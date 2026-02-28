@@ -14,6 +14,7 @@ const SKIP_PATHS = [
 ]
 
 const SKIP_EXTENSIONS = ['.png', '.jpg', '.svg', '.ico', '.woff', '.woff2', '.otf', '.ttf', '.xml', '.css', '.js']
+const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup', 'config', 'admin', 'backup', '.sql', 'passwd', 'cgi-bin']
 
 export async function trackHit (req, env) {
   if (!config.analytics) return
@@ -21,9 +22,19 @@ export async function trackHit (req, env) {
   const url = new URL(req.url)
   const path = url.pathname
 
-  // skip non-content paths and static assets
+  // skip non-content paths
   if (SKIP_PATHS.some(p => path.startsWith(p))) return
-  if (SKIP_EXTENSIONS.some(e => path.toLowerCase().endsWith(e))) return
+
+  // count bot probes separately
+  const isBot = BOT_PATHS.some(p => path.toLowerCase().includes(p)) ||
+    SKIP_EXTENSIONS.some(e => path.toLowerCase().endsWith(e))
+
+  if (isBot) {
+    const today = new Date().toISOString().slice(0, 10)
+    const count = parseInt(await env.KV.get(`bots:${today}`) || '0') + 1
+    await env.KV.put(`bots:${today}`, String(count), { expirationTtl: 60 * 60 * 24 * 90 })
+    return
+  }
 
   const cf = req.cf || {}
   const ip = req.headers.get('cf-connecting-ip') || ''
@@ -64,19 +75,22 @@ export async function handleAnalytics (req, env) {
   const days = parseInt(url.searchParams.get('days') || '7')
   const result = []
 
+  let totalBots = 0
   for (let i = 0; i < days; i++) {
     const d = new Date()
     d.setDate(d.getDate() - i)
-    const key = `hits:${d.toISOString().slice(0, 10)}`
-    const data = await env.KV.get(key, 'json')
-    if (data) result.push({ date: d.toISOString().slice(0, 10), hits: data.hits })
+    const dateStr = d.toISOString().slice(0, 10)
+    const data = await env.KV.get(`hits:${dateStr}`, 'json')
+    const bots = parseInt(await env.KV.get(`bots:${dateStr}`) || '0')
+    totalBots += bots
+    if (data) result.push({ date: dateStr, hits: data.hits })
   }
 
   // return dashboard html or json
   const accept = req.headers.get('accept') || ''
   if (accept.includes('text/html')) {
     const token = url.searchParams.get('token')
-    return new Response(buildDashboard(result, days, token), {
+  return new Response(buildDashboard(result, days, token, totalBots), {
       headers: { 'Content-Type': 'text/html' }
     })
   }
@@ -86,14 +100,15 @@ export async function handleAnalytics (req, env) {
   })
 }
 
-function countryFlag (code) {
+
+function countryFlag(code) {
   if (!code || code === '?') return ''
   return code.toUpperCase().replace(/./g, c =>
     String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)
   ) + ' '
 }
 
-function buildDashboard (data, days, token) {
+function buildDashboard (data, days, token, totalBots) {
   const tokenParam = token ? `&token=${token}` : ''
   const allHits = data.flatMap(d => d.hits)
   const totalHits = allHits.length
@@ -193,6 +208,7 @@ function buildDashboard (data, days, token) {
     <div><strong>${totalHits}</strong><span>hits</span></div>
     <div><strong>${uniqueIps}</strong><span>unique</span></div>
     <div><strong>${data.length}</strong><span>days</span></div>
+    <div><strong>${totalBots}</strong><span>🤖 bots</span></div>
   </div>
 
   <h2>top pages</h2>
