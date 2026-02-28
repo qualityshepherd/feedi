@@ -1,3 +1,5 @@
+[![Deploy](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml/badge.svg?branch=main)](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml)
+
 # feedi
 
 feedi is a _public_ RSS reader that includes your blog. Add any RSS feed to `feeds.json` (including your own) and it shows up on your site. Your writing, what you're reading, all on your domain. No algorithm. No platform. No comments. If someone writes a response and you follow their feed, you'll see it. That's the whole social model.
