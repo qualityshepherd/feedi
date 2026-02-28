@@ -1,1 +1,3 @@
-[]
+[
+  { "url": "https://feedi.brine-flare.workers.dev/assets/rss/blog.xml", "limit": 10 }
+]

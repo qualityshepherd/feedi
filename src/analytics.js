@@ -76,7 +76,7 @@ export async function handleAnalytics (req, env) {
   const accept = req.headers.get('accept') || ''
   if (accept.includes('text/html')) {
     const token = url.searchParams.get('token')
-  return new Response(buildDashboard(result, days, token), {
+    return new Response(buildDashboard(result, days, token), {
       headers: { 'Content-Type': 'text/html' }
     })
   }
@@ -86,8 +86,7 @@ export async function handleAnalytics (req, env) {
   })
 }
 
-
-function countryFlag(code) {
+function countryFlag (code) {
   if (!code || code === '?') return ''
   return code.toUpperCase().replace(/./g, c =>
     String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)

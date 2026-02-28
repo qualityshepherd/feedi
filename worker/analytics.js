@@ -94,7 +94,7 @@ function countryFlag (code) {
 }
 
 function buildDashboard (data, days, token) {
-  const token_param = token ? `&token=${token}` : ''
+  const tokenParam = token ? `&token=${token}` : ''
   const allHits = data.flatMap(d => d.hits)
   const totalHits = allHits.length
 
@@ -183,10 +183,10 @@ function buildDashboard (data, days, token) {
 <div class="analytics">
   <p class="title">analytics</p>
   <nav class="days-nav">
-    <a href="?days=1${token_param}" ${days === 1 ? 'class="active"' : ''}>today</a>
-    <a href="?days=7${token_param}" ${days === 7 ? 'class="active"' : ''}>7d</a>
-    <a href="?days=30${token_param}" ${days === 30 ? 'class="active"' : ''}>30d</a>
-    <a href="?days=90${token_param}" ${days === 90 ? 'class="active"' : ''}>90d</a>
+    <a href="?days=1${tokenParam}" ${days === 1 ? 'class="active"' : ''}>today</a>
+    <a href="?days=7${tokenParam}" ${days === 7 ? 'class="active"' : ''}>7d</a>
+    <a href="?days=30${tokenParam}" ${days === 30 ? 'class="active"' : ''}>30d</a>
+    <a href="?days=90${tokenParam}" ${days === 90 ? 'class="active"' : ''}>90d</a>
   </nav>
 
   <div class="summary">

@@ -1,4 +1,3 @@
-import config from '../feedi.config.js'
 import { elements } from './dom.js'
 import { feedsItemTemplate, notFoundTemplate } from './templates.js'
 
