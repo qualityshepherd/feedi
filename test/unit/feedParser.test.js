@@ -1,4 +1,4 @@
-import { unit as test } from '../../testpup.js'
+import { unit as test } from '../testpup.js'
 import {
   extractTag,
   extractCdata,

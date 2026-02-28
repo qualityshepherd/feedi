@@ -26,7 +26,7 @@ const genr8Feeds = {
     const aggregated = aggregateFeeds(successful)
 
     if (aggregated.length === 0) {
-      console.warn('⚠️  No posts aggregated — keeping existing aggregated.json unchanged')
+      console.warn('⚠️  No posts aggregated — keeping existing feedIndex.json unchanged')
       return
     }
 
@@ -40,7 +40,7 @@ export default genr8Feeds
 // only run when executed directly
 const isMain = process.argv[1]?.endsWith('genr8Feeds.js')
 if (isMain) {
-  genr8Feeds.build('./feeds.json', './aggregated.json')
+  genr8Feeds.build('./feeds.json', './feedIndex.json')
     .catch(err => {
       console.error('❌ Failed to generate feeds:', err)
       process.exit(1)

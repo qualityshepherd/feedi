@@ -24,7 +24,7 @@ export const renderFeedsItems = (items) => {
 export const loadAndRenderFeeds = async () => {
   try {
     if (!cachedFeeds) {
-      cachedFeeds = await readAggregated('./aggregated.json')
+      cachedFeeds = await readAggregated('./feedIndex.json')
     }
     renderFeedsItems(cachedFeeds)
   } catch (err) {

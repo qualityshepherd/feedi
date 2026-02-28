@@ -1,4 +1,4 @@
-import { e2e as test } from '../../testpup.js'
+import { e2e as test } from '../testpup.js'
 import { locators as $, spaPage } from './pages/spa.page.js'
 
 test('e2e: should search for post', async t => {

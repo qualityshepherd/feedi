@@ -25,9 +25,9 @@ export const notFoundTemplate = (message = 'No results found.') => `
 `
 
 export const aboutPageTemplate = () => `
-  <h2>SPLOG2</h2>
-  <div class="center">
-    A simple, single page, blog written in vanilla js that supports markdown, rss, podcasts and deploys to github pages (github.io).
+  <div class="post">
+    <h2>About</h2>
+    <p>Edit this in <code>src/templates.js</code></p>
   </div>
 `
 

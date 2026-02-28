@@ -1,4 +1,4 @@
-import { e2e as test } from '../../testpup.js'
+import { e2e as test } from '../testpup.js'
 import { locators as $, spaPage } from './pages/spa.page.js'
 
 test('e2e: should display feeds items', async t => {
@@ -39,7 +39,7 @@ test('e2e: feeds links open in new tab', async t => {
   t.is(target, '_blank')
 })
 
-test('e2e: should handle empty or broken aggregated.json gracefully', async t => {
+test('e2e: should handle empty or broken feedIndex.json gracefully', async t => {
   await spaPage(t).goto('feeds')
   const hasItems = await t.exists($.feedsItem)
   const hasNotFound = await t.exists($.notFoundMessage)
