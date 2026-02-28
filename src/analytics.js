@@ -182,13 +182,19 @@ function buildDashboard (data, days, token, totalBots, rssData) {
   const podApps = {}
   for (const h of podUas) {
     const ua = h.ua
-    const app = ua.includes('Overcast') ? 'Overcast'
-      : ua.includes('PocketCasts') ? 'Pocket Casts'
-      : ua.includes('Spotify') ? 'Spotify'
-      : ua.includes('AppleCoreMedia') ? 'Apple Podcasts'
-      : ua.includes('Castro') ? 'Castro'
-      : ua.includes('Downcast') ? 'Downcast'
-      : 'Other'
+    const app = ua.includes('Overcast')
+      ? 'Overcast'
+      : ua.includes('PocketCasts')
+        ? 'Pocket Casts'
+        : ua.includes('Spotify')
+          ? 'Spotify'
+          : ua.includes('AppleCoreMedia')
+            ? 'Apple Podcasts'
+            : ua.includes('Castro')
+              ? 'Castro'
+              : ua.includes('Downcast')
+                ? 'Downcast'
+                : 'Other'
     podApps[app] = (podApps[app] || 0) + 1
   }
   const topPodApps = Object.entries(podApps).sort((a, b) => b[1] - a[1])
@@ -297,7 +303,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 
-  ${topPodApps.length ? `
+  ${topPodApps.length
+? `
   <h2>🎙️ podcast apps</h2>
   <div>
     ${topPodApps.map(([app, count]) => `
@@ -306,7 +313,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       <div class="bar" style="width:${Math.round(count / (topPodApps[0]?.[1] || 1) * 120)}px"></div>
       <span class="count">${count}</span>
     </div>`).join('')}
-  </div>` : ''}
+  </div>`
+: ''}
 
   <h2>hits</h2>
   <div class="hits-list">
