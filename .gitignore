@@ -4,3 +4,4 @@ test/screenshots/
 index.json
 aggregated.json
 assets/rss/
+.wrangler/\n.DS_Store\nprivate.pem\npublic.pem
