@@ -14,13 +14,14 @@ const SKIP_PATHS = [
 ]
 
 const SKIP_EXTENSIONS = ['.png', '.jpg', '.svg', '.ico', '.woff', '.woff2', '.otf', '.ttf', '.xml', '.css', '.js']
+
 const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup', 'config', 'admin', 'backup', '.sql', 'passwd', 'cgi-bin']
 
 export async function trackHit (req, env) {
   if (!config.analytics) return
 
   const url = new URL(req.url)
-  const path = url.pathname
+  const path = url.pathname + (url.search ? url.search : "")
 
   // skip non-content paths
   if (SKIP_PATHS.some(p => path.startsWith(p))) return
