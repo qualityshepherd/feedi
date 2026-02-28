@@ -1,7 +1,9 @@
 node_modules/
+.wrangler/
+.DS_Store
+private.pem
+public.pem
 test/errors/
 test/screenshots/
 index.json
-aggregated.json
 assets/rss/
-.wrangler/\n.DS_Store\nprivate.pem\npublic.pem
