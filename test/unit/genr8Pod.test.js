@@ -118,7 +118,7 @@ test('Gen: validatePodFeed catches missing content namespace', t => {
 })
 
 test('Gen: validatePodFeed catches missing itunes:image', t => {
-  const feed = buildPodFeed([fakePodcast], fakeCfg).replace(/<itunes:image href="[^"]*" \/>\n  <image>/, '<image>')
+  const feed = buildPodFeed([fakePodcast], fakeCfg).replace(/<itunes:image href="[^"]*" \/>\n {2}<image>/, '<image>')
   t.ok(validatePodFeed(feed).some(e => e.includes('itunes:image')))
 })
 

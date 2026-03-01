@@ -157,7 +157,7 @@ export async function backupToR2 (env) {
   if (bots) backup.bots = parseInt(bots)
 
   // rss
-  const rssKeys = await env.KV.list({ prefix: `rss:` })
+  const rssKeys = await env.KV.list({ prefix: 'rss:' })
   backup.rss = {}
   for (const { name } of rssKeys.keys) {
     if (name.endsWith(today)) {
@@ -280,26 +280,26 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       --header-font: 'header'; --mono-font: 'mono';
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg-darkest); color: var(--text); font-family: 'Inter', Arial, sans-serif; font-size: 1.2rem; line-height: 1.6; }
+    body { background: var(--bg-darkest); color: var(--text); font-family: 'Inter', Arial, sans-serif; font-size: 1rem; line-height: 1.6; }
     .analytics { max-width: 1024px; margin: 0 auto; padding: 2.5rem 1.5rem; }
-    .title { font-family: var(--header-font); font-size: 1.75rem; color: var(--header); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+    .title { font-family: var(--header-font); font-size: 175%; color: var(--header); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
     .days-nav { display: flex; gap: 1.5rem; margin-bottom: 3rem; flex-wrap: wrap; }
-    .days-nav a { color: var(--alt1); text-decoration: none; font-size: 1rem; border: none; }
+    .days-nav a { color: var(--alt1); text-decoration: none; font-size: 100%; border: none; }
     .days-nav a.active, .days-nav a:hover { color: var(--alt3); }
     .summary { display: flex; flex-wrap: wrap; gap: 2rem 3rem; margin: 1rem 0 3rem; }
-    .summary strong { display: block; font-size: 2.75rem; line-height: 1; color: var(--header); font-family: var(--header-font); font-weight: 600; }
-    .summary span { color: var(--alt1); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; }
-    h2 { margin: 3rem 0 0.75rem; font-size: 0.825rem; color: var(--alt1); letter-spacing: 0.15em; text-transform: uppercase; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: var(--header-font); font-weight: normal; }
+    .summary strong { display: block; font-size: 275%; line-height: 1; color: var(--header); font-family: var(--header-font); font-weight: 600; }
+    .summary span { color: var(--alt1); font-size: 85%; text-transform: uppercase; letter-spacing: 0.08em; }
+    h2 { margin: 3rem 0 0.75rem; font-size: 82.5%; color: var(--alt1); letter-spacing: 0.15em; text-transform: uppercase; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); font-family: var(--header-font); font-weight: normal; }
     .bar-wrap { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
     .bar-wrap:hover .label { color: var(--alt3); }
-    .bar-wrap .label { color: var(--text); flex: 1; font-size: 1.27rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-wrap .label { color: var(--text); flex: 1; font-size: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .bar-wrap .bar { height: 2px; background: var(--alt3); min-width: 2px; flex-shrink: 0; opacity: 0.5; }
-    .bar-wrap .count { color: var(--alt1); min-width: 2rem; text-align: right; font-family: var(--mono-font); font-size: 1.1rem; }
+    .bar-wrap .count { color: var(--alt1); min-width: 2rem; text-align: right; font-family: var(--mono-font); font-size: 100%; }
     .heatmap { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; margin: 0.5rem 0; }
     .heatmap-cell { height: 28px; background: var(--alt3); border-radius: 2px; cursor: default; }
     .heatmap-labels { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; margin-bottom: 1rem; }
-    .heatmap-labels span { font-size: 0.55rem; color: var(--alt1); text-align: center; font-family: var(--mono-font); }
-    .hit { display: flex; gap: 0.75rem; padding: 0.5rem 0; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); align-items: baseline; flex-wrap: wrap; }
+    .heatmap-labels span { font-size: 55%; color: var(--alt1); text-align: center; font-family: var(--mono-font); }
+    .hit { display: flex; gap: 0.75rem; padding: 0.5rem 0; font-size: 100%; border-bottom: 1px solid rgba(255,255,255,0.04); align-items: baseline; flex-wrap: wrap; }
     .hit:hover .path { color: var(--alt3); }
     .hit .time { color: var(--alt1); font-family: var(--mono-font); white-space: nowrap; flex-shrink: 0; }
     .hit .flag { flex-shrink: 0; }
@@ -366,7 +366,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 
-  ${topPodApps.length ? `
+  ${topPodApps.length
+? `
   <h2>🎙️ podcast apps</h2>
   <div>
     ${topPodApps.map(([app, count]) => `
@@ -375,7 +376,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       <div class="bar" style="width:${Math.round(count / (topPodApps[0]?.[1] || 1) * 120)}px"></div>
       <span class="count">${count}</span>
     </div>`).join('')}
-  </div>` : ''}
+  </div>`
+: ''}
 
   <h2>hits</h2>
   <div class="hits-list">

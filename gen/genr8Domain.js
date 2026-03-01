@@ -35,11 +35,13 @@ const patchFeeds = async () => {
 
 // generate wrangler.toml from config
 export const buildWranglerToml = (cfg, kvId) => {
-  const r2Section = cfg.r2Bucket ? `
+  const r2Section = cfg.r2Bucket
+    ? `
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "${cfg.r2Bucket}"
-` : ''
+`
+    : ''
 
   return `name = "${cfg.domain.replace(/\./g, '-')}"
 main = "worker/index.js"
