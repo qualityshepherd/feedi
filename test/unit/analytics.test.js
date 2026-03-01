@@ -19,6 +19,22 @@ test('Analytics: isBot detects static extension', t => {
   t.ok(isBot('/assets/css/style.css'))
 })
 
+test('Analytics: isBot detects swagger probe', t => {
+  t.ok(isBot('/swagger/swagger-ui.html'))
+})
+
+test('Analytics: isBot detects statistics.json probe', t => {
+  t.ok(isBot('/statistics.json'))
+})
+
+test('Analytics: isBot detects actuator probe', t => {
+  t.ok(isBot('/actuator/env'))
+})
+
+test('Analytics: isBot detects graphql probe', t => {
+  t.ok(isBot('/graphql'))
+})
+
 test('Analytics: isBot returns false for normal path', t => {
   t.falsy(isBot('/posts/my-post'))
 })

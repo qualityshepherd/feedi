@@ -14,7 +14,7 @@ const SKIP_PATHS = [
 
 const SKIP_EXTENSIONS = ['.png', '.jpg', '.svg', '.ico', '.woff', '.woff2', '.otf', '.ttf', '.css', '.js']
 
-const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup', 'config', 'admin', 'backup', '.sql', 'passwd', 'cgi-bin']
+const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup', 'config', 'admin', 'backup', '.sql', 'passwd', 'cgi-bin', 'statistics.json', 'swagger', 'actuator', 'graphql', 'telescope']
 
 const RSS_PATHS = ['/assets/rss/blog.xml', '/assets/rss/pod.xml']
 
@@ -260,7 +260,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg-darkest); color: var(--text); font-family: 'Inter', Arial, sans-serif; font-size: 1.2rem; line-height: 1.6; }
-    .analytics { max-width: 700px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    .analytics { max-width: 1024px; margin: 0 auto; padding: 2.5rem 1.5rem; }
     .title { font-family: var(--header-font); font-size: 1.75rem; color: var(--header); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
     .days-nav { display: flex; gap: 1.5rem; margin-bottom: 3rem; flex-wrap: wrap; }
     .days-nav a { color: var(--alt1); text-decoration: none; font-size: 1rem; border: none; }
@@ -345,8 +345,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 
-  ${topPodApps.length
-? `
+  ${topPodApps.length ? `
   <h2>🎙️ podcast apps</h2>
   <div>
     ${topPodApps.map(([app, count]) => `
@@ -355,8 +354,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       <div class="bar" style="width:${Math.round(count / (topPodApps[0]?.[1] || 1) * 120)}px"></div>
       <span class="count">${count}</span>
     </div>`).join('')}
-  </div>`
-: ''}
+  </div>` : ''}
 
   <h2>hits</h2>
   <div class="hits-list">
