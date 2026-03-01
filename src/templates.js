@@ -44,7 +44,7 @@ export const feedsItemTemplate = item => `
       <h2 class="post-title">${item.title}</h2>
     </a>
     <div class="feeds-meta">
-      <span class="feeds-feed">${item.feed?.title || ''}</span>
+      <span class="feeds-feed">${item.author ? `${item.author} · ` : ''}${item.feed?.title || ''}</span>
       <span class="date">${item.date}</span>
     </div>
   </div>

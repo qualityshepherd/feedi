@@ -42,6 +42,7 @@ const parseRssItem = (itemXml, feedMeta) => ({
   content: extractCdata(
     extractTag(itemXml, 'content:encoded') || extractTag(itemXml, 'description')
   ),
+  author: extractCdata(extractTag(itemXml, 'dc:creator') || extractTag(itemXml, 'author')),
   feed: feedMeta
 })
 
@@ -62,6 +63,7 @@ const parseAtomEntry = (entryXml, feedMeta) => ({
   content: extractCdata(
     extractTag(entryXml, 'content') || extractTag(entryXml, 'summary')
   ),
+  author: extractCdata(extractTag(extractTag(entryXml, 'author'), 'name')),
   feed: feedMeta
 })
 

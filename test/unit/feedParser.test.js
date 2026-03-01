@@ -23,6 +23,7 @@ const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
     <link>https://example.com/post-two</link>
     <pubDate>Tue, 02 Jan 2024 00:00:00 GMT</pubDate>
     <description><![CDATA[<p>Content two</p>]]></description>
+    <dc:creator>Jane Doe</dc:creator>
   </item>
   <item>
     <title><![CDATA[Post One]]></title>
@@ -41,6 +42,7 @@ const atomXml = `<?xml version="1.0" encoding="UTF-8"?>
     <link href="https://example.com/atom-post"/>
     <published>2024-01-03T00:00:00Z</published>
     <content>Atom content here</content>
+    <author><name>John Smith</name></author>
   </entry>
 </feed>`
 
@@ -128,6 +130,16 @@ test('FeedParser: parseFeed rss item has feed metadata', t => {
   t.is(first.feed.url, feedConfig.url)
 })
 
+test('FeedParser: parseFeed rss item extracts dc:creator as author', t => {
+  const [first] = parseFeed(rssXml, feedConfig)
+  t.is(first.author, 'Jane Doe')
+})
+
+test('FeedParser: parseFeed rss item author is empty string when missing', t => {
+  const [, second] = parseFeed(rssXml, feedConfig)
+  t.is(second.author, '')
+})
+
 // -- parseFeed (Atom) --
 
 test('FeedParser: parseFeed returns atom entries', t => {
@@ -143,6 +155,11 @@ test('FeedParser: parseFeed atom entry has correct title', t => {
 test('FeedParser: parseFeed atom entry url comes from href attr', t => {
   const [first] = parseFeed(atomXml, { url: 'https://example.com/atom.xml' })
   t.is(first.url, 'https://example.com/atom-post')
+})
+
+test('FeedParser: parseFeed atom entry extracts author name', t => {
+  const [first] = parseFeed(atomXml, { url: 'https://example.com/atom.xml' })
+  t.is(first.author, 'John Smith')
 })
 
 // -- limitFeed --

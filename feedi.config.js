@@ -7,8 +7,7 @@ const config = {
   maxPosts: 1,
 
   // features
-  analytics: true,
-  showFeeds: false
+  analytics: true
 
   // ── podcast (optional) ──────────────────────────────────────
   // uncomment and fill in if you have a podcast
