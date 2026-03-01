@@ -20,6 +20,16 @@ It's MACRO blogging. Write when you have something to say. Read what's worth rea
 
 ---
 
+## philosophy
+
+We didn't separate reading and writing because it was better. We did it because databases were heavy, servers were weak, and browsers were dumb. That constraint became culture. feedi undoes it.
+
+Your feeds are public. Your silence is visible. If your posts are buried, that's information. Either prune feeds or write more. There's no algorithm to hide behind.
+
+*"This site shows what I read. If I don't write enough to matter here, that's on me."*
+
+---
+
 ## requirements
 
 - Node.js

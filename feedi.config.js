@@ -2,7 +2,7 @@ const config = {
   // ── edit these ──────────────────────────────────────────────
   title: 'feedi',
   description: 'a public rss reader',
-  domain: 'feedi.brine-flare.workers.dev',
+  domain: 'feedi.brine.dev',
   author: 'brine',
   maxPosts: 1,
 
