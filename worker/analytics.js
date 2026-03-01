@@ -44,15 +44,10 @@ export const countryFlag = (code) => {
 
 export const buildHeatmap = (allHits) => {
   const hours = Array(24).fill(0)
-  for (const h of allHits) {
-    const hour = new Date(h.ts).getHours()
-    hours[hour]++
-  }
-  const max = Math.max(...hours, 1)
-  return hours.map((count, hour) => {
-    const opacity = count === 0 ? 0.05 : 0.15 + (count / max) * 0.85
+  // placeholder cells — filled client-side in local timezone
+  return hours.map((_, hour) => {
     const label = hour === 0 ? '12a' : hour < 12 ? `${hour}a` : hour === 12 ? '12p' : `${hour - 12}p`
-    return `<div class="heatmap-cell" style="opacity:${opacity.toFixed(2)}" title="${label}: ${count} hits"></div>`
+    return `<div class="heatmap-cell" data-hour="${hour}" style="opacity:0.05" title="${label}"></div>`
   }).join('')
 }
 
@@ -386,7 +381,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
   <div class="hits-list">
     ${allHits.slice().reverse().map(h => `
     <div class="hit">
-      <span class="time">${new Date(h.ts).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}</span>
+      <span class="time" data-ts="${h.ts}"></span>
       <span class="flag">${countryFlag(h.country)}</span>
       <span class="city" title="${h.region || h.country}">${h.city || h.country}</span>
       <span class="path" title="${h.path}">${h.path}</span>
@@ -394,6 +389,26 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 </div>
+<script>
+  // render hit times in local timezone
+  document.querySelectorAll('.time[data-ts]').forEach(el => {
+    el.textContent = new Date(+el.dataset.ts).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })
+  })
+
+  // render heatmap in local timezone
+  const timestamps = Array.from(document.querySelectorAll('.time[data-ts]')).map(el => +el.dataset.ts)
+  const hours = Array(24).fill(0)
+  timestamps.forEach(ts => hours[new Date(ts).getHours()]++)
+  const max = Math.max(...hours, 1)
+  document.querySelectorAll('.heatmap-cell[data-hour]').forEach(el => {
+    const hour = +el.dataset.hour
+    const count = hours[hour]
+    const label = hour === 0 ? '12a' : hour < 12 ? hour + 'a' : hour === 12 ? '12p' : (hour - 12) + 'p'
+    const opacity = count === 0 ? 0.05 : 0.15 + (count / max) * 0.85
+    el.style.opacity = opacity.toFixed(2)
+    el.title = label + ': ' + count + ' hits'
+  })
+</script>
 </body>
 </html>`
 }
