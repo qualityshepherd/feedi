@@ -31,8 +31,8 @@ const url = `https://${config.domain}`
       feed += `
   <item>
     <title>${post.meta.title}</title>
-    <link>${url}/#post?s=${post.meta.slug}</link>
-    <guid>${url}/#post?s=${post.meta.slug}</guid>
+    <link>${url}/posts/${post.meta.slug}</link>
+    <guid>${url}/posts/${post.meta.slug}</guid>
     <pubDate>${new Date(post.meta.date).toUTCString()}</pubDate>
     <description><![CDATA[${safeHtml}]]></description>
   </item>`
@@ -43,6 +43,6 @@ const url = `https://${config.domain}`
     await fs.mkdir('./assets/rss', { recursive: true })
     await fs.writeFile(`${'./assets/rss'}/blog.xml`, feed, 'utf8')
   } catch (err) {
-    console.error('❌ Failed to generate RSS feed:', err)
+    console.error('Failed to generate RSS feed:', err)
   }
 })()

@@ -28,7 +28,7 @@ export const loadAndRenderFeeds = async () => {
     }
     renderFeedsItems(cachedFeeds)
   } catch (err) {
-    console.error('❌ Failed to load feeds:', err)
+    console.error('Failed to load feeds:', err)
     elements.main.innerHTML = notFoundTemplate('Could not load feeds.')
   }
 }

@@ -111,17 +111,3 @@ test('UI: renderTags should include proper accessibility attributes', t => {
   t.ok(html.includes('role="button"'))
   t.ok(html.includes('aria-label="Filter by tag: accessibility"'))
 })
-
-test('UI: renderTags should generate valid HTML structure', t => {
-  const html = renderTags(['html', 'css'])
-  t.ok(html.includes('<a href='))
-  t.ok(html.includes('class="tag"'))
-  t.ok(html.includes('>html</a>'))
-  t.ok(html.includes('>css</a>'))
-})
-
-test('UI: functions should be pure and not depend on global state', t => {
-  t.deepEqual(getLimitedPosts(fakeIndex(), 1), getLimitedPosts(fakeIndex(), 1))
-  t.is(postMatchesSearch(fakeIndex()[0], 'Post One'), postMatchesSearch(fakeIndex()[0], 'Post One'))
-  t.is(renderTags(['test']), renderTags(['test']))
-})

@@ -25,6 +25,6 @@ const url = `https://${config.domain}`
     await fs.mkdir('./assets/rss', { recursive: true })
     await fs.writeFile(`${'./assets/rss'}/sitemap.xml`, sitemap, 'utf8')
   } catch (err) {
-    console.error('❌ Failed to generate sitemap:', err)
+    console.error('Failed to generate sitemap:', err)
   }
 })()

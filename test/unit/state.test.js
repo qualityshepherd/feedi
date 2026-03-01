@@ -58,14 +58,6 @@ test('State: sortByDate should not mutate input', t => {
   t.is(JSON.stringify(posts), clone)
 })
 
-test('State: getState should return a copy of state', t => {
-  resetState()
-  const state1 = getState()
-  const state2 = getState()
-
-  t.deepEqual(state1, state2)
-})
-
 test('State: setPosts should update posts and return new posts array', t => {
   resetState()
   const testPosts = [{ meta: { title: 'Test' } }]

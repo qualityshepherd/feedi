@@ -77,6 +77,6 @@ export default genr8Index
   try {
     await genr8Index.siteIndex('./index.json', './posts')
   } catch (err) {
-    console.error('❌ Failed to generate site index:', err)
+    console.error('Failed to generate site index:', err)
   }
 })()

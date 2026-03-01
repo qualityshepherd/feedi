@@ -2,37 +2,68 @@ import { removeFuturePosts } from '../src/state.js'
 import { promises as fs } from 'fs'
 import config from '../feedi.config.js'
 
-const url = `https://${config.domain}`
-const pod = {
-  title: config.title,
-  link: url,
-  description: config.description,
-  image: config.podcast?.image || `${url}/assets/images/default.svg`,
-  author: config.podcast?.author || config.author,
-  explicit: config.podcast?.explicit || 'false',
-  email: config.podcast?.email || '',
-  podRss: `${url}/assets/rss/pod.xml`
+// ── runner ────────────────────────────────────────────────────
+
+import { fileURLToPath } from 'url'
+
+// ── pure functions (exported for testing) ────────────────────
+
+export const extractAudioSrc = (html) => {
+  const match = html.match(/<audio.*?src="(.*?)"/)
+  return match?.[1] || null
 }
 
-/**
- * Generate a valid podcast RSS feed from posts tagged with "podcast"
- * Requires config.podcast to be set in feedi.config.js
- */
-;(async () => {
-  try {
-    const raw = await fs.readFile('./index.json', 'utf8')
-    const posts = removeFuturePosts(JSON.parse(raw))
+export const resolveAudioUrl = (src, baseUrl) => {
+  if (!src) return null
+  return src.startsWith('http') ? src : `${baseUrl}/${src.replace(/^\//, '')}`
+}
 
-    const podcasts = posts.filter(({ meta }) =>
-      Array.isArray(meta.tags) &&
-      meta.tags.some(tag => tag.toLowerCase() === 'podcast')
-    )
+export const isRfc2822Date = (str) =>
+  /^\w{3}, \d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2} (GMT|UTC|[+-]\d{4}|\w{2,4})$/.test(str.trim())
 
-    const audioRegExp = /<audio.*?src="(.*?)"/
+export const buildPodItem = (podcast, baseUrl, length = 0) => {
+  const src = extractAudioSrc(podcast.html)
+  const audioUrl = resolveAudioUrl(src, baseUrl)
+  if (!audioUrl) return null
 
-    let feed = `<?xml version="1.0" encoding="UTF-8" ?>
+  const image = podcast.meta.image || `${baseUrl}/assets/images/default.svg`
+  const pubDate = new Date(podcast.meta.date).toUTCString()
+
+  return `
+  <item>
+    <title>${podcast.meta.title}</title>
+    <link>${baseUrl}/posts/${podcast.meta.slug}</link>
+    <guid isPermaLink="true">${baseUrl}/posts/${podcast.meta.slug}</guid>
+    <description>${podcast.meta.description || ''}</description>
+    <enclosure url="${audioUrl}" type="audio/mpeg" length="${length}" />
+    <pubDate>${pubDate}</pubDate>
+    <itunes:image href="${image}" />
+  </item>`
+}
+
+export const buildPodFeed = (podcasts, cfg, lengths = {}) => {
+  const baseUrl = `https://${cfg.domain}`
+  const pod = {
+    title: cfg.title,
+    link: baseUrl,
+    description: cfg.description,
+    image: cfg.podcast?.image || `${baseUrl}/assets/images/default.svg`,
+    author: cfg.podcast?.author || cfg.author,
+    explicit: cfg.podcast?.explicit || 'false',
+    email: cfg.podcast?.email || '',
+    category: cfg.podcast?.category || 'Leisure',
+    podRss: `${baseUrl}/assets/rss/pod.xml`
+  }
+
+  const items = podcasts
+    .map(p => buildPodItem(p, baseUrl, lengths[p.meta.slug] || 0))
+    .filter(Boolean)
+    .join('')
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"
   xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
   xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
   <title>${pod.title}</title>
@@ -47,45 +78,91 @@ const pod = {
   </image>
   <itunes:author>${pod.author}</itunes:author>
   <itunes:explicit>${pod.explicit}</itunes:explicit>
-  <itunes:category text="Leisure" />
+  <itunes:category text="${pod.category}" />
   <itunes:owner>
     <itunes:email>${pod.email}</itunes:email>
   </itunes:owner>
-  <atom:link href="${pod.podRss}" rel="self" type="application/rss+xml" />`
+  <atom:link href="${pod.podRss}" rel="self" type="application/rss+xml" />${items}
+</channel>
+</rss>`
+}
 
-    for (const podcast of podcasts) {
-      const audioMatch = podcast.html.match(audioRegExp)
-      if (!audioMatch?.[1]) {
-        console.warn(`Skipping post "${podcast.meta.title}" — no <audio> found.`)
-        continue
+export const validatePodFeed = (xml) => {
+  const errors = []
+
+  // extract channel header (before first <item>) for scoped checks
+  const channelHeader = xml.split('<item>')[0]
+
+  // required by Apple spec: channel level
+  if (!xml.includes('xmlns:itunes')) errors.push('missing itunes namespace')
+  if (!xml.includes('xmlns:content')) errors.push('missing content namespace')
+  if (!/<title>[^<]/.test(channelHeader)) errors.push('missing channel <title>')
+  if (!/<link>[^<]/.test(channelHeader)) errors.push('missing channel <link>')
+  if (!/<description>[^<]/.test(channelHeader)) errors.push('missing channel <description>')
+  if (!/<language>[^<]/.test(channelHeader)) errors.push('missing channel <language>')
+  if (!channelHeader.includes('<itunes:image')) errors.push('missing channel <itunes:image>')
+  if (!channelHeader.includes('<itunes:author>')) errors.push('missing channel <itunes:author>')
+  if (!channelHeader.includes('<itunes:category')) errors.push('missing channel <itunes:category>')
+  if (!channelHeader.includes('<itunes:explicit>')) errors.push('missing channel <itunes:explicit>')
+
+  // per-item checks — required by Apple spec
+  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1])
+  for (const [i, item] of items.entries()) {
+    const n = i + 1
+    if (!item.includes('<title>')) errors.push(`item ${n}: missing <title>`)
+    if (!item.includes('<guid')) errors.push(`item ${n}: missing <guid>`)
+    if (!item.includes('<enclosure')) errors.push(`item ${n}: missing <enclosure>`)
+    if (!item.includes('type="audio/mpeg"')) errors.push(`item ${n}: enclosure missing type`)
+    if (!item.includes('url="http')) errors.push(`item ${n}: enclosure url not absolute`)
+    const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1]
+    if (!pubDate) {
+      errors.push(`item ${n}: missing <pubDate>`)
+    } else if (!isRfc2822Date(pubDate)) {
+      errors.push(`item ${n}: pubDate not RFC 2822 — got "${pubDate}"`)
+    }
+  }
+
+  return errors
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  (async () => {
+    try {
+      const raw = await fs.readFile('./index.json', 'utf8')
+      const posts = removeFuturePosts(JSON.parse(raw))
+      const podcasts = posts.filter(({ meta }) =>
+        Array.isArray(meta.tags) &&
+      meta.tags.some(tag => tag.toLowerCase() === 'podcast')
+      )
+
+      // get file sizes for local audio files
+      const lengths = {}
+      for (const podcast of podcasts) {
+        const src = extractAudioSrc(podcast.html)
+        if (src && !src.startsWith('http')) {
+          try {
+            const stat = await fs.stat(`./${src.replace(/^\//, '')}`)
+            lengths[podcast.meta.slug] = stat.size
+          } catch {
+            console.warn(`Could not stat audio file for "${podcast.meta.title}": ${src}`)
+          }
+        }
       }
 
-      const audioUrl = `${url}/${audioMatch[1]}`
-      const description = podcast.meta.description || ''
+      const feed = buildPodFeed(podcasts, config, lengths)
 
-      feed += `
-  <item>
-    <title>${podcast.meta.title}</title>
-    <link>${url}/#post?s=${podcast.meta.slug}</link>
-    <guid isPermaLink="true">${url}/#post?s=${podcast.meta.slug}</guid>
-    <description>${description}</description>
-    <enclosure url="${audioUrl}" type="audio/mpeg" length="0" />
-    <pubDate>${new Date(podcast.meta.date).toUTCString()}</pubDate>
-    <itunes:image href="${getImage(podcast)}" />
-  </item>`
+      const errors = validatePodFeed(feed)
+      if (errors.length) {
+        console.error('Podcast RSS validation failed:')
+        errors.forEach(e => console.error(' •', e))
+        process.exit(1)
+      }
+
+      await fs.mkdir('./assets/rss', { recursive: true })
+      await fs.writeFile('./assets/rss/pod.xml', feed, 'utf8')
+      console.log(`podcast RSS generated (${podcasts.length} episodes)`)
+    } catch (err) {
+      console.error('Failed to generate podcast RSS:', err)
     }
-
-    feed += '\n</channel>\n</rss>'
-
-    await fs.mkdir('./assets/rss', { recursive: true })
-    await fs.writeFile('./assets/rss/pod.xml', feed, 'utf8')
-  } catch (err) {
-    console.error('❌ Failed to generate podcast RSS:', err)
-  }
-})()
-
-function getImage (podobj) {
-  return podobj.meta.image
-    ? podobj.meta.image
-    : `${url}/assets/images/default.svg`
+  })()
 }

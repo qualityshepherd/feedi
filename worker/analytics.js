@@ -143,7 +143,7 @@ export async function flushPending (env) {
     await env.KV.put(key, JSON.stringify(existing), { expirationTtl: TTL })
   }
 
-  console.log(`✅ flushed ${hits.length} pending hits`)
+  console.log(`flushed ${hits.length} pending hits`)
 }
 
 async function hashIp (ip) {
@@ -345,7 +345,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 
-  ${topPodApps.length ? `
+  ${topPodApps.length
+? `
   <h2>🎙️ podcast apps</h2>
   <div>
     ${topPodApps.map(([app, count]) => `
@@ -354,7 +355,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       <div class="bar" style="width:${Math.round(count / (topPodApps[0]?.[1] || 1) * 120)}px"></div>
       <span class="count">${count}</span>
     </div>`).join('')}
-  </div>` : ''}
+  </div>`
+: ''}
 
   <h2>hits</h2>
   <div class="hits-list">

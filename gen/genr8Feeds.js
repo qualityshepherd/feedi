@@ -21,17 +21,17 @@ const genr8Feeds = {
 
     results
       .filter(r => r.status === 'rejected')
-      .forEach(r => console.warn(`⚠️  Feed failed: ${r.reason.message}`))
+      .forEach(r => console.warn(`Feed failed: ${r.reason.message}`))
 
     const aggregated = aggregateFeeds(successful)
 
     if (aggregated.length === 0) {
-      console.warn('⚠️  No posts aggregated — keeping existing feedIndex.json unchanged')
+      console.warn('No posts aggregated — keeping existing feedIndex.json unchanged')
       return
     }
 
     await fs.writeFile(pathToAggregated, JSON.stringify(aggregated, null, 2), 'utf8')
-    console.log(`✅ Aggregated ${aggregated.length} posts from ${successful.length}/${feeds.length} feeds`)
+    console.log(`Aggregated ${aggregated.length} posts from ${successful.length}/${feeds.length} feeds`)
   }
 }
 
@@ -42,7 +42,7 @@ const isMain = process.argv[1]?.endsWith('genr8Feeds.js')
 if (isMain) {
   genr8Feeds.build('./feeds.json', './feedIndex.json')
     .catch(err => {
-      console.error('❌ Failed to generate feeds:', err)
+      console.error('Failed to generate feeds:', err)
       process.exit(1)
     })
 }

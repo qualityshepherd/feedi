@@ -42,7 +42,7 @@ export async function readSiteIndex (pathToIndex) {
       removeFuturePosts(index)
     )
   } catch (err) {
-    console.error('❌ Failed to load index.json:', err)
+    console.error('Failed to load index.json:', err)
     return []
   }
 }
