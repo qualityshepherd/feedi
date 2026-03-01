@@ -18,14 +18,14 @@ import {
 const baseUrl = process.env.TEST_ENV || 'http://localhost:4242'
 const pathToIndex = `${baseUrl}/test/unit/fake.index.json`
 
-test('readSiteIndex should return parsed JSON', async t => {
+test('State: readSiteIndex should return parsed JSON', async t => {
   const data = await readSiteIndex(pathToIndex)
 
   t.ok(data.length > 0)
   t.ok(data[0].meta.title)
 })
 
-test('readSiteIndex should exclude future-dated posts', async t => {
+test('State: readSiteIndex should exclude future-dated posts', async t => {
   const data = await readSiteIndex(pathToIndex)
   const datesTodayOrOlder = date => new Date(date) <= new Date()
 
@@ -39,26 +39,26 @@ const posts = [
 ]
 const extractDates = posts => posts.map(p => p.meta.date)
 
-test('sortByDate should sort posts descending by default', t => {
+test('State: sortByDate should sort posts descending by default', t => {
   const sortedDates = extractDates(sortByDate(posts))
 
   t.deepEqual(sortedDates, ['2024-01-01', '2023-01-01', '2022-01-01'])
 })
 
-test('sortByDate should sort posts ascending if desc is false', t => {
+test('State: sortByDate should sort posts ascending if desc is false', t => {
   const sortedDates = extractDates(sortByDate(posts, false))
 
   t.deepEqual(sortedDates, ['2022-01-01', '2023-01-01', '2024-01-01'])
 })
 
-test('sortByDate should not mutate input', t => {
+test('State: sortByDate should not mutate input', t => {
   const clone = JSON.stringify(posts)
   sortByDate(posts)
 
   t.is(JSON.stringify(posts), clone)
 })
 
-test('getState should return a copy of state', t => {
+test('State: getState should return a copy of state', t => {
   resetState()
   const state1 = getState()
   const state2 = getState()
@@ -66,7 +66,7 @@ test('getState should return a copy of state', t => {
   t.deepEqual(state1, state2)
 })
 
-test('setPosts should update posts and return new posts array', t => {
+test('State: setPosts should update posts and return new posts array', t => {
   resetState()
   const testPosts = [{ meta: { title: 'Test' } }]
   setPosts(testPosts)
@@ -74,7 +74,7 @@ test('setPosts should update posts and return new posts array', t => {
   t.deepEqual(getPosts(), testPosts)
 })
 
-test('setDisplayedPosts should update displayed post count', t => {
+test('State: setDisplayedPosts should update displayed post count', t => {
   resetState()
   setDisplayedPosts(10)
   t.is(getDisplayedPosts(), 10)
@@ -83,7 +83,7 @@ test('setDisplayedPosts should update displayed post count', t => {
   t.is(getDisplayedPosts(), 25)
 })
 
-test('setSearchTerm should update search term', t => {
+test('State: setSearchTerm should update search term', t => {
   resetState()
   setSearchTerm('javascript')
   t.is(getSearchTerm(), 'javascript')
@@ -92,7 +92,7 @@ test('setSearchTerm should update search term', t => {
   t.is(getSearchTerm(), '')
 })
 
-test('incrementDisplayedPosts should increase displayed posts count', t => {
+test('State: incrementDisplayedPosts should increase displayed posts count', t => {
   resetState()
   setDisplayedPosts(5)
   incrementDisplayedPosts(3)
@@ -102,7 +102,7 @@ test('incrementDisplayedPosts should increase displayed posts count', t => {
   t.ok(getDisplayedPosts() > 8)
 })
 
-test('updateState should update multiple properties at once', t => {
+test('State: updateState should update multiple properties at once', t => {
   resetState()
   const testPosts = [{ meta: { title: 'Test' } }]
   updateState({ posts: testPosts, displayedPosts: 15, searchTerm: 'test query' })
@@ -113,7 +113,7 @@ test('updateState should update multiple properties at once', t => {
   t.is(state.searchTerm, 'test query')
 })
 
-test('state updates should be immutable', t => {
+test('State: state updates should be immutable', t => {
   resetState()
   const initialState = getState()
   setPosts([{ meta: { title: 'New Post' } }])
@@ -124,7 +124,7 @@ test('state updates should be immutable', t => {
   t.is(initialState.posts.length, 0)
 })
 
-test('removeFuturePosts should filter out future posts', t => {
+test('State: removeFuturePosts should filter out future posts', t => {
   const fakePosts = [
     { meta: { date: '2050-01-01', title: 'Future Post' } },
     { meta: { date: '2020-01-01', title: 'Past Post' } }
@@ -133,7 +133,7 @@ test('removeFuturePosts should filter out future posts', t => {
   t.is(removeFuturePosts(fakePosts).length, 1)
 })
 
-test('resetState should restore initial state', t => {
+test('State: resetState should restore initial state', t => {
   setPosts([{ meta: { title: 'Test' } }])
   setDisplayedPosts(99)
   setSearchTerm('modified')
@@ -146,7 +146,7 @@ test('resetState should restore initial state', t => {
   t.deepEqual(resetResult, currentState)
 })
 
-test('state getters should return copies to prevent mutation', t => {
+test('State: state getters should return copies to prevent mutation', t => {
   resetState()
   const testPosts = [{ meta: { title: 'Post 1' } }, { meta: { title: 'Post 2' } }]
   setPosts(testPosts)
@@ -158,7 +158,7 @@ test('state getters should return copies to prevent mutation', t => {
   t.is(posts2.length, 2)
 })
 
-test('state should handle edge cases gracefully', t => {
+test('State: state should handle edge cases gracefully', t => {
   resetState()
   setPosts([])
   t.is(getPosts().length, 0)

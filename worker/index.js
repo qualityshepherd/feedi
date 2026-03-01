@@ -1,5 +1,5 @@
 import { handleWebfinger, handleActor } from './activitypub.js'
-import { trackHit, handleAnalytics } from './analytics.js'
+import { trackHit, flushPending, handleAnalytics } from './analytics.js'
 
 export default {
   async fetch (req, env) {
@@ -17,5 +17,9 @@ export default {
 
     await trackHit(req, env)
     return env.ASSETS.fetch(req)
+  },
+
+  async scheduled (event, env) {
+    await flushPending(env)
   }
 }

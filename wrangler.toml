@@ -11,4 +11,5 @@ binding = "ASSETS"
 binding = "KV"
 id = "31af68a490ad48a2a5a92248ca0cf957"
 
-
+[triggers]
+crons = ["*/5 * * * *"]
