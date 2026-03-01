@@ -39,7 +39,17 @@ function puppeteerDsl (t, page, browser) {
     count: (sel) => page.$$eval(sel, els => els.length),
     getText: (sel) => page.$eval(sel, el => el.textContent),
     hasClass: (sel, cls) => page.$eval(sel, (el, c) => el.classList.contains(c), cls),
-    isVisible: async (sel) => { try { const el = await page.$(sel); return !!el } catch { return false } }
+    inDom: async (sel) => { try { return !!(await page.$(sel)) } catch { return false } },
+    isVisible: async (sel) => {
+      try {
+        const el = await page.$(sel)
+        if (!el) return false
+        return await page.$eval(sel, el => {
+          const style = window.getComputedStyle(el)
+          return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetParent !== null
+        })
+      } catch { return false }
+    }
   })
 }
 

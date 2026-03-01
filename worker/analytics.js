@@ -18,8 +18,6 @@ const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'sh
 
 const RSS_PATHS = ['/assets/rss/blog.xml', '/assets/rss/pod.xml']
 
-const TTL = 60 * 60 * 24 * 90 // 90 days
-
 // ── pure functions (exported for testing) ────────────────────
 
 export const isBot = (path) =>
@@ -83,7 +81,7 @@ export async function trackHit (req, env) {
     const ua = req.headers.get('user-agent') || ''
     const existing = await env.KV.get(key, 'json') || { hits: [] }
     existing.hits.push({ ts: Date.now(), ua })
-    await env.KV.put(key, JSON.stringify(existing), { expirationTtl: TTL })
+    await env.KV.put(key, JSON.stringify(existing))
     return
   }
 
@@ -94,7 +92,7 @@ export async function trackHit (req, env) {
   if (isBot(path)) {
     const today = new Date().toISOString().slice(0, 10)
     const count = parseInt(await env.KV.get(`bots:${today}`) || '0') + 1
-    await env.KV.put(`bots:${today}`, String(count), { expirationTtl: TTL })
+    await env.KV.put(`bots:${today}`, String(count))
     return
   }
 
@@ -116,7 +114,7 @@ export async function trackHit (req, env) {
   }
 
   try {
-    await env.KV.put(key, JSON.stringify(hit), { expirationTtl: TTL })
+    await env.KV.put(key, JSON.stringify(hit))
   } catch (err) {
     console.error('Analytics write failed:', err)
   }
@@ -140,10 +138,44 @@ export async function flushPending (env) {
     const key = `hits:${date}`
     const existing = await env.KV.get(key, 'json') || { hits: [] }
     existing.hits.push(...newHits)
-    await env.KV.put(key, JSON.stringify(existing), { expirationTtl: TTL })
+    await env.KV.put(key, JSON.stringify(existing))
   }
 
   console.log(`flushed ${hits.length} pending hits`)
+}
+
+// cron: runs daily at 2am via wrangler.toml [triggers]
+export const backupKey = (date) => `feedi-backups/analytics-${date}.json`
+
+export async function backupToR2 (env) {
+  if (!env.R2) return
+
+  const today = new Date().toISOString().slice(0, 10)
+  const backup = {}
+
+  // hits
+  const hits = await env.KV.get(`hits:${today}`, 'json')
+  if (hits) backup.hits = hits
+
+  // bots
+  const bots = await env.KV.get(`bots:${today}`)
+  if (bots) backup.bots = parseInt(bots)
+
+  // rss
+  const rssKeys = await env.KV.list({ prefix: `rss:` })
+  backup.rss = {}
+  for (const { name } of rssKeys.keys) {
+    if (name.endsWith(today)) {
+      const data = await env.KV.get(name, 'json')
+      if (data) backup.rss[name] = data
+    }
+  }
+
+  await env.R2.put(backupKey(today), JSON.stringify(backup), {
+    httpMetadata: { contentType: 'application/json' }
+  })
+
+  console.log(`backed up analytics for ${today} to R2`)
 }
 
 async function hashIp (ip) {
@@ -156,10 +188,7 @@ export async function handleAnalytics (req, env) {
   const days = parseInt(url.searchParams.get('days') || '7')
   const token = url.searchParams.get('token')
 
-  const cookieHeader = req.headers.get('cookie') || ''
-  const hasAuthCookie = cookieHeader.split(';').some(c => c.trim().startsWith('feedi_analytics=1'))
-
-  if (!hasAuthCookie && (!token || token !== env.API_SECRET)) {
+  if (!token || token !== env.API_SECRET) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -188,12 +217,9 @@ export async function handleAnalytics (req, env) {
 
   const accept = req.headers.get('accept') || ''
   if (accept.includes('text/html')) {
-    const html = buildDashboard(result, days, token, totalBots, rssData)
-    const headers = { 'Content-Type': 'text/html' }
-    if (token && token === env.API_SECRET) {
-      headers['Set-Cookie'] = 'feedi_analytics=1; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Strict'
-    }
-    return new Response(html, { headers })
+    return new Response(buildDashboard(result, days, token, totalBots, rssData), {
+      headers: { 'Content-Type': 'text/html' }
+    })
   }
 
   return new Response(JSON.stringify(result, null, 2), {
@@ -345,8 +371,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 
-  ${topPodApps.length
-? `
+  ${topPodApps.length ? `
   <h2>🎙️ podcast apps</h2>
   <div>
     ${topPodApps.map(([app, count]) => `
@@ -355,8 +380,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       <div class="bar" style="width:${Math.round(count / (topPodApps[0]?.[1] || 1) * 120)}px"></div>
       <span class="count">${count}</span>
     </div>`).join('')}
-  </div>`
-: ''}
+  </div>` : ''}
 
   <h2>hits</h2>
   <div class="hits-list">

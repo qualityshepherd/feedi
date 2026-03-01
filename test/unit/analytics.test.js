@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { isBot, detectPodApp, countryFlag, groupHitsByDate } from '../../worker/analytics.js'
+import { isBot, detectPodApp, countryFlag, groupHitsByDate, backupKey } from '../../worker/analytics.js'
 
 // ── isBot ─────────────────────────────────────────────────────
 
@@ -108,4 +108,10 @@ test('Analytics: groupHitsByDate groups hits by date', t => {
 
 test('Analytics: groupHitsByDate returns empty object for no hits', t => {
   t.deepEqual(groupHitsByDate([]), {})
+})
+
+// ── backupKey ─────────────────────────────────────────────────
+
+test('Backup: backupKey generates correct R2 path', t => {
+  t.is(backupKey('2026-03-01'), 'feedi-backups/analytics-2026-03-01.json')
 })

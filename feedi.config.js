@@ -4,10 +4,11 @@ const config = {
   description: 'a public rss reader',
   domain: 'feedi.brine.dev',
   author: 'brine',
-  maxPosts: 1,
+  maxPosts: 10,
 
   // features
-  analytics: true
+  analytics: true,
+  r2Bucket: 'feedi-brine-dev' // must match bucket_name in wrangler.toml
 
   // ── podcast (optional) ──────────────────────────────────────
   // uncomment and fill in if you have a podcast
