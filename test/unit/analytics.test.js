@@ -47,6 +47,19 @@ test('Analytics: isBot is case insensitive', t => {
   t.ok(isBot('/XMLRPC.PHP'))
 })
 
+
+test('Analytics: isBot detects python UA', t => {
+  t.ok(isBot('/', 'python-requests/2.28.0'))
+})
+
+test('Analytics: isBot detects curl UA', t => {
+  t.ok(isBot('/', 'curl/7.88.1'))
+})
+
+test('Analytics: isBot allows real browser UA', t => {
+  t.falsy(isBot('/', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)'))
+})
+
 // ── detectPodApp ──────────────────────────────────────────────
 
 test('Analytics: detectPodApp detects Overcast', t => {

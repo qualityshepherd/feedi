@@ -20,9 +20,12 @@ const RSS_PATHS = ['/assets/rss/blog.xml', '/assets/rss/pod.xml']
 
 // ── pure functions (exported for testing) ────────────────────
 
-export const isBot = (path) =>
+const BOT_UAS = ['python', 'curl', 'wget', 'go-http', 'libwww', 'node-fetch', 'axios', 'urllib']
+
+export const isBot = (path, ua = '') =>
   BOT_PATHS.some(p => path.toLowerCase().includes(p)) ||
-  SKIP_EXTENSIONS.some(e => path.toLowerCase().split('?')[0].endsWith(e))
+  SKIP_EXTENSIONS.some(e => path.toLowerCase().split('?')[0].endsWith(e)) ||
+  BOT_UAS.some(b => ua.toLowerCase().includes(b))
 
 export const detectPodApp = (ua) => {
   if (ua.includes('Overcast')) return 'Overcast'
@@ -74,13 +77,16 @@ export async function trackHit (req, env) {
   // skip non-content paths
   if (SKIP_PATHS.some(p => path.startsWith(p))) return
 
-  // count bot probes -- rate limit by IP per minute
-  if (isBot(path)) {
-    const minute = new Date().toISOString().slice(0, 16)
-    const throttleKey = 'bot-throttle:' + (await hashIp(ip)) + ':' + minute
-    const seen = await env.KV.get(throttleKey)
-    if (seen) return
-    await env.KV.put(throttleKey, '1', { expirationTtl: 120 })
+  const ua = req.headers.get('user-agent') || ''
+
+  // count bot probes -- throttle via Cache API (free, no KV writes)
+  if (isBot(path, ua)) {
+    const ipHash = await hashIp(ip)
+    const cacheKey = new Request('https://bot-throttle.local/' + ipHash)
+    const cache = caches.default
+    const throttled = await cache.match(cacheKey)
+    if (throttled) return
+    await cache.put(cacheKey, new Response('1', { headers: { 'Cache-Control': 'max-age=600' } }))
     const count = parseInt(await env.KV.get('bots:' + today) || '0') + 1
     await env.KV.put('bots:' + today, String(count))
     return
