@@ -259,3 +259,12 @@ test('FeedParser: aggregateFeeds sorts combined posts by date newest first', t =
 test('FeedParser: aggregateFeeds handles empty feed results', t => {
   t.deepEqual(aggregateFeeds([]), [])
 })
+
+test('FeedParser: aggregateFeeds deduplicates posts by url', t => {
+  const post = { url: 'https://example.com/post1', date: '2026-01-01', title: 'Post', feed: { title: 'Feed' } }
+  const feeds = [
+    { posts: [post], config: { limit: 10 } },
+    { posts: [post], config: { limit: 10 } }
+  ]
+  t.is(aggregateFeeds(feeds).length, 1)
+})

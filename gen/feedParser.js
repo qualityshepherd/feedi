@@ -82,9 +82,16 @@ export const limitFeed = (posts, limit = 10) =>
 export const sortByDate = (posts) =>
   [...posts].sort((a, b) => new Date(b.date) - new Date(a.date))
 
-export const aggregateFeeds = (feedResults) =>
-  sortByDate(
-    feedResults.flatMap(({ posts, config: feedConfig }) =>
-      limitFeed(posts, feedConfig.limit ?? 10)
-    )
+export const aggregateFeeds = (feedResults) => {
+  const all = feedResults.flatMap(({ posts, config: feedConfig }) =>
+    limitFeed(posts, feedConfig.limit ?? 10)
   )
+  const seen = new Set()
+  const deduped = all.filter(p => {
+    if (!p.url) return true
+    if (seen.has(p.url)) return false
+    seen.add(p.url)
+    return true
+  })
+  return sortByDate(deduped)
+}

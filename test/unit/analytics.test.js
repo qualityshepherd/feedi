@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { isBot, detectPodApp, countryFlag, groupHitsByDate, backupKey } from '../../worker/analytics.js'
+import { isBot, detectPodApp, countryFlag, backupKey } from '../../worker/analytics.js'
 
 // ── isBot ─────────────────────────────────────────────────────
 
@@ -91,23 +91,6 @@ test('Analytics: countryFlag returns span with flag and title', t => {
 
 test('Analytics: countryFlag returns empty string for unknown', t => {
   t.is(countryFlag('?'), '')
-})
-
-// ── groupHitsByDate ───────────────────────────────────────────
-
-test('Analytics: groupHitsByDate groups hits by date', t => {
-  const hits = [
-    { ts: new Date('2025-01-01T10:00:00Z').getTime(), path: '/a' },
-    { ts: new Date('2025-01-01T20:00:00Z').getTime(), path: '/b' },
-    { ts: new Date('2025-01-02T10:00:00Z').getTime(), path: '/c' }
-  ]
-  const result = groupHitsByDate(hits)
-  t.is(result['2025-01-01'].length, 2)
-  t.is(result['2025-01-02'].length, 1)
-})
-
-test('Analytics: groupHitsByDate returns empty object for no hits', t => {
-  t.deepEqual(groupHitsByDate([]), {})
 })
 
 // ── backupKey ─────────────────────────────────────────────────

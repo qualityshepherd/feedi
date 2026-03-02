@@ -1,3 +1,6 @@
 [
-  { "url": "https://feedi.brine.dev/assets/rss/blog.xml", "limit": 10 }
+  { "url": "https://feedi.brine.dev/assets/rss/blog.xml", "limit": 10 },
+  { "url": "https://www.reddit.com/r/Fkr/.rss", "limit": 10 },
+  { "url": "https://dice.camp/@Wightbred.rss", "limit": 5 },
+  { "url": "https://brine.dev/assets/rss/blog.xml", "limit": 10 }
 ]

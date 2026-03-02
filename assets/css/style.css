@@ -402,3 +402,10 @@ h5 {
 .feeds-feed {
   font-style: italic;
 }
+
+.feeds-excerpt {
+  margin: 0.25rem 0 0.5rem;
+  opacity: 0.75;
+  font-size: 90%;
+  line-height: 1.5;
+}

@@ -1,4 +1,4 @@
-name = "feedi"
+name = "feedi-brine-dev"
 main = "worker/index.js"
 compatibility_date = "2025-01-01"
 
@@ -11,5 +11,9 @@ binding = "ASSETS"
 binding = "KV"
 id = "31af68a490ad48a2a5a92248ca0cf957"
 
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "feedi-brine-dev"
+
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["0 2 * * *"]
