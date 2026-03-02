@@ -26,6 +26,7 @@ const ROUTES = {
   TAG: '/tag',
   ARCHIVE: '/archive',
   SEARCH: '/search',
+  BLOG: '/blog',
   READER: '/feeds'
 }
 
@@ -42,11 +43,22 @@ const filterPostsByTag = (posts, tag) =>
   )
 
 const routeHandlers = {
-  [ROUTES.HOME]: () => {
+  [ROUTES.HOME]: async () => {
+    setDisplayedPosts(config.maxPosts)
+    if (config.feedsInRoot) {
+      await loadAndRenderFeeds()
+    } else {
+      const posts = getPosts()
+      const displayedCount = getDisplayedPosts()
+      renderPosts(posts, displayedCount)
+      toggleLoadMoreButton(displayedCount < posts.length)
+    }
+  },
+
+  [ROUTES.BLOG]: () => {
     setDisplayedPosts(config.maxPosts)
     const posts = getPosts()
     const displayedCount = getDisplayedPosts()
-
     renderPosts(posts, displayedCount)
     toggleLoadMoreButton(displayedCount < posts.length)
   },

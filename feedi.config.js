@@ -8,6 +8,7 @@ const config = {
 
   // features
   analytics: true,
+  feedsInRoot: false,  // true = show external feeds on home page
   r2Bucket: 'feedi-brine-dev' // must match bucket_name in wrangler.toml
 
   // ── podcast (optional) ──────────────────────────────────────

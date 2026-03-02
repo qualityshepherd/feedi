@@ -51,16 +51,6 @@ export const buildHeatmap = (allHits) => {
   }).join('')
 }
 
-export const groupHitsByDate = (hits) => {
-  const byDate = {}
-  for (const hit of hits) {
-    const date = new Date(hit.ts).toISOString().slice(0, 10)
-    if (!byDate[date]) byDate[date] = []
-    byDate[date].push(hit)
-  }
-  return byDate
-}
-
 // ── worker functions ──────────────────────────────────────────
 
 export async function trackHit (req, env) {
@@ -68,11 +58,12 @@ export async function trackHit (req, env) {
 
   const url = new URL(req.url)
   const path = url.pathname + (url.search || '')
+  const today = new Date().toISOString().slice(0, 10)
+  const ip = req.headers.get('cf-connecting-ip') || ''
 
-  // track RSS hits — low volume, write directly
+  // track RSS hits
   if (RSS_PATHS.includes(url.pathname)) {
-    const today = new Date().toISOString().slice(0, 10)
-    const key = `rss:${url.pathname}:${today}`
+    const key = 'rss:' + url.pathname + ':' + today
     const ua = req.headers.get('user-agent') || ''
     const existing = await env.KV.get(key, 'json') || { hits: [] }
     existing.hits.push({ ts: Date.now(), ua })
@@ -83,20 +74,20 @@ export async function trackHit (req, env) {
   // skip non-content paths
   if (SKIP_PATHS.some(p => path.startsWith(p))) return
 
-  // count bot probes — low volume, write directly
+  // count bot probes -- rate limit by IP per minute
   if (isBot(path)) {
-    const today = new Date().toISOString().slice(0, 10)
-    const count = parseInt(await env.KV.get(`bots:${today}`) || '0') + 1
-    await env.KV.put(`bots:${today}`, String(count))
+    const minute = new Date().toISOString().slice(0, 16)
+    const throttleKey = 'bot-throttle:' + (await hashIp(ip)) + ':' + minute
+    const seen = await env.KV.get(throttleKey)
+    if (seen) return
+    await env.KV.put(throttleKey, '1', { expirationTtl: 120 })
+    const count = parseInt(await env.KV.get('bots:' + today) || '0') + 1
+    await env.KV.put('bots:' + today, String(count))
     return
   }
 
   const cf = req.cf || {}
-  const ip = req.headers.get('cf-connecting-ip') || ''
   const ipHash = await hashIp(ip)
-
-  // write pending hit — no read, no merge, no race condition
-  const key = `pending:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`
   const hit = {
     path,
     ts: Date.now(),
@@ -109,35 +100,15 @@ export async function trackHit (req, env) {
   }
 
   try {
-    await env.KV.put(key, JSON.stringify(hit))
+    const key = 'hits:' + today
+    const existing = await env.KV.get(key, 'json') || { hits: [] }
+    existing.hits.push(hit)
+    await env.KV.put(key, JSON.stringify(existing))
   } catch (err) {
     console.error('Analytics write failed:', err)
   }
 }
 
-// cron: runs every 5 minutes via wrangler.toml [triggers]
-export async function flushPending (env) {
-  const list = await env.KV.list({ prefix: 'pending:' })
-  if (!list.keys.length) return
-
-  const hits = []
-  for (const { name } of list.keys) {
-    const hit = await env.KV.get(name, 'json')
-    if (hit) hits.push(hit)
-    await env.KV.delete(name)
-  }
-
-  const byDate = groupHitsByDate(hits)
-
-  for (const [date, newHits] of Object.entries(byDate)) {
-    const key = `hits:${date}`
-    const existing = await env.KV.get(key, 'json') || { hits: [] }
-    existing.hits.push(...newHits)
-    await env.KV.put(key, JSON.stringify(existing))
-  }
-
-  console.log(`flushed ${hits.length} pending hits`)
-}
 
 // cron: runs daily at 2am via wrangler.toml [triggers]
 export const backupKey = (date) => `feedi-backups/analytics-${date}.json`
@@ -157,7 +128,7 @@ export async function backupToR2 (env) {
   if (bots) backup.bots = parseInt(bots)
 
   // rss
-  const rssKeys = await env.KV.list({ prefix: 'rss:' })
+  const rssKeys = await env.KV.list({ prefix: `rss:` })
   backup.rss = {}
   for (const { name } of rssKeys.keys) {
     if (name.endsWith(today)) {
@@ -366,8 +337,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 
-  ${topPodApps.length
-? `
+  ${topPodApps.length ? `
   <h2>🎙️ podcast apps</h2>
   <div>
     ${topPodApps.map(([app, count]) => `
@@ -376,8 +346,7 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       <div class="bar" style="width:${Math.round(count / (topPodApps[0]?.[1] || 1) * 120)}px"></div>
       <span class="count">${count}</span>
     </div>`).join('')}
-  </div>`
-: ''}
+  </div>` : ''}
 
   <h2>hits</h2>
   <div class="hits-list">

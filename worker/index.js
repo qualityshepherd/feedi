@@ -1,5 +1,5 @@
 import { handleWebfinger, handleActor } from './activitypub.js'
-import { trackHit, flushPending, handleAnalytics } from './analytics.js'
+import { trackHit, backupToR2, handleAnalytics } from './analytics.js'
 
 export default {
   async fetch (req, env) {
@@ -10,8 +10,6 @@ export default {
     if (path === '/actor') return handleActor()
 
     if (path === '/api/analytics') {
-      const token = url.searchParams.get('token')
-      if (!token || token !== env.API_SECRET) return new Response('Unauthorized', { status: 401 })
       return handleAnalytics(req, env)
     }
 
@@ -20,6 +18,8 @@ export default {
   },
 
   async scheduled (event, env) {
-    await flushPending(env)
+    if (event.cron === '0 2 * * *') {
+      await backupToR2(env)
+    }
   }
 }
