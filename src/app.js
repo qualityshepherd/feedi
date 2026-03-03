@@ -29,7 +29,7 @@ function setEventListeners () {
 
 // initialize app
 ;(async () => {
-  const index = await readSiteIndex('./index.json')
+  const index = await readSiteIndex('/index.json')
   setPosts(index)
   setDisplayedPosts(config.maxPosts)
   setEventListeners()

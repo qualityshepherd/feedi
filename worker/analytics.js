@@ -115,7 +115,6 @@ export async function trackHit (req, env) {
   }
 }
 
-
 // cron: runs daily at 2am via wrangler.toml [triggers]
 export const backupKey = (date) => `feedi-backups/analytics-${date}.json`
 
@@ -134,7 +133,7 @@ export async function backupToR2 (env) {
   if (bots) backup.bots = parseInt(bots)
 
   // rss
-  const rssKeys = await env.KV.list({ prefix: `rss:` })
+  const rssKeys = await env.KV.list({ prefix: 'rss:' })
   backup.rss = {}
   for (const { name } of rssKeys.keys) {
     if (name.endsWith(today)) {
@@ -343,7 +342,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
     </div>`).join('')}
   </div>
 
-  ${topPodApps.length ? `
+  ${topPodApps.length
+? `
   <h2>🎙️ podcast apps</h2>
   <div>
     ${topPodApps.map(([app, count]) => `
@@ -352,7 +352,8 @@ function buildDashboard (data, days, token, totalBots, rssData) {
       <div class="bar" style="width:${Math.round(count / (topPodApps[0]?.[1] || 1) * 120)}px"></div>
       <span class="count">${count}</span>
     </div>`).join('')}
-  </div>` : ''}
+  </div>`
+: ''}
 
   <h2>hits</h2>
   <div class="hits-list">

@@ -47,7 +47,6 @@ test('Analytics: isBot is case insensitive', t => {
   t.ok(isBot('/XMLRPC.PHP'))
 })
 
-
 test('Analytics: isBot detects python UA', t => {
   t.ok(isBot('/', 'python-requests/2.28.0'))
 })
