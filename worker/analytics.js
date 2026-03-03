@@ -48,9 +48,11 @@ export const freshDay = (date) => ({
   uniques: 0,
   byPath: {},
   byHour: Array(24).fill(0),
+  byDow: Array(7).fill(0),
   byCountry: {},
   byCity: {},
   byReferrer: {},
+  recentHits: [],
   rss: {
     blog: { total: 0, byApp: {} },
     pod: { total: 0, byApp: {} }
@@ -76,50 +78,98 @@ const nextMidnight = () => {
 }
 
 
+// ── pure logic (exported for testing) ────────────────────────
+
+export const applyHit = (day, uniques, hit) => {
+  const next = JSON.parse(JSON.stringify(day))
+  const nextUniques = new Set(uniques)
+
+  if (hit.bot) {
+    next.bots++
+    return { day: next, uniques: nextUniques }
+  }
+
+  if (hit.rss) {
+    const feed = hit.rss === 'blog' ? next.rss.blog : next.rss.pod
+    feed.total++
+    if (hit.app) feed.byApp[hit.app] = (feed.byApp[hit.app] || 0) + 1
+    return { day: next, uniques: nextUniques }
+  }
+
+  next.totalHits++
+  nextUniques.add(hit.ip)
+  next.uniques = nextUniques.size
+  next.byPath[hit.path] = (next.byPath[hit.path] || 0) + 1
+  if (hit.hour !== undefined) next.byHour[hit.hour]++
+  const dow = new Date(hit.ts).getUTCDay()
+  next.byDow[dow] = (next.byDow[dow] || 0) + 1
+  if (hit.country) next.byCountry[hit.country] = (next.byCountry[hit.country] || 0) + 1
+  if (hit.city) next.byCity[hit.city] = (next.byCity[hit.city] || 0) + 1
+  if (hit.referrer) {
+    try {
+      const ref = new URL(hit.referrer).hostname
+      next.byReferrer[ref] = (next.byReferrer[ref] || 0) + 1
+    } catch {}
+  }
+
+  // ring buffer — keep last 100 real page hits
+  next.recentHits = [
+    { ts: hit.ts, path: hit.path, country: hit.country, city: hit.city },
+    ...(next.recentHits || [])
+  ].slice(0, 100)
+
+  return { day: next, uniques: nextUniques }
+}
+
+export const serializeDay = (day, uniques) => ({
+  ...day,
+  _uniqueArr: [...uniques],
+  uniques: uniques.size
+})
+
+export const deserializeDay = (stored) => {
+  const { _uniqueArr, ...day } = stored
+  return { day, uniques: new Set(_uniqueArr || []) }
+}
+
+// ── Durable Object — CF-required class, no logic inside ──────
+
 export class AnalyticsDO {
   constructor (state, env) {
     this.state = state
     this.env = env
-    this._data = null
-    this._uniques = null
   }
 
-  async _init () {
-    if (this._data) return
+  async _load () {
     const today = todayStr()
     const stored = await this.state.storage.get('today')
-    if (stored && stored.date === today) {
-      this._data = stored
-      this._uniques = new Set(stored._uniqueArr || [])
-    } else {
-      this._data = freshDay(today)
-      this._uniques = new Set()
-    }
+    if (stored && stored.date === today) return deserializeDay(stored)
+    return { day: freshDay(today), uniques: new Set() }
+  }
+
+  async _save ({ day, uniques }) {
+    await this.state.storage.put('today', serializeDay(day, uniques))
+  }
+
+  async _ensureAlarm () {
     const alarm = await this.state.storage.getAlarm()
     if (!alarm) await this.state.storage.setAlarm(nextMidnight())
   }
 
-  async _persist () {
-    this._data._uniqueArr = [...this._uniques]
-    this._data.uniques = this._uniques.size
-    await this.state.storage.put('today', this._data)
-  }
-
   async fetch (req) {
-    await this._init()
+    await this._ensureAlarm()
     const url = new URL(req.url)
 
     if (req.method === 'POST' && url.pathname === '/hit') {
       const hit = await req.json()
-      this._recordHit(hit)
-      await this._persist()
+      const state = await this._load()
+      await this._save(applyHit(state.day, state.uniques, hit))
       return new Response('ok')
     }
 
     if (req.method === 'GET' && url.pathname === '/today') {
-      const out = { ...this._data }
-      delete out._uniqueArr
-      return new Response(JSON.stringify(out), {
+      const { day } = await this._load()
+      return new Response(JSON.stringify(day), {
         headers: { 'Content-Type': 'application/json' }
       })
     }
@@ -127,69 +177,16 @@ export class AnalyticsDO {
     return new Response('not found', { status: 404 })
   }
 
-  _recordHit (hit) {
-    const today = todayStr()
-    if (this._data.date !== today) {
-      this._data = freshDay(today)
-      this._uniques = new Set()
-    }
-
-    if (hit.bot) {
-      this._data.bots++
-      return
-    }
-
-    if (hit.rss) {
-      const feed = hit.rss === 'blog' ? this._data.rss.blog : this._data.rss.pod
-      feed.total++
-      if (hit.app) feed.byApp[hit.app] = (feed.byApp[hit.app] || 0) + 1
-      return
-    }
-
-    this._data.totalHits++
-    this._uniques.add(hit.ip)
-    this._data.uniques = this._uniques.size
-    this._data.byPath[hit.path] = (this._data.byPath[hit.path] || 0) + 1
-    if (hit.hour !== undefined) this._data.byHour[hit.hour]++
-    if (hit.country) this._data.byCountry[hit.country] = (this._data.byCountry[hit.country] || 0) + 1
-    if (hit.city) this._data.byCity[hit.city] = (this._data.byCity[hit.city] || 0) + 1
-    if (hit.referrer) {
-      try {
-        const ref = new URL(hit.referrer).hostname
-        this._data.byReferrer[ref] = (this._data.byReferrer[ref] || 0) + 1
-      } catch {}
-    }
-  }
-
   async alarm () {
-    await this._init()
-    await this._flushToR2()
-    const today = todayStr()
-    this._data = freshDay(today)
-    this._uniques = new Set()
-    await this._persist()
+    const { day } = await this._load()
+    if (this.env.R2) {
+      await this.env.R2.put(backupKey(day.date), JSON.stringify(day), {
+        httpMetadata: { contentType: 'application/json' }
+      })
+    }
+    await this._save({ day: freshDay(todayStr()), uniques: new Set() })
     await this.state.storage.setAlarm(nextMidnight())
   }
-
-  async _flushToR2 () {
-    if (!this.env.R2) return
-    const out = { ...this._data }
-    delete out._uniqueArr
-    await this.env.R2.put(backupKey(this._data.date), JSON.stringify(out), {
-      httpMetadata: { contentType: 'application/json' }
-    })
-  }
-}
-
-
-async function hashIp (ip) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip))
-  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-function getSiteStub (env) {
-  const id = env.ANALYTICS.idFromName(config.domain)
-  return env.ANALYTICS.get(id)
 }
 
 export async function trackHit (req, env) {
@@ -285,7 +282,9 @@ function buildDashboard (allData, days, token, hostname) {
   let totalHits = 0; let totalBots = 0; let totalUniques = 0
   let blogRss = 0; let podRss = 0
   const byPath = {}; const byCountry = {}; const byReferrer = {}
-  const byHour = Array(24).fill(0); const podApps = {}; const blogApps = {}
+  const byHour = Array(24).fill(0); const byDow = Array(7).fill(0)
+  const podApps = {}; const blogApps = {}
+  const recentHits = []
 
   for (const { data } of allData) {
     if (!data) continue
@@ -298,22 +297,50 @@ function buildDashboard (allData, days, token, hostname) {
     for (const [k, v] of Object.entries(data.byCountry || {})) byCountry[k] = (byCountry[k] || 0) + v
     for (const [k, v] of Object.entries(data.byReferrer || {})) byReferrer[k] = (byReferrer[k] || 0) + v
     ;(data.byHour || []).forEach((c, i) => { byHour[i] += c })
+    ;(data.byDow || []).forEach((c, i) => { byDow[i] += c })
     for (const [k, v] of Object.entries(data.rss?.pod?.byApp || {})) podApps[k] = (podApps[k] || 0) + v
     for (const [k, v] of Object.entries(data.rss?.blog?.byApp || {})) blogApps[k] = (blogApps[k] || 0) + v
+    recentHits.push(...(data.recentHits || []))
   }
+
+  recentHits.sort((a, b) => b.ts - a.ts)
 
   const topPaths = Object.entries(byPath).sort((a, b) => b[1] - a[1]).slice(0, 20)
   const topCountries = Object.entries(byCountry).sort((a, b) => b[1] - a[1]).slice(0, 10)
   const topRefs = Object.entries(byReferrer).sort((a, b) => b[1] - a[1]).slice(0, 10)
   const topPodApps = Object.entries(podApps).sort((a, b) => b[1] - a[1])
   const topBlogApps = Object.entries(blogApps).sort((a, b) => b[1] - a[1])
-  const maxHour = Math.max(...byHour, 1)
 
-  const heatmapHtml = byHour.map((count, hour) => {
+  const maxHour = Math.max(...byHour, 1)
+  const maxDow = Math.max(...byDow, 1)
+  const DOW = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+
+  const dowHtml = byDow.map((count, d) => {
+    const opacity = count === 0 ? 0.05 : (0.15 + (count / maxDow) * 0.85).toFixed(2)
+    return `<div class="heatmap-cell" style="opacity:${opacity}" title="${DOW[d]}: ${count}"></div>`
+  }).join('')
+
+  const hourHtml = byHour.map((count, hour) => {
     const label = hour === 0 ? '12a' : hour < 12 ? `${hour}a` : hour === 12 ? '12p' : `${hour - 12}p`
     const opacity = count === 0 ? 0.05 : (0.15 + (count / maxHour) * 0.85).toFixed(2)
     return `<div class="heatmap-cell" style="opacity:${opacity}" title="${label}: ${count}"></div>`
   }).join('')
+
+  const fmtTs = (ts) => {
+    const d = new Date(ts)
+    const date = days > 1 ? d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' : ''
+    const time = d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
+    return date + time
+  }
+
+  const logsHtml = recentHits.slice(0, 100).map(h =>
+    `<div class="log-row">` +
+    `<span class="log-ts">${fmtTs(h.ts)}</span>` +
+    `<span class="log-flag">${countryFlag(h.country)}</span>` +
+    `<span class="log-city">${h.city || '?'}</span>` +
+    `<span class="log-path">${h.path}</span>` +
+    `</div>`
+  ).join('')
 
   const bars = (items, isCountry = false) => items.map(([name, count]) =>
     `<div class="bar-wrap" title="${name}">` +
@@ -351,10 +378,17 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
 .bar-wrap .label{color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar-wrap .bar{height:2px;background:var(--alt3);min-width:2px;flex-shrink:0;opacity:.5}
 .bar-wrap .count{color:var(--alt1);min-width:2rem;text-align:right;font-family:mono}
-.heatmap{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;margin:.5rem 0}
-.heatmap-cell{height:28px;background:var(--alt3);border-radius:2px}
-.heatmap-labels{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;margin-bottom:1rem}
+.maps{display:grid;grid-template-columns:7fr 24fr;gap:1rem;margin:.5rem 0 1.5rem;align-items:end}
+.heatmap{display:grid;gap:3px}
+.heatmap.dow{grid-template-columns:repeat(7,1fr)}
+.heatmap.hour{grid-template-columns:repeat(24,1fr)}
+.heatmap-cell{height:18px;background:var(--alt3);border-radius:2px}
+.heatmap-labels{display:grid;gap:3px;margin-top:3px}
+.heatmap-labels.dow{grid-template-columns:repeat(7,1fr)}
+.heatmap-labels.hour{grid-template-columns:repeat(24,1fr)}
 .heatmap-labels span{font-size:55%;color:var(--alt1);text-align:center;font-family:mono}
+.log-row{display:grid;grid-template-columns:9rem 1.5rem 8rem 1fr;gap:.75rem;padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:85%;font-family:mono}
+.log-ts{color:var(--alt1)}.log-flag{text-align:center}.log-city{color:var(--alt1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.log-path{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style></head><body>
 <div class="analytics">
 <p class="title">analytics</p>
@@ -365,15 +399,23 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
   <div><strong>${totalUniques}</strong><span>unique</span></div>
   <div><strong>${allData.length}</strong><span>days</span></div>
   <div><strong>${totalBots}</strong><span>🤖 bots</span></div>
-  ${blogRss ? `<div><strong>${blogRss}</strong><span>📡 rss${topBlogApps.length ? ' · ' + topBlogApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>` : ''}
-  ${podRss ? `<div><strong>${podRss}</strong><span>🎙️ podcast${topPodApps.length ? ' · ' + topPodApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>` : ''}
+  <div><strong>${blogRss}</strong><span>📡 rss${topBlogApps.length ? ' · ' + topBlogApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>
+  <div><strong>${podRss}</strong><span>🎙️ podcast${topPodApps.length ? ' · ' + topPodApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>
 </div>
-<h2>activity by hour (utc)</h2>
-<div class="heatmap">${heatmapHtml}</div>
-<div class="heatmap-labels">${Array.from({length:24},(_,i)=>`<span>${i===0?'12a':i<12?i+'a':i===12?'12p':(i-12)+'p'}</span>`).join('')}</div>
+<div class="maps">
+  <div>
+    <div class="heatmap dow">${dowHtml}</div>
+    <div class="heatmap-labels dow">${DOW.map(d => `<span>${d}</span>`).join('')}</div>
+  </div>
+  <div>
+    <div class="heatmap hour">${hourHtml}</div>
+    <div class="heatmap-labels hour">${Array.from({length:24},(_,i)=>`<span>${i===0?'12a':i<12?i+'a':i===12?'12p':(i-12)+'p'}</span>`).join('')}</div>
+  </div>
+</div>
 <h2>top pages</h2><div>${bars(topPaths)}</div>
 <h2>top countries</h2><div>${bars(topCountries, true)}</div>
 <h2>top referrers</h2><div>${bars(topRefs)}</div>
 ${topPodApps.length ? `<h2>🎙️ podcast apps</h2><div>${bars(topPodApps)}</div>` : ''}
+${logsHtml ? `<h2>recent hits</h2><div>${logsHtml}</div>` : ''}
 </div></body></html>`
 }
