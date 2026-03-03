@@ -7,9 +7,14 @@ const SKIP_PATHS = [
 const SKIP_EXTENSIONS = ['.png', '.jpg', '.svg', '.ico', '.woff', '.woff2', '.otf', '.ttf', '.css', '.js']
 const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup',
   'config', 'admin', 'backup', '.sql', 'passwd', 'cgi-bin', 'statistics.json',
-  'swagger', 'actuator', 'graphql', 'telescope']
+  'swagger', 'actuator', 'graphql', 'telescope',
+  'security.txt', 'console/', 'server-status', 'login.action',
+  'v2/_catalog', 'v2/api-docs', 'v3/api-docs', 'trace.axd',
+  '@vite', '.vscode', '.DS_Store', 'META-INF', 'pom.properties',
+  'ediscovery', 'ecp/Current', 'login.action', 'https%3A']
 const RSS_PATHS = ['/assets/rss/blog.xml', '/assets/rss/pod.xml']
 const BOT_UAS = ['python', 'curl', 'wget', 'go-http', 'libwww', 'node-fetch', 'axios', 'urllib']
+
 
 export const isBot = (path, ua = '') =>
   BOT_PATHS.some(p => path.toLowerCase().includes(p)) ||
@@ -69,6 +74,7 @@ const nextMidnight = () => {
   d.setUTCHours(24, 0, 0, 0)
   return d.getTime()
 }
+
 
 export class AnalyticsDO {
   constructor (state, env) {
@@ -174,6 +180,7 @@ export class AnalyticsDO {
     })
   }
 }
+
 
 async function hashIp (ip) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip))
@@ -361,7 +368,7 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
 </div>
 <h2>activity by hour (utc)</h2>
 <div class="heatmap">${heatmapHtml}</div>
-<div class="heatmap-labels">${Array.from({ length: 24 }, (_, i) => `<span>${i === 0 ? '12a' : i < 12 ? i + 'a' : i === 12 ? '12p' : (i - 12) + 'p'}</span>`).join('')}</div>
+<div class="heatmap-labels">${Array.from({length:24},(_,i)=>`<span>${i===0?'12a':i<12?i+'a':i===12?'12p':(i-12)+'p'}</span>`).join('')}</div>
 <h2>top pages</h2><div>${bars(topPaths)}</div>
 <h2>top countries</h2><div>${bars(topCountries, true)}</div>
 <h2>top referrers</h2><div>${bars(topRefs)}</div>
