@@ -285,7 +285,7 @@ function buildDashboard (allData, days, token, hostname) {
   let totalHits = 0; let totalBots = 0; let totalUniques = 0
   let blogRss = 0; let podRss = 0
   const byPath = {}; const byCountry = {}; const byReferrer = {}
-  const byHour = Array(24).fill(0); const podApps = {}
+  const byHour = Array(24).fill(0); const podApps = {}; const blogApps = {}
 
   for (const { data } of allData) {
     if (!data) continue
@@ -299,12 +299,14 @@ function buildDashboard (allData, days, token, hostname) {
     for (const [k, v] of Object.entries(data.byReferrer || {})) byReferrer[k] = (byReferrer[k] || 0) + v
     ;(data.byHour || []).forEach((c, i) => { byHour[i] += c })
     for (const [k, v] of Object.entries(data.rss?.pod?.byApp || {})) podApps[k] = (podApps[k] || 0) + v
+    for (const [k, v] of Object.entries(data.rss?.blog?.byApp || {})) blogApps[k] = (blogApps[k] || 0) + v
   }
 
   const topPaths = Object.entries(byPath).sort((a, b) => b[1] - a[1]).slice(0, 20)
   const topCountries = Object.entries(byCountry).sort((a, b) => b[1] - a[1]).slice(0, 10)
   const topRefs = Object.entries(byReferrer).sort((a, b) => b[1] - a[1]).slice(0, 10)
   const topPodApps = Object.entries(podApps).sort((a, b) => b[1] - a[1])
+  const topBlogApps = Object.entries(blogApps).sort((a, b) => b[1] - a[1])
   const maxHour = Math.max(...byHour, 1)
 
   const heatmapHtml = byHour.map((count, hour) => {
@@ -363,8 +365,8 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
   <div><strong>${totalUniques}</strong><span>unique</span></div>
   <div><strong>${allData.length}</strong><span>days</span></div>
   <div><strong>${totalBots}</strong><span>🤖 bots</span></div>
-  ${blogRss ? `<div><strong>${blogRss}</strong><span>📡 rss</span></div>` : ''}
-  ${podRss ? `<div><strong>${podRss}</strong><span>🎙️ podcast</span></div>` : ''}
+  ${blogRss ? `<div><strong>${blogRss}</strong><span>📡 rss${topBlogApps.length ? ' · ' + topBlogApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>` : ''}
+  ${podRss ? `<div><strong>${podRss}</strong><span>🎙️ podcast${topPodApps.length ? ' · ' + topPodApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>` : ''}
 </div>
 <h2>activity by hour (utc)</h2>
 <div class="heatmap">${heatmapHtml}</div>
