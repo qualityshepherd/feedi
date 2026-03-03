@@ -6,6 +6,11 @@
   "author": "brine",
   "license": "MIT",
   "main": "app.js",
+  "standard": {
+    "env": [
+      "browser"
+    ]
+  },
   "scripts": {
     "build:index": "node ./gen/genr8Index.js",
     "build:feeds": "node ./gen/genr8Feeds.js",

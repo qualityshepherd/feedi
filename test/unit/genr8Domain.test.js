@@ -24,8 +24,13 @@ test('Gen: buildWranglerToml omits R2 section when no bucket', () => {
   t.ok(!result.includes('r2_buckets'))
 })
 
-test('Gen: buildWranglerToml includes both crons', () => {
+test('Gen: buildWranglerToml includes daily backup cron', () => {
   const result = buildWranglerToml(cfg, kvId)
-  t.match(result, /\*\/5 \* \* \* \*/)
   t.match(result, /0 2 \* \* \*/)
+  t.ok(!result.includes('*/5'))
+})
+
+test('Gen: buildWranglerToml includes DO binding', () => {
+  const result = buildWranglerToml(cfg, kvId)
+  t.match(result, /AnalyticsDO/)
 })

@@ -45,7 +45,7 @@ const filterPostsByTag = (posts, tag) =>
 const routeHandlers = {
   [ROUTES.HOME]: async () => {
     setDisplayedPosts(config.maxPosts)
-    if (config.feedsInRoot) {
+    if (!config.separateFeeds) {
       await loadAndRenderFeeds()
     } else {
       const posts = getPosts()
@@ -89,10 +89,7 @@ const routeHandlers = {
     const query = params.get('q')
     if (query) {
       setSearchTerm(query.toLowerCase())
-
-      if (elements.searchInput) {
-        elements.searchInput.value = query
-      }
+      if (elements.searchInput) elements.searchInput.value = query
       renderFilteredPosts()
     } else {
       setSearchTerm('')
@@ -102,7 +99,11 @@ const routeHandlers = {
   },
 
   [ROUTES.READER]: async () => {
-    await loadAndRenderFeeds()
+    if (config.separateFeeds) {
+      await loadAndRenderFeeds()
+    } else {
+      renderNotFoundPage()
+    }
   },
 
   default: () => {
@@ -115,7 +116,6 @@ export function handleRouting () {
   setSearchTerm('')
   toggleLoadMoreButton(false)
 
-  // match /posts/:slug to post route
   const resolvedRoute = route.startsWith('/posts/') ? ROUTES.POST : route
   const handler = routeHandlers[resolvedRoute] || routeHandlers.default
   handler({ params })
@@ -126,7 +126,7 @@ export function handleSearch (e) {
   setSearchTerm(searchValue)
 
   if (searchValue) {
-    history.replaceState(null, '', `/search?q=${encodeURIComponent(e.target.value)}`)
+    history.replaceState(null, '', '/search?q=' + encodeURIComponent(e.target.value))
   } else {
     history.replaceState(null, '', '/')
   }
@@ -141,9 +141,12 @@ export function handleLoadMore () {
   renderPosts(posts, displayedCount)
 }
 
-export function toggleMenu () {
-  const toggleDisplay = el =>
-    (el.style.display = el.style.display === 'block' ? 'none' : 'block')
+export function closeMenu () {
+  if (elements.menuLinks) elements.menuLinks.style.display = 'none'
+}
 
-  toggleDisplay(elements.menuLinks)
+export function toggleMenu () {
+  const links = elements.menuLinks
+  if (!links) return
+  links.style.display = links.style.display === 'block' ? 'none' : 'block'
 }

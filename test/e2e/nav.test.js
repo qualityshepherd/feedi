@@ -23,3 +23,25 @@ test('e2e: should filter posts by tag', async t => {
   t.ok((await t.url()).includes('/tag'))
   t.ok(await t.exists('.tags'))
 })
+
+test('e2e: ESC key closes open menu', async t => {
+  await spaPage(t).goto()
+  await t.waitAndClick($.menuButton)
+  await t.waitFor($.aboutLink)
+
+  await t.page.keyboard.press('Escape')
+  await t.wait(50)
+
+  t.falsy(await t.isVisible($.aboutLink))
+})
+
+test('e2e: clicking outside closes open menu', async t => {
+  await spaPage(t).goto()
+  await t.waitAndClick($.menuButton)
+  await t.waitFor($.aboutLink)
+
+  await t.page.mouse.click(10, 10) // click outside nav
+  await t.wait(50)
+
+  t.falsy(await t.isVisible($.aboutLink))
+})

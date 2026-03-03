@@ -55,9 +55,17 @@ binding = "ASSETS"
 [[kv_namespaces]]
 binding = "KV"
 id = "${kvId}"
+
+[[durable_objects.bindings]]
+name = "ANALYTICS"
+class_name = "AnalyticsDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["AnalyticsDO"]
 ${r2Section}
 [triggers]
-crons = ["*/5 * * * *", "0 2 * * *"]
+crons = ["0 2 * * *"]
 `
 }
 

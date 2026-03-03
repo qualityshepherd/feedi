@@ -23,8 +23,6 @@ const fakeCfg = {
   podcast: { author: 'Jane Doe', email: 'jane@example.com', explicit: 'false', category: 'Technology' }
 }
 
-// ── extractAudioSrc ───────────────────────────────────────────
-
 test('Gen: extractAudioSrc returns src from audio tag', t => {
   t.is(extractAudioSrc('<audio src="/assets/ep1.mp3"></audio>'), '/assets/ep1.mp3')
 })
@@ -32,8 +30,6 @@ test('Gen: extractAudioSrc returns src from audio tag', t => {
 test('Gen: extractAudioSrc returns null when no audio tag', t => {
   t.is(extractAudioSrc('<p>no audio</p>'), null)
 })
-
-// ── resolveAudioUrl ───────────────────────────────────────────
 
 test('Gen: resolveAudioUrl makes relative src absolute', t => {
   t.is(resolveAudioUrl('/assets/ep1.mp3', baseUrl), 'https://example.com/assets/ep1.mp3')
@@ -46,8 +42,6 @@ test('Gen: resolveAudioUrl leaves absolute src unchanged', t => {
 test('Gen: resolveAudioUrl returns null for null src', t => {
   t.is(resolveAudioUrl(null, baseUrl), null)
 })
-
-// ── isRfc2822Date ─────────────────────────────────────────────
 
 test('Gen: isRfc2822Date accepts valid GMT date', t => {
   t.ok(isRfc2822Date('Wed, 01 Jan 2025 00:00:00 GMT'))
@@ -69,39 +63,35 @@ test('Gen: new Date().toUTCString() passes isRfc2822Date', t => {
   t.ok(isRfc2822Date(new Date('2025-01-01').toUTCString()))
 })
 
-// ── buildPodItem ──────────────────────────────────────────────
-
 test('Gen: buildPodItem returns null when no audio', t => {
-  t.is(buildPodItem({ ...fakePodcast, html: '<p>no audio</p>' }, baseUrl), null)
+  t.is(buildPodItem({ ...fakePodcast, html: '<p>no audio</p>' }, fakeCfg), null)
 })
 
 test('Gen: buildPodItem uses /posts/slug not hash route', t => {
-  const item = buildPodItem(fakePodcast, baseUrl)
+  const item = buildPodItem(fakePodcast, fakeCfg)
   t.ok(item.includes('/posts/episode-1'))
   t.falsy(item.includes('#post'))
 })
 
 test('Gen: buildPodItem enclosure has absolute url', t => {
-  const item = buildPodItem(fakePodcast, baseUrl)
+  const item = buildPodItem(fakePodcast, fakeCfg)
   t.ok(item.includes('url="https://'))
 })
 
 test('Gen: buildPodItem enclosure has audio/mpeg type', t => {
-  t.ok(buildPodItem(fakePodcast, baseUrl).includes('type="audio/mpeg"'))
+  t.ok(buildPodItem(fakePodcast, fakeCfg).includes('type="audio/mpeg"'))
 })
 
 test('Gen: buildPodItem enclosure uses provided length', t => {
-  const item = buildPodItem(fakePodcast, baseUrl, 5650889)
+  const item = buildPodItem(fakePodcast, fakeCfg, 5650889)
   t.ok(item.includes('length="5650889"'))
 })
 
 test('Gen: buildPodItem pubDate is RFC 2822', t => {
-  const item = buildPodItem(fakePodcast, baseUrl)
+  const item = buildPodItem(fakePodcast, fakeCfg)
   const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1]
   t.ok(isRfc2822Date(pubDate))
 })
-
-// ── validatePodFeed — Apple required fields ───────────────────
 
 test('Gen: validatePodFeed returns no errors for valid feed', t => {
   t.deepEqual(validatePodFeed(buildPodFeed([fakePodcast], fakeCfg)), [])

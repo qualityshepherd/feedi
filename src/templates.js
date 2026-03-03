@@ -55,15 +55,24 @@ const formatDate = (dateStr) => {
   } catch { return dateStr }
 }
 
-export const feedsItemTemplate = item => `
+const feedDomain = (url) => {
+  try { return new URL(url).hostname } catch { return '' }
+}
+
+export const feedsItemTemplate = (item) => {
+  const domain = feedDomain(item.url)
+  const avatar = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32` : ''
+  return `
   <div class="feeds-item">
+    <div class="feeds-header">
+      ${avatar ? `<img class="feeds-avatar" src="${avatar}" alt="" width="16" height="16">` : ''}
+      <span class="feeds-feed">${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
+      <span class="date">${formatDate(item.date)}</span>
+    </div>
     <a href="${item.url}" class="feeds-title" target="_blank" rel="noopener noreferrer">
       <h2 class="post-title">${stripHtml(item.title)}</h2>
     </a>
-    ${item.content ? `<p class="feeds-excerpt">${excerpt(item.content)}</p>` : ''}
-    <div class="feeds-meta">
-      <span class="feeds-feed">${item.author ? `${item.author} · ` : ''}${item.feed?.title || ''}</span>
-      <span class="date">${formatDate(item.date)}</span>
-    </div>
+    ${item.content ? `<p class="feeds-excerpt">${excerpt(item.content, 400)}</p>` : ''}
   </div>
 `
+}

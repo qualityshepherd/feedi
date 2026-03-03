@@ -21,12 +21,13 @@ export const resolveAudioUrl = (src, baseUrl) => {
 export const isRfc2822Date = (str) =>
   /^\w{3}, \d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2} (GMT|UTC|[+-]\d{4}|\w{2,4})$/.test(str.trim())
 
-export const buildPodItem = (podcast, baseUrl, length = 0) => {
+export const buildPodItem = (podcast, cfg, length = 0) => {
+  const baseUrl = `https://${cfg.domain}`
   const src = extractAudioSrc(podcast.html)
   const audioUrl = resolveAudioUrl(src, baseUrl)
   if (!audioUrl) return null
 
-  const image = podcast.meta.image || `${baseUrl}/assets/images/default.svg`
+  const image = podcast.meta.image || cfg.podcast?.image || `${baseUrl}/assets/images/default.svg`
   const pubDate = new Date(podcast.meta.date).toUTCString()
 
   return `
@@ -56,7 +57,7 @@ export const buildPodFeed = (podcasts, cfg, lengths = {}) => {
   }
 
   const items = podcasts
-    .map(p => buildPodItem(p, baseUrl, lengths[p.meta.slug] || 0))
+    .map(p => buildPodItem(p, cfg, lengths[p.meta.slug] || 0))
     .filter(Boolean)
     .join('')
 

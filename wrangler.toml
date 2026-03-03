@@ -11,6 +11,14 @@ binding = "ASSETS"
 binding = "KV"
 id = "31af68a490ad48a2a5a92248ca0cf957"
 
+[[durable_objects.bindings]]
+name = "ANALYTICS"
+class_name = "AnalyticsDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["AnalyticsDO"]
+
 [[r2_buckets]]
 binding = "R2"
 bucket_name = "feedi-brine-dev"

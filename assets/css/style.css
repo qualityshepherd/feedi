@@ -60,7 +60,7 @@
 body {
   margin: 0;
   font-family: "Inter", "Arial";
-  font-size: 1.21rem;
+  font-size: 18px;
   line-height: 150%;
   color: var(--text);
   font-weight: 400;
@@ -375,13 +375,33 @@ h5 {
 
 /* -- reader -- */
 .feeds-item {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
   border-bottom: 1px solid var(--border, #eee);
 }
 
-.feeds-item .post-title {
-  margin-bottom: 0.25rem;
+.feeds-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 85%;
+  opacity: 0.65;
+  margin-bottom: 0.4rem;
+}
+
+.feeds-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.feeds-feed {
+  font-style: italic;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .feeds-title {
@@ -392,20 +412,14 @@ h5 {
   text-decoration: underline;
 }
 
-.feeds-meta {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
-
-.feeds-feed {
-  font-style: italic;
+.feeds-item .post-title {
+  margin-bottom: 0.5rem;
+  font-size: 115%;
 }
 
 .feeds-excerpt {
-  margin: 0.25rem 0 0.5rem;
-  opacity: 0.75;
-  font-size: 90%;
-  line-height: 1.5;
+  margin: 0 0 0.5rem;
+  opacity: 0.8;
+  font-size: 92%;
+  line-height: 1.6;
 }
