@@ -71,6 +71,16 @@ export const buildHit = (path, cf = {}, ipHash, referrer = '', ts = Date.now()) 
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
 
+const hashIp = async (ip) => {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip))
+  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+const getSiteStub = (env) => {
+  const id = env.ANALYTICS.idFromName('default')
+  return env.ANALYTICS.get(id)
+}
+
 const nextMidnight = () => {
   const d = new Date()
   d.setUTCHours(24, 0, 0, 0)
