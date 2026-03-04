@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'header';
-  font-style:  semibold;
+  font-style:  normal;
   font-weight: 600;
   font-display: swap;
   src: url("../fonts/Oswald-Regular.ttf") format("truetype")
@@ -350,7 +350,7 @@ h2 {
   font-size: 375%;
   text-align: center;
   color: var(--header);
-  margin-bottom: 1.2rem;
+  margin-bottom: 120%;
   text-transform: uppercase;
 }
 

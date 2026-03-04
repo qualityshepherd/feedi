@@ -61,7 +61,7 @@ const feedDomain = (url) => {
 
 export const feedsItemTemplate = (item) => {
   const domain = feedDomain(item.url)
-  const avatar = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=32` : ''
+  const avatar = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : ''
   return `
   <div class="feeds-item">
     <div class="feeds-header">

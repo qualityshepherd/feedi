@@ -62,7 +62,7 @@ class_name = "AnalyticsDO"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["AnalyticsDO"]
+new_sqlite_classes = ["AnalyticsDO"]
 ${r2Section}
 [triggers]
 crons = ["0 2 * * *"]

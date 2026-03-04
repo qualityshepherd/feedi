@@ -16,7 +16,7 @@ const url = `https://${config.domain}`
     for (const post of publishedPosts) {
       if (!post.meta?.slug) continue // skip if missing required slug
       sitemap += '  <url>\n'
-      sitemap += `    <loc>${url}/#post?s=${post.meta.slug}</loc>\n`
+      sitemap += `    <loc>${url}/posts/${post.meta.slug}</loc>\n`
       sitemap += '  </url>\n'
     }
 

@@ -41,7 +41,7 @@ const genr8Index = {
   async parseMarkdownFiles (fileArray, path) {
     return Promise.all(
       fileArray
-        .filter(file => file.endsWith('.md') && !file.startsWith('draft'))
+        .filter(file => file.endsWith('.md'))
         .map(async file => {
           const raw = await fs.readFile(`${path}/${file}`, 'utf8')
           const parsed = this.parseFrontmatter(raw)
@@ -66,7 +66,7 @@ const genr8Index = {
 
   async writeSiteJson (path, data) {
     const sorted = sortByDate(data)
-    const json = JSON.stringify(sorted, null, 2).replace(/&quot;/g, '')
+    const json = JSON.stringify(sorted, null, 2)
     await fs.writeFile(path, json, 'utf8')
   }
 }

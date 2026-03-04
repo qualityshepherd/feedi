@@ -26,7 +26,6 @@ const ROUTES = {
   TAG: '/tag',
   ARCHIVE: '/archive',
   SEARCH: '/search',
-  BLOG: '/blog',
   READER: '/feeds'
 }
 
@@ -53,14 +52,6 @@ const routeHandlers = {
       renderPosts(posts, displayedCount)
       toggleLoadMoreButton(displayedCount < posts.length)
     }
-  },
-
-  [ROUTES.BLOG]: () => {
-    setDisplayedPosts(config.maxPosts)
-    const posts = getPosts()
-    const displayedCount = getDisplayedPosts()
-    renderPosts(posts, displayedCount)
-    toggleLoadMoreButton(displayedCount < posts.length)
   },
 
   [ROUTES.POST]: () => {

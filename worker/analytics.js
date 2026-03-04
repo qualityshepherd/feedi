@@ -11,7 +11,7 @@ const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'sh
   'security.txt', 'console/', 'server-status', 'login.action',
   'v2/_catalog', 'v2/api-docs', 'v3/api-docs', 'trace.axd',
   '@vite', '.vscode', '.DS_Store', 'META-INF', 'pom.properties',
-  'ediscovery', 'ecp/Current', 'login.action', 'https%3A']
+  'ediscovery', 'ecp/Current', 'https%3A']
 const RSS_PATHS = ['/assets/rss/blog.xml', '/assets/rss/pod.xml']
 const BOT_UAS = ['python', 'curl', 'wget', 'go-http', 'libwww', 'node-fetch', 'axios', 'urllib']
 
@@ -77,7 +77,7 @@ const hashIp = async (ip) => {
 }
 
 const getSiteStub = (env) => {
-  const id = env.ANALYTICS.idFromName('default')
+  const id = env.ANALYTICS.idFromName(new URL(req.url).hostname)
   return env.ANALYTICS.get(id)
 }
 
