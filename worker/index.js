@@ -12,13 +12,12 @@ export default {
     if (path === '/.well-known/webfinger') return handleWebfinger(req)
     if (path === '/actor') return handleActor()
 
-    // analytics dashboard — validate site token first
+    // analytics dashboard — protected by same ADMIN_SECRET as admin routes
     if (path === '/api/analytics') {
-      const token = url.searchParams.get('token')
-      if (!token) return new Response('Unauthorized', { status: 401 })
-      const site = await validateSiteToken(env, token)
-      if (!site) return new Response('Unauthorized', { status: 401 })
-      return handleAnalytics(req, env, site.hostname)
+      const secret = url.searchParams.get('secret')
+      if (!secret || secret !== env.ADMIN_SECRET) return new Response('Unauthorized', { status: 401 })
+      const hostname = url.hostname
+      return handleAnalytics(req, env, hostname)
     }
 
     // admin endpoints — protected by ADMIN_SECRET header

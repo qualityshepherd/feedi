@@ -242,11 +242,11 @@ export async function trackHit (req, env) {
   }
 }
 
-// called from index.js after token validation
+// called from index.js after secret validation
 export async function handleAnalytics (req, env, hostname) {
   const url = new URL(req.url)
   const days = parseInt(url.searchParams.get('days') || '7')
-  const token = url.searchParams.get('token')
+  const secret = url.searchParams.get('secret')
 
   const id = env.ANALYTICS.idFromName(hostname)
   const stub = env.ANALYTICS.get(id)
@@ -267,7 +267,7 @@ export async function handleAnalytics (req, env, hostname) {
 
   const accept = req.headers.get('accept') || ''
   if (accept.includes('text/html')) {
-    return new Response(buildDashboard(result, days, token, hostname), {
+    return new Response(buildDashboard(result, days, secret, hostname), {
       headers: { 'Content-Type': 'text/html' }
     })
   }
@@ -277,8 +277,8 @@ export async function handleAnalytics (req, env, hostname) {
   })
 }
 
-function buildDashboard (allData, days, token, hostname) {
-  const tokenParam = token ? `&token=${token}` : ''
+function buildDashboard (allData, days, secret, hostname) {
+  const tokenParam = secret ? `&secret=${secret}` : ''
   let totalHits = 0; let totalBots = 0; let totalUniques = 0
   let blogRss = 0; let podRss = 0
   const byPath = {}; const byCountry = {}; const byReferrer = {}
