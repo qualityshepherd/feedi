@@ -76,7 +76,7 @@ const hashIp = async (ip) => {
   return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-const getSiteStub = (env) => {
+const getSiteStub = (req,env) => {
   const id = env.ANALYTICS.idFromName(new URL(req.url).hostname)
   return env.ANALYTICS.get(id)
 }
@@ -200,8 +200,11 @@ export class AnalyticsDO {
 }
 
 export async function trackHit (req, env) {
-  if (!config.analytics) return
-
+  console.log('TrackHit triggered for:', req.url) // See if it even starts
+  if (!config.analytics) {
+    console.log('Analytics disabled in config')
+    return
+  }
   const url = new URL(req.url)
   const path = url.pathname + (url.search || '')
   if (SKIP_PATHS.some(p => path.startsWith(p))) return
@@ -211,7 +214,7 @@ export async function trackHit (req, env) {
 
   // RSS hit — classify UA only, no raw string stored
   if (RSS_PATHS.includes(url.pathname)) {
-    const stub = getSiteStub(env)
+    const stub = getSiteStub(req, env)
     await stub.fetch('https://do.local/hit', {
       method: 'POST',
       body: JSON.stringify({
@@ -229,7 +232,7 @@ export async function trackHit (req, env) {
     const cache = caches.default
     if (await cache.match(cacheKey)) return
     await cache.put(cacheKey, new Response('1', { headers: { 'Cache-Control': 'max-age=600' } }))
-    const stub = getSiteStub(env)
+    const stub = getSiteStub(req, env)
     await stub.fetch('https://do.local/hit', {
       method: 'POST',
       body: JSON.stringify({ bot: true })
@@ -242,7 +245,7 @@ export async function trackHit (req, env) {
   const hit = buildHit(path, cf, ipHash, req.headers.get('referer') || '')
 
   try {
-    const stub = getSiteStub(env)
+    const stub = getSiteStub(req, env)
     await stub.fetch('https://do.local/hit', {
       method: 'POST',
       body: JSON.stringify(hit)
