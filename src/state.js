@@ -60,7 +60,6 @@ export function sortByDate (posts, desc = true) {
   })
 }
 
-
 function parseDate (str) {
   return new Date(str.replace(/-/g, '/'))
 }
@@ -70,4 +69,3 @@ function validateResponse (res) {
     throw new Error(`HTTP ${res.status} - ${res.statusText}`)
   }
 }
-

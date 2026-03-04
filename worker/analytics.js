@@ -76,7 +76,7 @@ const hashIp = async (ip) => {
   return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
-const getSiteStub = (req,env) => {
+const getSiteStub = (req, env) => {
   const id = env.ANALYTICS.idFromName(new URL(req.url).hostname)
   return env.ANALYTICS.get(id)
 }
@@ -86,9 +86,6 @@ const nextMidnight = () => {
   d.setUTCHours(24, 0, 0, 0)
   return d.getTime()
 }
-
-
-// ── pure logic (exported for testing) ────────────────────────
 
 export const applyHit = (day, uniques, hit) => {
   const next = JSON.parse(JSON.stringify(day))
@@ -122,7 +119,6 @@ export const applyHit = (day, uniques, hit) => {
     } catch {}
   }
 
-  // ring buffer — keep last 100 real page hits
   next.recentHits = [
     { ts: hit.ts, path: hit.path, country: hit.country, city: hit.city },
     ...(next.recentHits || [])
@@ -142,57 +138,43 @@ export const deserializeDay = (stored) => {
   return { day, uniques: new Set(_uniqueArr || []) }
 }
 
-// ── Durable Object — CF-required class, no logic inside ──────
-
 export class AnalyticsDO {
   constructor (state, env) {
     this.state = state
     this.env = env
   }
-
   async _load () {
     const today = todayStr()
     const stored = await this.state.storage.get('today')
     if (stored && stored.date === today) return deserializeDay(stored)
     return { day: freshDay(today), uniques: new Set() }
   }
-
   async _save ({ day, uniques }) {
     await this.state.storage.put('today', serializeDay(day, uniques))
   }
-
   async _ensureAlarm () {
     const alarm = await this.state.storage.getAlarm()
     if (!alarm) await this.state.storage.setAlarm(nextMidnight())
   }
-
   async fetch (req) {
     await this._ensureAlarm()
     const url = new URL(req.url)
-
     if (req.method === 'POST' && url.pathname === '/hit') {
       const hit = await req.json()
       const state = await this._load()
       await this._save(applyHit(state.day, state.uniques, hit))
       return new Response('ok')
     }
-
     if (req.method === 'GET' && url.pathname === '/today') {
       const { day } = await this._load()
-      return new Response(JSON.stringify(day), {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      return new Response(JSON.stringify(day), { headers: { 'Content-Type': 'application/json' } })
     }
-
     return new Response('not found', { status: 404 })
   }
-
   async alarm () {
-    const { day } = await this._load()
+    const { day, uniques } = await this._load()
     if (this.env.R2) {
-      await this.env.R2.put(backupKey(day.date), JSON.stringify(day), {
-        httpMetadata: { contentType: 'application/json' }
-      })
+      await this.env.R2.put(backupKey(day.date), JSON.stringify(day), { httpMetadata: { contentType: 'application/json' } })
     }
     await this._save({ day: freshDay(todayStr()), uniques: new Set() })
     await this.state.storage.setAlarm(nextMidnight())
@@ -200,11 +182,7 @@ export class AnalyticsDO {
 }
 
 export async function trackHit (req, env) {
-  console.log('TrackHit triggered for:', req.url) // See if it even starts
-  if (!config.analytics) {
-    console.log('Analytics disabled in config')
-    return
-  }
+  if (!config.analytics) return
   const url = new URL(req.url)
   const path = url.pathname + (url.search || '')
   if (SKIP_PATHS.some(p => path.startsWith(p))) return
@@ -212,20 +190,15 @@ export async function trackHit (req, env) {
   const ip = req.headers.get('cf-connecting-ip') || ''
   const ua = req.headers.get('user-agent') || ''
 
-  // RSS hit — classify UA only, no raw string stored
   if (RSS_PATHS.includes(url.pathname)) {
     const stub = getSiteStub(req, env)
     await stub.fetch('https://do.local/hit', {
       method: 'POST',
-      body: JSON.stringify({
-        rss: url.pathname.includes('blog') ? 'blog' : 'pod',
-        app: detectPodApp(ua)
-      })
+      body: JSON.stringify({ rss: url.pathname.includes('blog') ? 'blog' : 'pod', app: detectPodApp(ua) })
     })
     return
   }
 
-  // bot — throttle via Cache API, count in DO
   if (isBot(path, ua)) {
     const ipHash = await hashIp(ip)
     const cacheKey = new Request('https://bot-throttle.local/' + ipHash)
@@ -233,29 +206,19 @@ export async function trackHit (req, env) {
     if (await cache.match(cacheKey)) return
     await cache.put(cacheKey, new Response('1', { headers: { 'Cache-Control': 'max-age=600' } }))
     const stub = getSiteStub(req, env)
-    await stub.fetch('https://do.local/hit', {
-      method: 'POST',
-      body: JSON.stringify({ bot: true })
-    })
+    await stub.fetch('https://do.local/hit', { method: 'POST', body: JSON.stringify({ bot: true }) })
     return
   }
 
   const cf = req.cf || {}
   const ipHash = await hashIp(ip)
   const hit = buildHit(path, cf, ipHash, req.headers.get('referer') || '')
-
   try {
     const stub = getSiteStub(req, env)
-    await stub.fetch('https://do.local/hit', {
-      method: 'POST',
-      body: JSON.stringify(hit)
-    })
-  } catch (err) {
-    console.error('Analytics write failed:', err)
-  }
+    await stub.fetch('https://do.local/hit', { method: 'POST', body: JSON.stringify(hit) })
+  } catch (err) { console.error('Analytics write failed:', err) }
 }
 
-// called from index.js after secret validation
 export async function handleAnalytics (req, env, hostname) {
   const url = new URL(req.url)
   const days = parseInt(url.searchParams.get('days') || '7')
@@ -285,9 +248,7 @@ export async function handleAnalytics (req, env, hostname) {
     })
   }
 
-  return new Response(JSON.stringify(result, null, 2), {
-    headers: { 'Content-Type': 'application/json' }
-  })
+  return new Response(JSON.stringify(result, null, 2), { headers: { 'Content-Type': 'application/json' } })
 }
 
 function buildDashboard (allData, days, secret, hostname) {
