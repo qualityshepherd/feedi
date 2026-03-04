@@ -15,7 +15,6 @@ const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'sh
 const RSS_PATHS = ['/assets/rss/blog.xml', '/assets/rss/pod.xml']
 const BOT_UAS = ['python', 'curl', 'wget', 'go-http', 'libwww', 'node-fetch', 'axios', 'urllib']
 
-
 export const isBot = (path, ua = '') =>
   BOT_PATHS.some(p => path.toLowerCase().includes(p)) ||
   SKIP_EXTENSIONS.some(e => path.toLowerCase().split('?')[0].endsWith(e)) ||
@@ -143,19 +142,23 @@ export class AnalyticsDO {
     this.state = state
     this.env = env
   }
+
   async _load () {
     const today = todayStr()
     const stored = await this.state.storage.get('today')
     if (stored && stored.date === today) return deserializeDay(stored)
     return { day: freshDay(today), uniques: new Set() }
   }
+
   async _save ({ day, uniques }) {
     await this.state.storage.put('today', serializeDay(day, uniques))
   }
+
   async _ensureAlarm () {
     const alarm = await this.state.storage.getAlarm()
     if (!alarm) await this.state.storage.setAlarm(nextMidnight())
   }
+
   async fetch (req) {
     await this._ensureAlarm()
     const url = new URL(req.url)
@@ -171,6 +174,7 @@ export class AnalyticsDO {
     }
     return new Response('not found', { status: 404 })
   }
+
   async alarm () {
     const { day, uniques } = await this._load()
     if (this.env.R2) {
@@ -308,12 +312,12 @@ function buildDashboard (allData, days, secret, hostname) {
   }
 
   const logsHtml = recentHits.slice(0, 100).map(h =>
-    `<div class="log-row">` +
+    '<div class="log-row">' +
     `<span class="log-ts">${fmtTs(h.ts)}</span>` +
     `<span class="log-flag">${countryFlag(h.country)}</span>` +
     `<span class="log-city">${h.city || '?'}</span>` +
     `<span class="log-path">${h.path}</span>` +
-    `</div>`
+    '</div>'
   ).join('')
 
   const bars = (items, isCountry = false) => items.map(([name, count]) =>
@@ -383,7 +387,7 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
   </div>
   <div>
     <div class="heatmap hour">${hourHtml}</div>
-    <div class="heatmap-labels hour">${Array.from({length:24},(_,i)=>`<span>${i===0?'12a':i<12?i+'a':i===12?'12p':(i-12)+'p'}</span>`).join('')}</div>
+    <div class="heatmap-labels hour">${Array.from({ length: 24 }, (_, i) => `<span>${i === 0 ? '12a' : i < 12 ? i + 'a' : i === 12 ? '12p' : (i - 12) + 'p'}</span>`).join('')}</div>
   </div>
 </div>
 <h2>top pages</h2><div>${bars(topPaths)}</div>
