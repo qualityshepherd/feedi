@@ -4,7 +4,8 @@ const config = {
   description: 'a public rss reader',
   domain: 'feedi.brine.dev',
   author: 'brine',
-  maxPosts: 10,
+  maxPosts: 1,
+  maxFeedItems: 20,
 
   // features
   analytics: true,

@@ -6,12 +6,12 @@ const url = `https://${domain}`
 
 // patch index.html bridgy rel=me link
 const patchHtml = async () => {
-  let html = await fs.readFile('./index.html', 'utf8')
+  let html = await fs.readFile('/index.html', 'utf8')
   html = html.replace(
     /<link rel="me" href="[^"]*">/,
     `<link rel="me" href="https://fed.brid.gy/${domain}">`
   )
-  await fs.writeFile('./index.html', html, 'utf8')
+  await fs.writeFile('/index.html', html, 'utf8')
   console.log(`index.html rel=me → ${domain}`)
 }
 

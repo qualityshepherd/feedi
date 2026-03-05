@@ -178,7 +178,11 @@ export class AnalyticsDO {
   async alarm () {
     const { day, uniques } = await this._load()
     if (this.env.R2) {
-      await this.env.R2.put(backupKey(day.date), JSON.stringify(day), { httpMetadata: { contentType: 'application/json' } })
+      // Including uniques in the backup so they aren't lost forever
+      const backupData = JSON.stringify({ ...day, uniques: Array.from(uniques) })
+      await this.env.R2.put(backupKey(day.date), backupData, {
+        httpMetadata: { contentType: 'application/json' }
+      })
     }
     await this._save({ day: freshDay(todayStr()), uniques: new Set() })
     await this.state.storage.setAlarm(nextMidnight())

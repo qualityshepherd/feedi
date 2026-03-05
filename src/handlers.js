@@ -43,7 +43,9 @@ const filterPostsByTag = (posts, tag) =>
 
 const routeHandlers = {
   [ROUTES.HOME]: async () => {
-    setDisplayedPosts(config.maxPosts)
+    if (getDisplayedPosts() === 0) {
+      setDisplayedPosts(config.maxPosts)
+    }
     if (!config.separateFeeds) {
       await loadAndRenderFeeds()
     } else {
@@ -91,6 +93,7 @@ const routeHandlers = {
 
   [ROUTES.READER]: async () => {
     if (config.separateFeeds) {
+      setDisplayedPosts(config.maxFeedItems || 20)
       await loadAndRenderFeeds()
     } else {
       renderNotFoundPage()
@@ -105,7 +108,6 @@ const routeHandlers = {
 export function handleRouting () {
   const { route, params } = getRouteParams()
   setSearchTerm('')
-  toggleLoadMoreButton(false)
 
   const resolvedRoute = route.startsWith('/posts/') ? ROUTES.POST : route
   const handler = routeHandlers[resolvedRoute] || routeHandlers.default
@@ -130,6 +132,7 @@ export function handleLoadMore () {
   const posts = getPosts()
   const displayedCount = getDisplayedPosts()
   renderPosts(posts, displayedCount)
+  toggleLoadMoreButton(displayedCount < posts.length)
 }
 
 export function closeMenu () {

@@ -64,20 +64,20 @@ export const feedsItemTemplate = (item) => {
   const avatar = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : ''
 
   return `
-  <article class="feeds-item">
-    <header class="feeds-header">
-      ${avatar ? `<img class="feeds-avatar" src="${avatar}" alt="" width="16" height="16">` : ''}
-      <span class="feeds-feed">${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
-      <time class="date">${formatDate(item.date)}</time>
-    </header>
+  <div class="post feed-post">
 
-    <h2 class="post-title feeds-title">
-      <a href="${item.url}" target="_blank" rel="noopener noreferrer">
-        ${stripHtml(item.title)}
-      </a>
-    </h2>
+    <div class="feed-meta">
+      ${avatar ? `<img class="feed-avatar" src="${avatar}" alt="">` : ''}
+      <span>${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
+      <span class="date">${formatDate(item.date)}</span>
+    </div>
 
-    ${item.content ? `<p class="feeds-excerpt">${excerpt(item.content, 400)}</p>` : ''}
-  </article>
+    <a href="${item.url}" target="_blank" rel="noopener noreferrer">
+      <h2 class="post-title">${stripHtml(item.title)}</h2>
+    </a>
+
+    ${item.content ? `<p class="feed-excerpt">${excerpt(item.content, 260)}</p>` : ''}
+
+  </div>
   `
 }
