@@ -5,7 +5,7 @@ const SKIP_PATHS = [
   '/index.json', '/feedIndex.json', '/feeds.json', '/sitemap'
 ]
 const SKIP_EXTENSIONS = ['.png', '.jpg', '.svg', '.ico', '.woff', '.woff2', '.otf', '.ttf', '.css', '.js']
-const BOT_PATHS = ['.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup',
+const BOT_PATHS = ['.aws', '.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup',
   'config', 'admin', 'backup', '.sql', 'passwd', 'cgi-bin', 'statistics.json',
   'swagger', 'actuator', 'graphql', 'telescope',
   'security.txt', 'console/', 'server-status', 'login.action',
