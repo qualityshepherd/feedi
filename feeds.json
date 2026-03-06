@@ -1,5 +1,4 @@
 [
-  { "url": "https://feedi.brine.dev/assets/rss/blog.xml", "limit": 2 },
   { "url": "https://www.reddit.com/r/Fkr/.rss", "limit": 2 },
   { "url": "https://dice.camp/@Wightbred.rss", "limit": 2 },
   { "url": "https://deepvoices.substack.com/feed", "limit": 2 },
