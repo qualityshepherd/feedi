@@ -1,24 +1,25 @@
 const config = {
-  // ── edit these ──────────────────────────────────────────────
+  // edit these
   title: 'feedi',
-  description: 'a public rss reader',
+  description: 'Webring/Blogroll 2.0 that brings back Web 1.0',
   domain: 'feedi.brine.dev',
   author: 'brine',
+  language: 'en-us',
   image: '/assets/images/avatar.svg', // used as podcast cover art fallback
   maxPosts: 10,
-  maxFeedItems: 20,
+  maxFeedItems: 42,
 
   // features
   analytics: true,
-  separateFeeds: true, // true = /feeds page + nav link; false = feeds shown at /
+  separateFeeds: true, // true = separate feeds and posts; false = everything in /
   r2Bucket: 'feedi-brine-dev', // must match bucket_name in wrangler.toml
 
   podcast: {
-    author: 'your name',
+    author: 'feedi',
     email: 'you@example.com',
-    explicit: 'false',
+    explicit: 'true',
     category: 'Leisure',
-    language: 'en-us',
+    language: 'en-us' // default: en-us
   }
 }
 

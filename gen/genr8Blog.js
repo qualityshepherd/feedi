@@ -17,7 +17,7 @@ const url = `https://${config.domain}`
   <title>${config.title}</title>
   <link>${url}</link>
   <description>${config.description}</description>
-  <language>en-us</language>
+  <language>${config.language || 'en-us'}</language>
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
   <atom:link href="${url}/assets/rss/blog.xml" rel="self" type="application/rss+xml" />`
 
