@@ -147,7 +147,7 @@ h1 {
 /* layout */
 
 .container {
-  max-width: 720px;
+  max-width: 65ch;
   margin: 0 auto;
   padding: 0 var(--space-4);
 }
@@ -171,7 +171,7 @@ header {
   align-items: center;
   justify-content: space-between;
 
-  max-width: 720px;
+  max-width: 65ch;
   margin: var(--space-5) auto var(--space-6) auto;
   padding: 0 var(--space-4);
 }
