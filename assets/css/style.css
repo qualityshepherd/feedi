@@ -370,16 +370,15 @@ ol {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
   margin-bottom: 4px;
+  text-decoration: none;
+}
+
+a.feed-meta:hover {
+  color: var(--color-accent);
 }
 
 .feed-meta .date {
   margin-left: auto;
-  color: var(--color-text-muted);
-  text-decoration: none;
-}
-
-.feed-meta a.date:hover {
-  color: var(--color-accent);
 }
 
 .feed-avatar {

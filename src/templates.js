@@ -38,10 +38,15 @@ export const archiveTemplate = post => `
   </p>
 `
 
-const stripHtml = str => str.replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, c => {
-  const entities = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&#32;': ' ' }
-  return entities[c] || ' '
-})
+const stripHtml = str => str
+  .replace(/<!--[\s\S]*?-->/g, '')
+  .replace(/<[^>]*>/g, '')
+  .replace(/&[a-z#0-9]+;/gi, c => {
+    const entities = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&#32;': ' ' }
+    return entities[c] || ' '
+  })
+  .replace(/\s+/g, ' ')
+  .trim()
 
 const formatDate = (dateStr) => {
   try {
@@ -69,17 +74,17 @@ export const feedsItemTemplate = (item) => {
   return `
   <div class="post feed-post">
 
-    <div class="feed-meta">
+    ${url
+      ? `<a class="feed-meta" href="${url}" target="_blank" rel="noopener noreferrer">`
+      : '<div class="feed-meta">'}
       ${avatar ? `<img class="feed-avatar" src="${avatar}" alt="">` : ''}
       <span>${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
-      ${url ? `<a class="feed-date date" href="${url}" target="_blank" rel="noopener noreferrer">${dateStr}</a>` : `<span class="date">${dateStr}</span>`}
-    </div>
+      <span class="date">${dateStr}</span>
+    ${url ? '</a>' : '</div>'}
 
-    ${item.title
-      ? `${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">` : ''}<h2 class="post-title">${stripHtml(item.title)}</h2>${url ? '</a>' : ''}`
-      : ''}
+    ${item.title ? `<h2 class="post-title">${stripHtml(item.title)}</h2>` : ''}
 
-    ${item.content ? `<div class="feed-content">${item.content}</div>` : ''}
+    ${item.content ? `<div class="feed-content">${stripHtml(item.content)}</div>` : ''}
 
   </div>
   `
