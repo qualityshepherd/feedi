@@ -82,7 +82,9 @@ export const feedsItemTemplate = (item) => {
       <span class="date">${dateStr}</span>
     ${url ? '</a>' : '</div>'}
 
-    ${item.title ? `<h2 class="post-title">${stripHtml(item.title)}</h2>` : ''}
+    ${item.title
+      ? `${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">` : ''}<h2 class="post-title">${stripHtml(item.title)}</h2>${url ? '</a>' : ''}`
+      : ''}
 
     ${item.content ? `<div class="feed-content">${stripHtml(item.content)}</div>` : ''}
 
