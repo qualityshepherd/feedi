@@ -2,7 +2,7 @@ import config from '../feedi.config.js'
 
 const SKIP_PATHS = [
   '/.well-known', '/actor', '/api', '/favicon', '/robots.txt',
-  '/index.json', '/feedIndex.json', '/feeds.json', '/sitemap'
+  '/index.json', '/feedIndex.json', '/feeds.json', '/sitemap', '/nodeinfo'
 ]
 const SKIP_EXTENSIONS = ['.png', '.jpg', '.svg', '.ico', '.woff', '.woff2', '.otf', '.ttf', '.css', '.js']
 const BOT_PATHS = ['.aws', '.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlrpc', 'shell', 'setup',
@@ -379,7 +379,7 @@ function buildDashboard (allData, days, secret, hostname) {
 :root{--bg-darkest:#222;--text:#A0A0A2;--header:#79808A;--alt1:#79808A;--alt3:#957A65}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg-darkest);color:var(--text);font-family:Inter,Arial,sans-serif;line-height:1.6}
-.analytics{max-width:1024px;margin:0 auto;padding:2.5rem 1.5rem}
+.analytics{max-width:800px;margin:0 auto;padding:2.5rem 1.5rem}
 .title{font-family:header;font-size:175%;color:var(--header);text-transform:uppercase;letter-spacing:.05em}
 .subtitle{color:var(--alt1);font-size:85%;margin-bottom:0}
 .days-nav{display:flex;gap:1.5rem;margin:1rem 0 3rem;flex-wrap:wrap}
