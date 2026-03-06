@@ -235,8 +235,7 @@ h3,
 h4,
 h5,
 h6,
-.post-title,
-.archive {
+.post-title {
   font-family: var(--font-heading);
   text-transform: uppercase;
   letter-spacing: 0.06em;

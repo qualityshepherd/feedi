@@ -33,10 +33,10 @@ export const aboutPageTemplate = () => `
 `
 
 export const archiveTemplate = post => `
-  <p>
-    <a href="/posts/${post.meta.slug}"><span class="archive">${post.meta.title}</span></a>
+  <h2>
+    <a href="/posts/${post.meta.slug}"><span>${post.meta.title}</span></a>
     <span class="date">${post.meta.date}</span>
-  </p>
+  </h2>
 `
 
 const formatDate = (dateStr) => {
