@@ -70,7 +70,7 @@ test('sanitizeContent: strips style tags', t => {
 })
 
 test('sanitizeContent: decodes &#39; to apostrophe', t => {
-  t.ok(sanitizeContent("it&#39;s fine").includes("it's fine"))
+  t.ok(sanitizeContent('it&#39;s fine').includes("it's fine"))
 })
 
 test('sanitizeContent: decodes &amp;', t => {

@@ -17,7 +17,7 @@ import {
   renderSinglePost,
   toggleLoadMoreButton
 } from './ui.js'
-import { loadAndRenderFeeds } from './feeds.js'
+import { loadAndRenderFeeds, getCachedFeeds, renderFeedsItems } from './feeds.js'
 
 const ROUTES = {
   HOME: '/',
@@ -130,10 +130,15 @@ export function handleSearch (e) {
 
 export function handleLoadMore () {
   incrementDisplayedPosts()
-  const posts = getPosts()
-  const displayedCount = getDisplayedPosts()
-  renderPosts(posts, displayedCount)
-  toggleLoadMoreButton(displayedCount < posts.length)
+  const feeds = getCachedFeeds()
+  if (feeds) {
+    renderFeedsItems(feeds)
+  } else {
+    const posts = getPosts()
+    const displayedCount = getDisplayedPosts()
+    renderPosts(posts, displayedCount)
+    toggleLoadMoreButton(displayedCount < posts.length)
+  }
 }
 
 export function closeMenu () {
