@@ -141,3 +141,23 @@ test('Gen: validatePodFeed catches bad pubDate format', t => {
   const feed = buildPodFeed([fakePodcast], fakeCfg).replace(/<pubDate>.*?<\/pubDate>/, '<pubDate>2025-01-01T00:00:00Z</pubDate>')
   t.ok(validatePodFeed(feed).some(e => e.includes('RFC 2822')))
 })
+
+test('Gen: validatePodFeed catches missing itunes:owner', t => {
+  const feed = buildPodFeed([fakePodcast], fakeCfg).replace(/<itunes:owner>[\s\S]*?<\/itunes:owner>\n/, '')
+  t.ok(validatePodFeed(feed).some(e => e.includes('itunes:owner')))
+})
+
+test('Gen: validatePodFeed catches missing itunes:email', t => {
+  const feed = buildPodFeed([fakePodcast], fakeCfg).replace(/<itunes:email>.*?<\/itunes:email>\n/, '')
+  t.ok(validatePodFeed(feed).some(e => e.includes('itunes:email')))
+})
+
+test('Gen: validatePodFeed catches missing itunes:author', t => {
+  const feed = buildPodFeed([fakePodcast], fakeCfg).replace(/<itunes:author>.*?<\/itunes:author>\n/, '')
+  t.ok(validatePodFeed(feed).some(e => e.includes('itunes:author')))
+})
+
+test('Gen: validatePodFeed catches missing enclosure length', t => {
+  const feed = buildPodFeed([fakePodcast], fakeCfg).replace(/length="\d+"/, '')
+  t.ok(validatePodFeed(feed).some(e => e.includes('length')))
+})

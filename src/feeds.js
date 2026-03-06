@@ -1,5 +1,6 @@
 import { elements } from './dom.js'
 import { feedsItemTemplate, notFoundTemplate } from './templates.js'
+import { getDisplayedPosts } from './state.js'
 
 let cachedFeeds = null
 
@@ -14,7 +15,8 @@ export const renderFeedsItems = (items) => {
     elements.main.innerHTML = notFoundTemplate('No feed posts found. Add feeds to feeds.json.')
     return
   }
-  elements.main.innerHTML = items.map(feedsItemTemplate).join('')
+  const limit = getDisplayedPosts()
+  elements.main.innerHTML = items.slice(0, limit).map(feedsItemTemplate).join('')
 }
 
 export const loadAndRenderFeeds = async () => {

@@ -103,9 +103,9 @@ test('Backup: backupKey generates correct R2 path', t => {
   t.is(backupKey('2026-03-01'), 'feedi-backups/analytics-2026-03-01.json')
 })
 
-test('buildHit: has no region field', t => {
+test('buildHit: has region field', t => {
   const hit = buildHit('/post', { country: 'US', city: 'NYC', region: 'NY' }, 'abc123')
-  t.ok(!('region' in hit))
+  t.ok('region' in hit)
 })
 
 test('buildHit: includes country and city', t => {

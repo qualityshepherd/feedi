@@ -38,6 +38,15 @@ export const countryFlag = (code) => {
   return `<span title="${code}">${flag}</span> `
 }
 
+export const countryFlagWithRegion = (code, region) => {
+  if (!code || code === '?') return ''
+  const flag = code.toUpperCase().replace(/./g, c =>
+    String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)
+  )
+  const label = (region && region !== '?') ? `${region}, ${code}` : code
+  return `<span title="${label}">${flag}</span> `
+}
+
 export const backupKey = (date) => `feedi-backups/analytics-${date}.json`
 
 export const freshDay = (date) => ({
@@ -64,6 +73,7 @@ export const buildHit = (path, cf = {}, ipHash, referrer = '', ts = Date.now()) 
   ip: ipHash,
   hour: new Date(ts).getUTCHours(),
   country: (cf && cf.country) || '?',
+  region: (cf && cf.region) || '?',
   city: (cf && cf.city) || '?',
   referrer
 })
@@ -119,7 +129,7 @@ export const applyHit = (day, uniques, hit) => {
   }
 
   next.recentHits = [
-    { ts: hit.ts, path: hit.path, country: hit.country, city: hit.city },
+    { ts: hit.ts, path: hit.path, country: hit.country, region: hit.region, city: hit.city },
     ...(next.recentHits || [])
   ].slice(0, 100)
 
@@ -341,7 +351,7 @@ function buildDashboard (allData, days, secret, hostname) {
   const logsHtml = recentHits.slice(0, 100).map(h =>
     '<div class="log-row">' +
     `<span class="log-ts">${fmtTs(h.ts)}</span>` +
-    `<span class="log-flag">${countryFlag(h.country)}</span>` +
+    `<span class="log-flag">${countryFlagWithRegion(h.country, h.region)}</span>` +
     `<span class="log-city">${h.city || '?'}</span>` +
     `<span class="log-path">${h.path}</span>` +
     '</div>'

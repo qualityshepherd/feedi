@@ -1,6 +1,6 @@
 ---
 title: Attack the dog then pretend like nothing happened
-date: 2021-7-17
+date: 2025-7-17
 tags: panic
 ---
 

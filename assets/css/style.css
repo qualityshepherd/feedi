@@ -307,7 +307,7 @@ blockquote {
   display: block;
 }
 
-/* images */
+/* images and audio*/
 
 /* Thumbnail image floated right */
 img[alt="thumb"] {
@@ -335,6 +335,12 @@ img[alt="center"] {
 /* circular crop */
 img[alt="round"] {
   border-radius: 50%;
+}
+
+audio {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  width: 100%;
 }
 
 /* tables & lists  */
@@ -391,7 +397,7 @@ a.feed-meta:hover {
   line-height: 1.6;
 }
 
-/* footy */
+/* footer */
 
 footer {
   margin-top: var(--space-7);

@@ -27,7 +27,9 @@ export const buildPodItem = (podcast, cfg, length = 0) => {
   const audioUrl = resolveAudioUrl(src, baseUrl)
   if (!audioUrl) return null
 
-  const image = podcast.meta.image || cfg.podcast?.image || `${baseUrl}/assets/images/default.svg`
+  const image = podcast.meta.image
+    ? (podcast.meta.image.startsWith('http') ? podcast.meta.image : `${baseUrl}${podcast.meta.image}`)
+    : cfg.podcast?.image || (cfg.image ? `${baseUrl}${cfg.image}` : `${baseUrl}/assets/images/default.svg`)
   const pubDate = new Date(podcast.meta.date).toUTCString()
 
   return `
@@ -48,7 +50,7 @@ export const buildPodFeed = (podcasts, cfg, lengths = {}) => {
     title: cfg.title,
     link: baseUrl,
     description: cfg.description,
-    image: cfg.podcast?.image || `${baseUrl}/assets/images/default.svg`,
+    image: cfg.podcast?.image || (cfg.image ? `${baseUrl}${cfg.image}` : `${baseUrl}/assets/images/default.svg`),
     author: cfg.podcast?.author || cfg.author,
     explicit: cfg.podcast?.explicit || 'false',
     email: cfg.podcast?.email || '',
@@ -70,7 +72,7 @@ export const buildPodFeed = (podcasts, cfg, lengths = {}) => {
   <title>${pod.title}</title>
   <link>${pod.link}</link>
   <description>${pod.description}</description>
-  <language>en-us</language>
+  <language>${cfg.podcast?.language || 'en-us'}</language>
   <itunes:image href="${pod.image}" />
   <image>
     <url>${pod.image}</url>
@@ -105,6 +107,8 @@ export const validatePodFeed = (xml) => {
   if (!channelHeader.includes('<itunes:author>')) errors.push('missing channel <itunes:author>')
   if (!channelHeader.includes('<itunes:category')) errors.push('missing channel <itunes:category>')
   if (!channelHeader.includes('<itunes:explicit>')) errors.push('missing channel <itunes:explicit>')
+  if (!channelHeader.includes('<itunes:owner>')) errors.push('missing channel <itunes:owner>')
+  if (!channelHeader.includes('<itunes:email>')) errors.push('missing channel <itunes:email> in owner')
 
   // per-item checks — required by Apple spec
   const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1])
@@ -115,6 +119,7 @@ export const validatePodFeed = (xml) => {
     if (!item.includes('<enclosure')) errors.push(`item ${n}: missing <enclosure>`)
     if (!item.includes('type="audio/mpeg"')) errors.push(`item ${n}: enclosure missing type`)
     if (!item.includes('url="http')) errors.push(`item ${n}: enclosure url not absolute`)
+    if (!/length="\d+"/.test(item)) errors.push(`item ${n}: enclosure missing length`)
     const pubDate = item.match(/<pubDate>(.*?)<\/pubDate>/)?.[1]
     if (!pubDate) {
       errors.push(`item ${n}: missing <pubDate>`)

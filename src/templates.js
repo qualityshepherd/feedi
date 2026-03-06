@@ -1,4 +1,5 @@
 import { renderTags } from './ui.js'
+import { stripHtml, processContent, truncateContent } from './content.js'
 
 export const postsTemplate = post => `
   <div class="post">
@@ -38,16 +39,6 @@ export const archiveTemplate = post => `
   </p>
 `
 
-const stripHtml = str => str
-  .replace(/<!--[\s\S]*?-->/g, '')
-  .replace(/<[^>]*>/g, '')
-  .replace(/&[a-z#0-9]+;/gi, c => {
-    const entities = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&apos;': "'", '&#32;': ' ' }
-    return entities[c] || ' '
-  })
-  .replace(/\s+/g, ' ')
-  .trim()
-
 const formatDate = (dateStr) => {
   try {
     return new Date(dateStr).toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -86,7 +77,7 @@ export const feedsItemTemplate = (item) => {
       ? `${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">` : ''}<h2 class="post-title">${stripHtml(item.title)}</h2>${url ? '</a>' : ''}`
       : ''}
 
-    ${item.content ? `<div class="feed-content">${stripHtml(item.content)}</div>` : ''}
+    ${item.content ? `<div class="feed-content">${processContent(truncateContent(item.content, url), item.feed?.url)}</div>` : ''}
 
   </div>
   `

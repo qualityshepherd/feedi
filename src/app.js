@@ -18,12 +18,17 @@ function setEventListeners () {
   window.addEventListener('popstate', handleRouting)
 
   // intercept internal link clicks for pushState SPA navigation
+  // external links always open in new tab
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a')
-    if (!a || !a.href || a.target === '_blank') return
+    if (!a || !a.href) return
 
     const url = new URL(a.href)
-    if (url.origin !== location.origin) return
+    if (url.origin !== location.origin) {
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+      return
+    }
 
     e.preventDefault()
     history.pushState(null, '', url.pathname + url.search)

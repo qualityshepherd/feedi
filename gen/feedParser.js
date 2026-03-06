@@ -35,16 +35,24 @@ const splitItems = (xml) => {
   return items
 }
 
-const parseRssItem = (itemXml, feedMeta) => ({
-  title: extractCdata(extractTag(itemXml, 'title')),
-  url: extractCdata(extractTag(itemXml, 'link')).replace(/<[^>]+>/g, '').trim(),
-  date: extractTag(itemXml, 'pubDate') || extractTag(itemXml, 'dc:date') || '',
-  content: extractCdata(
+const parseRssItem = (itemXml, feedMeta) => {
+  const enclosureUrl = extractAttr(itemXml, 'enclosure', 'url')
+  const content = extractCdata(
     extractTag(itemXml, 'content:encoded') || extractTag(itemXml, 'description')
-  ),
-  author: extractCdata(extractTag(itemXml, 'dc:creator') || extractTag(itemXml, 'author')),
-  feed: feedMeta
-})
+  )
+  // append audio player if enclosure present and not already in content
+  const audioTag = enclosureUrl && !content.includes('<audio')
+    ? `<audio controls src="${enclosureUrl}" style="width:100%;margin-top:1em;"></audio>`
+    : ''
+  return {
+    title: extractCdata(extractTag(itemXml, 'title')),
+    url: extractCdata(extractTag(itemXml, 'link')).replace(/<[^>]+>/g, '').trim(),
+    date: extractTag(itemXml, 'pubDate') || extractTag(itemXml, 'dc:date') || '',
+    content: content + audioTag,
+    author: extractCdata(extractTag(itemXml, 'dc:creator') || extractTag(itemXml, 'author')),
+    feed: feedMeta
+  }
+}
 
 // -- Atom --
 
