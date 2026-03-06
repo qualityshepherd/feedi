@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { applyHit, backupKey, buildHit, countryFlag, deserializeDay, detectPodApp, freshDay, isBot, serializeDay } from '../../worker/analytics.js'
+import { applyHit, backupKey, buildHit, buildR2Backup, countryFlag, deserializeDay, detectPodApp, freshDay, isBot, serializeDay } from '../../worker/analytics.js'
 
 test('Analytics: isBot detects php probe', t => {
   t.ok(isBot('/wp-login.php'))
@@ -252,4 +252,61 @@ test('deserializeDay: handles missing _uniqueArr', t => {
   const { uniques } = deserializeDay(freshDay('2026-03-03'))
   t.ok(uniques instanceof Set)
   t.is(uniques.size, 0)
+})
+
+// buildR2Backup — the alarm uses this to save yesterday's data without hitting the
+// _load() date guard that caused the data-loss bug.
+test('buildR2Backup: returns null when nothing stored', t => {
+  t.is(buildR2Backup(null), null)
+  t.is(buildR2Backup(undefined), null)
+})
+
+test('buildR2Backup: uses stored date (yesterday) not today', t => {
+  const yesterday = '2026-03-05'
+  const stored = serializeDay(freshDay(yesterday), new Set(['ip1']))
+  const backup = buildR2Backup(stored)
+  t.is(backup.key, `feedi-backups/analytics-${yesterday}.json`)
+})
+
+test('buildR2Backup: data contains the actual hits from stored day', t => {
+  const day = freshDay('2026-03-05')
+  const hit = buildHit('/posts/foo', { country: 'US', city: 'NYC' }, 'ip1')
+  const { day: populated, uniques } = applyHit(day, new Set(), hit)
+  const stored = serializeDay(populated, uniques)
+  const backup = buildR2Backup(stored)
+  const parsed = JSON.parse(backup.data)
+  t.is(parsed.totalHits, 1)
+  t.is(parsed.byPath['/posts/foo'], 1)
+})
+
+test('buildR2Backup: data includes uniques array (not Set, JSON-safe)', t => {
+  const stored = serializeDay(freshDay('2026-03-05'), new Set(['ip1', 'ip2']))
+  const backup = buildR2Backup(stored)
+  const parsed = JSON.parse(backup.data)
+  t.ok(Array.isArray(parsed.uniques))
+  t.is(parsed.uniques.length, 2)
+})
+
+test('buildR2Backup: key is correct R2 path format', t => {
+  const stored = serializeDay(freshDay('2026-01-15'), new Set())
+  const backup = buildR2Backup(stored)
+  t.is(backup.key, 'feedi-backups/analytics-2026-01-15.json')
+})
+
+// Regression: alarm at midnight must save YESTERDAY not an empty freshDay.
+// This simulates what _load() would return vs what buildR2Backup uses.
+test('buildR2Backup regression: stored date differs from today — still saves stored data', t => {
+  // This is the midnight scenario: stored is yesterday, todayStr() is today.
+  const yesterday = '2026-03-05'
+  const day = freshDay(yesterday)
+  const hit = buildHit('/', { country: 'DE' }, 'abc')
+  const { day: withHit, uniques } = applyHit(day, new Set(), hit)
+  const stored = serializeDay(withHit, uniques)
+
+  // buildR2Backup must use stored.date, not today
+  const backup = buildR2Backup(stored)
+  t.ok(backup !== null)
+  t.ok(backup.key.includes(yesterday))
+  const parsed = JSON.parse(backup.data)
+  t.is(parsed.totalHits, 1) // not 0 (what an empty freshDay would give)
 })

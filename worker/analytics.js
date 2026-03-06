@@ -137,6 +137,17 @@ export const deserializeDay = (stored) => {
   return { day, uniques: new Set(_uniqueArr || []) }
 }
 
+// Pure: builds the R2 backup payload from raw storage (bypasses date guard in _load).
+// Returns { key, data } or null if nothing stored yet.
+export const buildR2Backup = (stored) => {
+  if (!stored) return null
+  const { day, uniques } = deserializeDay(stored)
+  return {
+    key: backupKey(day.date),
+    data: JSON.stringify({ ...day, uniques: Array.from(uniques) })
+  }
+}
+
 export class AnalyticsDO {
   constructor (state, env) {
     this.state = state
@@ -176,11 +187,12 @@ export class AnalyticsDO {
   }
 
   async alarm () {
-    const { day, uniques } = await this._load()
-    if (this.env.R2) {
-      // Including uniques in the backup so they aren't lost forever
-      const backupData = JSON.stringify({ ...day, uniques: Array.from(uniques) })
-      await this.env.R2.put(backupKey(day.date), backupData, {
+    // Read raw storage — _load() guards on today's date and would return an empty
+    // freshDay at midnight when stored.date is still yesterday, losing all data.
+    const stored = await this.state.storage.get('today')
+    const backup = buildR2Backup(stored)
+    if (backup && this.env.R2) {
+      await this.env.R2.put(backup.key, backup.data, {
         httpMetadata: { contentType: 'application/json' }
       })
     }
@@ -189,25 +201,36 @@ export class AnalyticsDO {
   }
 }
 
+// Pure: classifies a request path+ua into what kind of hit it is.
+// Returns 'skip' | 'rss-blog' | 'rss-pod' | 'bot' | 'hit'
+export const classifyHit = (path, ua = '') => {
+  if (SKIP_PATHS.some(p => path.startsWith(p))) return 'skip'
+  const pathname = path.split('?')[0]
+  if (RSS_PATHS.includes(pathname)) return pathname.includes('blog') ? 'rss-blog' : 'rss-pod'
+  if (isBot(path, ua)) return 'bot'
+  return 'hit'
+}
+
 export async function trackHit (req, env) {
   if (!config.analytics) return
   const url = new URL(req.url)
   const path = url.pathname + (url.search || '')
-  if (SKIP_PATHS.some(p => path.startsWith(p))) return
-
   const ip = req.headers.get('cf-connecting-ip') || ''
   const ua = req.headers.get('user-agent') || ''
+  const kind = classifyHit(path, ua)
 
-  if (RSS_PATHS.includes(url.pathname)) {
+  if (kind === 'skip') return
+
+  if (kind === 'rss-blog' || kind === 'rss-pod') {
     const stub = getSiteStub(req, env)
     await stub.fetch('https://do.local/hit', {
       method: 'POST',
-      body: JSON.stringify({ rss: url.pathname.includes('blog') ? 'blog' : 'pod', app: detectPodApp(ua) })
+      body: JSON.stringify({ rss: kind === 'rss-blog' ? 'blog' : 'pod', app: detectPodApp(ua) })
     })
     return
   }
 
-  if (isBot(path, ua)) {
+  if (kind === 'bot') {
     const ipHash = await hashIp(ip)
     const cacheKey = new Request('https://bot-throttle.local/' + ipHash)
     const cache = caches.default

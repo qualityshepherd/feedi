@@ -1,6 +1,5 @@
 import { unit as test } from '../testpup.js'
 import {
-  readSiteIndex,
   sortByDate,
   getState,
   getPosts,
@@ -15,22 +14,7 @@ import {
   resetState
 } from '../../src/state.js'
 
-const baseUrl = process.env.TEST_ENV || 'http://localhost:4242'
-const pathToIndex = `${baseUrl}/test/unit/fake.index.json`
-
-test('State: readSiteIndex should return parsed JSON', async t => {
-  const data = await readSiteIndex(pathToIndex)
-
-  t.ok(data.length > 0)
-  t.ok(data[0].meta.title)
-})
-
-test('State: readSiteIndex should exclude future-dated posts', async t => {
-  const data = await readSiteIndex(pathToIndex)
-  const datesTodayOrOlder = date => new Date(date) <= new Date()
-
-  t.ok(data.every(post => datesTodayOrOlder(post.meta?.date)))
-})
+// readSiteIndex requires a live server — tested in e2e/posts.test.js
 
 const posts = [
   { meta: { date: '2023-01-01', title: 'A' } },

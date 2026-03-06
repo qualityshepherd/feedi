@@ -1,6 +1,8 @@
 import { e2e as test } from '../testpup.js'
 import { locators as $, feediPage } from './pages/feedi.page.js'
 
+import { readSiteIndex } from '../../src/state.js'
+
 test('e2e: should display all posts', async t => {
   await feediPage(t).goto()
   t.ok(await t.count($.postTitle) > 0)
@@ -28,4 +30,17 @@ test('e2e: should be responsive; handle different viewports', async t => {
   await t.page.setViewport({ height: 667, width: 375 })
   t.ok(await t.count($.postTitle) > 0)
   t.deepEqual(t.page.viewport(), { height: 667, width: 375 })
+})
+
+const BASE = process.env.TEST_ENV || 'http://localhost:4242'
+
+test('readSiteIndex: returns posts with titles from live server', async t => {
+  const data = await readSiteIndex(`${BASE}/index.json`)
+  t.ok(data.length > 0)
+  t.ok(data[0].meta.title)
+})
+
+test('readSiteIndex: excludes future-dated posts', async t => {
+  const data = await readSiteIndex(`${BASE}/index.json`)
+  t.ok(data.every(p => new Date(p.meta.date) <= new Date()))
 })

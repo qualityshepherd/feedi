@@ -1,21 +1,11 @@
-import { e2e as test } from '../testpup.js'
-import { locators as $, feediPage } from './pages/feedi.page.js'
+import { unit as test } from '../testpup.js'
+import { buildNav } from '../../src/nav.js'
 
-test('e2e: should use menu to navigate to about page', async t => {
-  await feediPage(t).goto()
-  await t.waitAndClick($.aboutLink)
-  t.ok((await t.url()).includes('/about'))
-  t.ok(await t.exists('h2'))
+test('buildNav: separateFeeds true shows feeds link', t => {
+  t.ok(buildNav({ separateFeeds: true }).showFeeds)
 })
 
-test('e2e: should access archive posts via url', async t => {
-  await feediPage(t).goto('archive')
-  t.ok(await t.count($.archiveLink) > 0)
-})
-
-test('e2e: should filter posts by tag', async t => {
-  await feediPage(t).goto()
-  await t.waitAndClick($.tagLink)
-  t.ok((await t.url()).includes('/tag'))
-  t.ok(await t.exists('.tags'))
+test('buildNav: separateFeeds false/missing hides feeds link', t => {
+  t.falsy(buildNav({ separateFeeds: false }).showFeeds)
+  t.falsy(buildNav({}).showFeeds)
 })

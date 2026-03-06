@@ -3,6 +3,9 @@ import { trackHit, handleAnalytics, AnalyticsDO } from './analytics.js'
 
 export { AnalyticsDO }
 
+export const isAuthorized = (secret, adminSecret) =>
+  !!secret && !!adminSecret && secret === adminSecret
+
 export default {
   async fetch (req, env, ctx) {
     const url = new URL(req.url)
@@ -13,7 +16,7 @@ export default {
 
     if (path === '/api/analytics') {
       const secret = url.searchParams.get('secret')
-      if (!secret || secret !== env.ADMIN_SECRET) return new Response('Unauthorized', { status: 401 })
+      if (!isAuthorized(secret, env.ADMIN_SECRET)) return new Response('Unauthorized', { status: 401 })
       return handleAnalytics(req, env, url.hostname)
     }
 
