@@ -42,6 +42,16 @@ const safeHref = (href) => {
 
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|svg)(\?|$)/i
 
+// Strip Substack promotional footers: subscribe CTAs, platform links, etc.
+const stripSubstackFooter = (str) => {
+  // Remove whole paragraph if it contains platform links or subscribe CTAs
+  str = str.replace(/<p[^>]*>[\s\S]*?(?:on (?:Spotify|Apple Music|YouTube|Tidal|Amazon Music)|Subscribe now)[\s\S]*?<\/p>/gi, '')
+  // Catch any remaining bare subscribe/platform links outside paragraphs
+  str = str.replace(/<a[^>]*>[^<]*on (?:Spotify|Apple Music|YouTube|Tidal|Amazon Music)[^<]*<\/a>/gi, '')
+  str = str.replace(/<a[^>]*substack[^>]*>\s*Subscribe now\s*<\/a>/gi, '')
+  return str.trimEnd()
+}
+
 // Strip Reddit's "submitted by /u/..." footer — author already shown in feed-meta.
 const stripRedditFooter = (str) => {
   return str.replace(/\s*submitted by\s*<a[^>]*>[\s\S]*?(<\/span>\s*)+$/gi, '').trimEnd()
@@ -68,16 +78,20 @@ const linkifyImages = (str) => {
 // then keep structure and formatting while removing dangerous content.
 export const sanitizeContent = (str) => {
   if (!str) return ''
-  return linkifyImages(
+  return stripSubstackFooter(linkifyImages(
     stripRedditFooter(
       decodeEntities(str)
         // strip dangerous blocks
         .replace(/<!--[\s\S]*?-->/g, '')
         .replace(/<script[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?<\/style>/gi, '')
-        // strip on* event attributes from any tag
+        // strip on* event attributes, srcset, sizes from any tag
         .replace(/\s+on\w+="[^"]*"/gi, '')
         .replace(/\s+on\w+='[^']*'/gi, '')
+        .replace(/\s+srcset=(["'])[\s\S]*?\1/gi, '')
+        .replace(/\s+sizes=(["'])[\s\S]*?\1/gi, '')
+        // drop <img> with relative src (external feeds won't resolve them)
+        .replace(/<img[^>]*src="(?!https?:\/\/)[^"]*"[^>]*\/?>/gi, '')
         // rewrite <a> tags — safe hrefs get target/rel, unsafe drop to inner text
         .replace(/<a([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs, inner) => {
           const hrefMatch = attrs.match(/href=["']([^"']*)["']/i)
@@ -88,7 +102,7 @@ export const sanitizeContent = (str) => {
             : inner
         })
     )
-  )
+  ))
 }
 
 // Linkifies bare #hashtags not already inside an <a>.

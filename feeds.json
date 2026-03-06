@@ -1,6 +1,16 @@
 [
-  { "url": "https://feedi.brine.dev/assets/rss/blog.xml", "limit": 10 },
-  { "url": "https://www.reddit.com/r/Fkr/.rss", "limit": 10 },
-  { "url": "https://dice.camp/@Wightbred.rss", "limit": 5 },
-  { "url": "https://brine.dev/assets/rss/blog.xml", "limit": 10 }
+  { "url": "https://feedi.brine.dev/assets/rss/blog.xml", "limit": 2 },
+  { "url": "https://www.reddit.com/r/Fkr/.rss", "limit": 2 },
+  { "url": "https://dice.camp/@Wightbred.rss", "limit": 2 },
+  { "url": "https://deepvoices.substack.com/feed", "limit": 2 },
+  { "url": "https://dailyclassicart.substack.com/feed", "limit": 2 },
+  { "url": "https://aquariumdrunkard.com/feed/", "limit": 2 },
+  { "url": "https://monsterbrains.blogspot.com/feeds/posts/default", "limit": 2 },
+  { "url": "https://publicdomainreview.tumblr.com/rss", "limit": 2 },
+  { "url": "https://everybodysdummy.blogspot.com/feeds/posts/default", "limit": 2 },
+  { "url": "https://worldof.brine.dev/assets/rss/pod.xml", "limit": 2 },
+  { "url": "https://doomandgloomfromthetomb.tumblr.com/", "limit": 2 },
+  { "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC8TZwtZ17WKFJSmwTZQpBTA", "limit": 2 },
+  { "url": "https://tenfootpole.org/ironspike/?feed=rss2", "limit": 2 },
+  { "url": "https://brine.dev/assets/rss/blog.xml", "limit": 2 }
 ]

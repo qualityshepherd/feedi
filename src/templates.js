@@ -1,5 +1,6 @@
 import { renderTags } from './ui.js'
-import { stripHtml, processContent, truncateContent } from './content.js'
+import { stripHtml, processContent, truncateContent } from './feedRules.js'
+import config from '../feedi.config.js'
 
 export const postsTemplate = post => `
   <div class="post">
@@ -33,10 +34,10 @@ export const aboutPageTemplate = () => `
 `
 
 export const archiveTemplate = post => `
-  <h2>
-    <a href="/posts/${post.meta.slug}"><span>${post.meta.title}</span></a>
+  <p>
+    <a href="/posts/${post.meta.slug}"><span class="archive">${post.meta.title}</span></a>
     <span class="date">${post.meta.date}</span>
-  </h2>
+  </p>
 `
 
 const formatDate = (dateStr) => {
@@ -77,7 +78,7 @@ export const feedsItemTemplate = (item) => {
       ? `${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">` : ''}<h2 class="post-title">${stripHtml(item.title)}</h2>${url ? '</a>' : ''}`
       : ''}
 
-    ${item.content ? `<div class="feed-content">${processContent(truncateContent(item.content, url), item.feed?.url)}</div>` : ''}
+    ${item.content ? `<div class="feed-content">${processContent(truncateContent(item.content, url, config.contentLength ?? 3000), item.feed?.url)}</div>` : ''}
 
   </div>
   `

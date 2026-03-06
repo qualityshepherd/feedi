@@ -94,7 +94,7 @@ const routeHandlers = {
 
   [ROUTES.READER]: async () => {
     if (config.separateFeeds) {
-      setDisplayedPosts(config.maxFeedItems || 20)
+      setDisplayedPosts(config.maxFeedItems === 0 ? Infinity : (config.maxFeedItems || 20))
       await loadAndRenderFeeds()
     } else {
       renderNotFoundPage()

@@ -35,13 +35,15 @@ const splitItems = (xml) => {
   return items
 }
 
-const parseRssItem = (itemXml, feedMeta) => {
+const parseRssItem = (itemXml, feedMeta, isPodcast = false) => {
   const enclosureUrl = extractAttr(itemXml, 'enclosure', 'url')
+  const enclosureType = extractAttr(itemXml, 'enclosure', 'type') || ''
+  const isAudioEnclosure = enclosureType.startsWith('audio/')
   const content = extractCdata(
     extractTag(itemXml, 'content:encoded') || extractTag(itemXml, 'description')
   )
-  // append audio player if enclosure present and not already in content
-  const audioTag = enclosureUrl && !content.includes('<audio')
+  // only inject audio player for actual podcast feeds (itunes namespace)
+  const audioTag = enclosureUrl && isPodcast && isAudioEnclosure && !content.includes('<audio')
     ? `<audio controls src="${enclosureUrl}" style="width:100%;margin-top:1em;"></audio>`
     : ''
   return {
@@ -64,24 +66,30 @@ const splitEntries = (xml) => {
   return entries
 }
 
-const parseAtomEntry = (entryXml, feedMeta) => ({
-  title: extractCdata(extractTag(entryXml, 'title')),
-  url: extractAttr(entryXml, 'link', 'href') || extractCdata(extractTag(entryXml, 'link')),
-  date: extractTag(entryXml, 'published') || extractTag(entryXml, 'updated') || '',
-  content: extractCdata(
-    extractTag(entryXml, 'content') || extractTag(entryXml, 'summary')
-  ),
-  author: extractCdata(extractTag(extractTag(entryXml, 'author'), 'name')),
-  feed: feedMeta
-})
+const parseAtomEntry = (entryXml, feedMeta) => {
+  const videoId = extractCdata(extractTag(entryXml, 'yt:videoId'))
+  const thumbnail = videoId
+    ? `<a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener noreferrer"><img src="https://i.ytimg.com/vi/${videoId}/hqdefault.jpg" loading="lazy" style="max-width:100%;display:block;margin:0 auto;"></a>`
+    : ''
+  const content = extractCdata(extractTag(entryXml, 'content') || extractTag(entryXml, 'summary'))
+  return {
+    title: extractCdata(extractTag(entryXml, 'title')),
+    url: extractAttr(entryXml, 'link', 'href') || extractCdata(extractTag(entryXml, 'link')),
+    date: extractTag(entryXml, 'published') || extractTag(entryXml, 'updated') || '',
+    content: thumbnail + content,
+    author: extractCdata(extractTag(extractTag(entryXml, 'author'), 'name')),
+    feed: feedMeta
+  }
+}
 
 // -- Public API --
 
 export const parseFeed = (xml, feedConfig) => {
   const feedMeta = { title: parseFeedTitle(xml), url: feedConfig.url }
+  const isPodcast = xml.includes('xmlns:itunes')
   return isAtom(xml)
     ? splitEntries(xml).map(e => parseAtomEntry(e, feedMeta))
-    : splitItems(xml).map(i => parseRssItem(i, feedMeta))
+    : splitItems(xml).map(i => parseRssItem(i, feedMeta, isPodcast))
 }
 
 export const limitFeed = (posts, limit = 10) =>
