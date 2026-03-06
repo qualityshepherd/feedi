@@ -3,7 +3,6 @@ import { locators as $, feediPage } from './pages/feedi.page.js'
 
 test('e2e: should display feeds items', async t => {
   await feediPage(t).goto('feeds')
-
   t.ok(await t.count($.feedsPost) > 0)
 })
 

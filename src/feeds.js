@@ -3,10 +3,6 @@ import { feedsItemTemplate, notFoundTemplate } from './templates.js'
 
 let cachedFeeds = null
 
-export const clearFeedsCache = () => {
-  cachedFeeds = null
-}
-
 const readAggregated = async (path) => {
   const res = await fetch(path)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)

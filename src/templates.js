@@ -43,12 +43,6 @@ const stripHtml = str => str.replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, c
   return entities[c] || ' '
 })
 
-const excerpt = (content, len = 150) => {
-  if (!content) return ''
-  const text = stripHtml(content).replace(/\s+/g, ' ').trim()
-  return text.length <= len ? text : text.slice(0, len).replace(/\s+\S*$/, '') + '...'
-}
-
 const formatDate = (dateStr) => {
   try {
     return new Date(dateStr).toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' })
@@ -59,9 +53,18 @@ const feedDomain = (url) => {
   try { return new URL(url).hostname } catch { return '' }
 }
 
+const safeUrl = (url) => {
+  try {
+    const { protocol } = new URL(url)
+    return protocol === 'https:' || protocol === 'http:' ? url : ''
+  } catch { return '' }
+}
+
 export const feedsItemTemplate = (item) => {
-  const domain = feedDomain(item.url)
+  const url = safeUrl(item.url)
+  const domain = feedDomain(url)
   const avatar = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : ''
+  const dateStr = formatDate(item.date)
 
   return `
   <div class="post feed-post">
@@ -69,14 +72,14 @@ export const feedsItemTemplate = (item) => {
     <div class="feed-meta">
       ${avatar ? `<img class="feed-avatar" src="${avatar}" alt="">` : ''}
       <span>${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
-      <span class="date">${formatDate(item.date)}</span>
+      ${url ? `<a class="feed-date date" href="${url}" target="_blank" rel="noopener noreferrer">${dateStr}</a>` : `<span class="date">${dateStr}</span>`}
     </div>
 
-    <a href="${item.url}" target="_blank" rel="noopener noreferrer">
-      <h2 class="post-title">${stripHtml(item.title)}</h2>
-    </a>
+    ${item.title
+      ? `${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">` : ''}<h2 class="post-title">${stripHtml(item.title)}</h2>${url ? '</a>' : ''}`
+      : ''}
 
-    ${item.content ? `<p class="feed-excerpt">${excerpt(item.content, 260)}</p>` : ''}
+    ${item.content ? `<div class="feed-content">${item.content}</div>` : ''}
 
   </div>
   `

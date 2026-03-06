@@ -4,14 +4,10 @@ export const locators = {
   searchInput: '#search',
   postTitle: '.post-title',
   notFoundMessage: '.not-found',
-  siteTitleLink: '#site-title-link',
   aboutLink: 'a[href="/about"]',
   archiveLink: 'a[href="/archive"]',
-  readerLink: 'a[href="/feeds"]',
   feedsPost: '.feed-post',
-  feedMeta: '.feeds-meta',
   tagLink: '.tag',
-  singlePostLink: '.post-title',
   loadMoreButton: '#load-more'
 }
 

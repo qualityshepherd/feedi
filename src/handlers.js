@@ -25,7 +25,6 @@ const ROUTES = {
   ABOUT: '/about',
   TAG: '/tag',
   ARCHIVE: '/archive',
-  SEARCH: '/search',
   READER: '/feeds'
 }
 
@@ -78,7 +77,9 @@ const routeHandlers = {
     renderArchive(getPosts())
   },
 
-  [ROUTES.SEARCH]: ({ params }) => {
+  // /search is not a nav route — URL state set by handleSearch via replaceState.
+  // Handler exists so shared/direct search URLs still work.
+  '/search': ({ params }) => {
     const query = params.get('q')
     if (query) {
       setSearchTerm(query.toLowerCase())

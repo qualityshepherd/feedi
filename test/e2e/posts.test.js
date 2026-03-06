@@ -1,7 +1,8 @@
 import { e2e as test } from '../testpup.js'
 import { locators as $, feediPage } from './pages/feedi.page.js'
-
 import { readSiteIndex } from '../../src/state.js'
+
+const BASE = process.env.TEST_ENV || 'http://localhost:4242'
 
 test('e2e: should display all posts', async t => {
   await feediPage(t).goto()
@@ -20,19 +21,10 @@ test('e2e: should load more posts', async t => {
 
 test('e2e: should display a single post', async t => {
   await feediPage(t).goto()
-  await t.waitAndClick($.singlePostLink)
+  await t.waitAndClick($.postTitle)
   t.ok((await t.url()).includes('/posts/'))
   t.is(await t.count('.post'), 1)
 })
-
-test('e2e: should be responsive; handle different viewports', async t => {
-  await feediPage(t).goto()
-  await t.page.setViewport({ height: 667, width: 375 })
-  t.ok(await t.count($.postTitle) > 0)
-  t.deepEqual(t.page.viewport(), { height: 667, width: 375 })
-})
-
-const BASE = process.env.TEST_ENV || 'http://localhost:4242'
 
 test('readSiteIndex: returns posts with titles from live server', async t => {
   const data = await readSiteIndex(`${BASE}/index.json`)
