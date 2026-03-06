@@ -94,7 +94,7 @@ export const sanitizeContent = (str) => {
 // Linkifies bare #hashtags not already inside an <a>.
 export const linkifyHashtags = (str, feedOrigin = null) => {
   if (!str) return ''
-  return str.replace(/(?<![="\/>@#])#([a-zA-Z0-9_]+)/g, (match, tag) => {
+  return str.replace(/(?<![="/>@#])#([a-zA-Z0-9_]+)/g, (match, tag) => {
     const url = feedOrigin
       ? `${feedOrigin}/tags/${tag}`
       : `/tag?t=${encodeURIComponent(tag.toLowerCase())}`
@@ -105,7 +105,7 @@ export const linkifyHashtags = (str, feedOrigin = null) => {
 // Linkifies @mentions not already inside an <a>.
 export const linkifyMentions = (str, feedOrigin = null) => {
   if (!str) return ''
-  return str.replace(/(?<![="\/\w@])@([a-zA-Z0-9_]+)(?:@([a-zA-Z0-9._-]+\.[a-zA-Z]{2,}))?/g, (match, user, instance) => {
+  return str.replace(/(?<![="/\w@])@([a-zA-Z0-9_]+)(?:@([a-zA-Z0-9._-]+\.[a-zA-Z]{2,}))?/g, (match, user, instance) => {
     if (instance) return `<a href="https://${instance}/@${user}" target="_blank" rel="noopener noreferrer">${match}</a>`
     if (!feedOrigin) return match
     return `<a href="${feedOrigin}/@${user}" target="_blank" rel="noopener noreferrer">${match}</a>`

@@ -338,6 +338,7 @@ img[alt="round"] {
 }
 
 audio {
+  color-scheme: dark;
   margin-top: 15px;
   margin-bottom: 15px;
   width: 100%;
