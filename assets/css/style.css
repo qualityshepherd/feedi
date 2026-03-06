@@ -48,6 +48,7 @@
 /* design tokens */
 
 :root {
+  --color-logo: #a8845a;
   --color-bg: #2a2a2a;
   --color-surface-1: #303030;
   --color-surface-2: #353535;
@@ -176,10 +177,12 @@ header {
   padding: 0 var(--space-4);
 }
 
-header img {
+header img,
+.site-logo {
   height: 84px;
   width: auto;
   cursor: pointer;
+  color: var(--color-logo);
 }
 
 nav {
@@ -235,7 +238,8 @@ h3,
 h4,
 h5,
 h6,
-.post-title {
+.post-title,
+.archive {
   font-family: var(--font-heading);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -306,7 +310,7 @@ blockquote {
   display: block;
 }
 
-/* images and audio*/
+/* images and audio */
 
 /* Thumbnail image floated right */
 img[alt="thumb"] {
@@ -397,7 +401,7 @@ a.feed-meta:hover {
   line-height: 1.6;
 }
 
-/* footer */
+/* footy */
 
 footer {
   margin-top: var(--space-7);

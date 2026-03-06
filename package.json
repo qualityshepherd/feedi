@@ -24,6 +24,7 @@
     "test:debug": "HEADLESS=0 SLOWMO=100 start-server-and-test server http://localhost:4242 \"node --test --test-reporter spec test/e2e/**/*.test.js\"",
     "server": "npm start && sirv . --port 4242 --single --quiet",
     "kill": "pkill -f chromium",
+    "purge": "curl -X POST \"https://api.cloudflare.com/client/v4/zones/$BRINE_TOKEN/purge_cache\" -H \"Authorization: Bearer $BEARER\" -H \"Content-Type: application/json\" --data '{\"purge_everything\":true}'",
     "pretty": "standard --fix"
   },
   "devDependencies": {
