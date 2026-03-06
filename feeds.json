@@ -1,7 +1,7 @@
 [
   { "url": "https://www.reddit.com/r/Fkr/.rss", "limit": 4 },
   { "url": "https://dice.camp/@Wightbred.rss", "limit": 4 },
-  { "url": "https://tale-of-rat-and-snake.blogspot.com/feeds/posts/default", "limit": 4 },
+  { "url": "https://tale-of-rat-and-snake.blogspot.com/feeds/posts/default?alt=rss", "limit": 4 },
   { "url": "https://deepvoices.substack.com/feed", "limit": 4 },
   { "url": "https://dailyclassicart.substack.com/feed", "limit": 4 },
   { "url": "https://monsterbrains.blogspot.com/feeds/posts/default", "limit": 4 },

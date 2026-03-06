@@ -130,12 +130,12 @@ export function handleSearch (e) {
 
 export function handleLoadMore () {
   incrementDisplayedPosts()
-  const feeds = getCachedFeeds()
-  if (feeds) {
-    renderFeedsItems(feeds)
+  const displayedCount = getDisplayedPosts()
+  if (location.pathname === ROUTES.READER) {
+    const feeds = getCachedFeeds()
+    if (feeds) renderFeedsItems(feeds)
   } else {
     const posts = getPosts()
-    const displayedCount = getDisplayedPosts()
     renderPosts(posts, displayedCount)
     toggleLoadMoreButton(displayedCount < posts.length)
   }
