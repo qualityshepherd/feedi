@@ -8,8 +8,8 @@ test('classifyHit: skips /api prefix', t => {
   t.is(classifyHit('/api/analytics'), 'skip')
 })
 
-test('classifyHit: skips /api/beacon', t => {
-  t.is(classifyHit('/api/beacon'), 'skip')
+test('classifyHit: skips /api/hit', t => {
+  t.is(classifyHit('/api/hit'), 'skip')
 })
 
 test('classifyHit: search with query returns hit', t => {

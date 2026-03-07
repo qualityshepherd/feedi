@@ -115,7 +115,7 @@ export function handleRouting () {
   // tell the worker about SPA navigation — worker is blind to client-side route changes
   // skip initial load since the worker already tracked that request directly
   if (!isInitialLoad && route !== '/search') {
-    navigator.sendBeacon('/api/beacon?path=' + encodeURIComponent(location.pathname + location.search))
+    navigator.sendBeacon('/api/hit?path=' + encodeURIComponent(location.pathname + location.search))
   }
   isInitialLoad = false
 
@@ -134,7 +134,7 @@ export function handleSearch (e) {
     history.replaceState(null, '', '/search?q=' + e.target.value)
     clearTimeout(searchBeaconTimer)
     searchBeaconTimer = setTimeout(() => {
-      navigator.sendBeacon('/api/beacon?path=' + encodeURIComponent(location.pathname + location.search))
+      navigator.sendBeacon('/api/hit?path=' + encodeURIComponent(location.pathname + location.search))
     }, 1000)
   } else {
     clearTimeout(searchBeaconTimer)

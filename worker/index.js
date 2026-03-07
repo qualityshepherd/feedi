@@ -21,7 +21,7 @@ export default {
     }
 
     // SPA beacon — client sends real path via ?path= since worker can't see client-side navigation
-    if (path === '/api/beacon' && req.method === 'POST') {
+    if (path === '/api/hit' && req.method === 'POST') {
       ctx.waitUntil(trackHit(req, env))
       return new Response(null, { status: 204 })
     }
