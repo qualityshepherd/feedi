@@ -66,7 +66,8 @@ const linkifyImages = (str) => {
       : `<a href="${href}" target="_blank" rel="noopener noreferrer">${href}</a>`
   })
   // bare image URLs not already in a tag
-  str = str.replace(/(?<![="'>])(https?:\/\/[^\s<>"']+)/g, (_, url) => {
+  str = str.replace(/(["'>]?)(https?:\/\/[^\s<>"']+)/g, (match, prefix, url) => {
+    if (prefix) return match
     return IMAGE_EXT.test(url)
       ? `<img src="${url}" loading="lazy" style="max-width:100%;height:auto;">`
       : `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`
@@ -108,18 +109,20 @@ export const sanitizeContent = (str) => {
 // Linkifies bare #hashtags not already inside an <a>.
 export const linkifyHashtags = (str, feedOrigin = null) => {
   if (!str) return ''
-  return str.replace(/(?<![="/>@#])#([a-zA-Z0-9_]+)/g, (match, tag) => {
+  return str.replace(/([="/>@#]?)#([a-zA-Z0-9_]+)/g, (match, prefix, tag) => {
+    if (prefix) return match
     const url = feedOrigin
       ? `${feedOrigin}/tags/${tag}`
       : `/tag?t=${encodeURIComponent(tag.toLowerCase())}`
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${match}</a>`
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">#${tag}</a>`
   })
 }
 
 // Linkifies @mentions not already inside an <a>.
 export const linkifyMentions = (str, feedOrigin = null) => {
   if (!str) return ''
-  return str.replace(/(?<![="/\w@])@([a-zA-Z0-9_]+)(?:@([a-zA-Z0-9._-]+\.[a-zA-Z]{2,}))?/g, (match, user, instance) => {
+  return str.replace(/([=/"w@]?)@([a-zA-Z0-9_]+)(?:@([a-zA-Z0-9._-]+\.[a-zA-Z]{2,}))?/g, (match, prefix, user, instance) => {
+    if (prefix) return match
     if (instance) return `<a href="https://${instance}/@${user}" target="_blank" rel="noopener noreferrer">${match}</a>`
     if (!feedOrigin) return match
     return `<a href="${feedOrigin}/@${user}" target="_blank" rel="noopener noreferrer">${match}</a>`

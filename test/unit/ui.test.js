@@ -26,7 +26,7 @@ test('UI: getLimitedPosts should handle edge cases', t => {
   const posts = fakeIndex()
   t.is(getLimitedPosts(posts, 100).length, posts.length)
   t.is(getLimitedPosts(posts, 0).length, 0)
-  t.is(getLimitedPosts(posts, -1).length, 1)
+  t.is(getLimitedPosts(posts, -1).length, 0)
   t.is(getLimitedPosts([], 5).length, 0)
 })
 

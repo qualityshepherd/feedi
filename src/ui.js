@@ -8,7 +8,7 @@ import {
   archiveTemplate
 } from './templates.js'
 
-export const getLimitedPosts = (posts, limit) => posts.slice(0, limit)
+export const getLimitedPosts = (posts, limit) => posts.slice(0, Math.max(0, limit))
 
 export const postMatchesSearch = (post, searchTerm) => {
   if (!searchTerm) return true
