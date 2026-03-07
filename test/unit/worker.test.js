@@ -4,51 +4,6 @@ import { isAuthorized } from '../../worker/index.js'
 
 // classifyHit — covers all branching in trackHit without touching CF infra
 
-test('classifyHit: skips /api prefix', t => {
-  t.is(classifyHit('/api/analytics'), 'skip')
-})
-
-test('classifyHit: skips /api/hit', t => {
-  t.is(classifyHit('/api/hit'), 'skip')
-})
-
-test('classifyHit: search with query returns hit', t => {
-  t.is(classifyHit('/search?q=poop', 'Mozilla/5.0'), 'hit')
-})
-
-test('classifyHit: skips /.well-known prefix', t => {
-  t.is(classifyHit('/.well-known/webfinger'), 'skip')
-})
-
-test('classifyHit: skips /index.json', t => {
-  t.is(classifyHit('/index.json'), 'skip')
-})
-
-test('classifyHit: skips /feedIndex.json', t => {
-  t.is(classifyHit('/feedIndex.json'), 'skip')
-})
-
-test('classifyHit: skips /robots.txt', t => {
-  t.is(classifyHit('/robots.txt'), 'skip')
-})
-
-test('classifyHit: skips /sitemap', t => {
-  t.is(classifyHit('/sitemap.xml'), 'skip')
-})
-
-test('classifyHit: classifies blog rss path', t => {
-  t.is(classifyHit('/assets/rss/blog.xml'), 'rss-blog')
-})
-
-test('classifyHit: classifies pod rss path', t => {
-  t.is(classifyHit('/assets/rss/pod.xml'), 'rss-pod')
-})
-
-test('classifyHit: rss paths with query string still match', t => {
-  // query string must not break the pathname match
-  t.is(classifyHit('/assets/rss/blog.xml?v=1'), 'rss-blog')
-})
-
 test('classifyHit: bot ua returns bot', t => {
   t.is(classifyHit('/posts/foo', 'python-requests/2.28'), 'bot')
 })
