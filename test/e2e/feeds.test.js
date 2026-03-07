@@ -1,7 +1,7 @@
 import { e2e as test } from '../testpup.js'
 import { locators as $, feediPage } from './feedi.page.js'
 
-test('e2e: should display feeds items', async t => {
+test('e2e: should display feeds', async t => {
   await feediPage(t).goto('feeds')
   t.ok(await t.count($.feedsPost) > 0)
 })

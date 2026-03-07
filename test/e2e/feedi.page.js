@@ -34,12 +34,5 @@ export const feediPage = (t) => ({
 
   currentPath: () => t.eval(() => location.pathname + location.search),
 
-  getLinkTarget: (sel) => t.eval((s) => document.querySelector(s)?.target, sel),
-
-  cmdClick: async (sel) => {
-    await t.waitFor(sel)
-    await t.page.keyboard.down('Meta')
-    await t.page.click(sel)
-    await t.page.keyboard.up('Meta')
-  }
+  getLinkTarget: (sel) => t.eval((s) => document.querySelector(s)?.target, sel)
 })

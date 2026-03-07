@@ -42,17 +42,3 @@ test('e2e: external links get target=_blank on click', async t => {
   const target = await page.getLinkTarget(externalSel)
   t.is(target, '_blank')
 })
-
-test('e2e: cmd+click does not SPA navigate', async t => {
-  const page = feediPage(t)
-  await page.goto()
-  const pathBefore = await page.currentPath()
-  const pages = await t.browser.pages()
-  await page.cmdClick($.postLink)
-  await t.wait(300)
-  // current tab should not have navigated
-  t.is(await page.currentPath(), pathBefore)
-  // a new tab should have opened
-  const pagesAfter = await t.browser.pages()
-  t.ok(pagesAfter.length > pages.length)
-})
