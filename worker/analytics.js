@@ -30,23 +30,6 @@ export const detectPodApp = (ua) => {
   return 'Other'
 }
 
-export const countryFlag = (code) => {
-  if (!code || code === '?') return ''
-  const flag = code.toUpperCase().replace(/./g, c =>
-    String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)
-  )
-  return `<span title="${code}">${flag}</span> `
-}
-
-export const countryFlagWithRegion = (code, region) => {
-  if (!code || code === '?') return ''
-  const flag = code.toUpperCase().replace(/./g, c =>
-    String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)
-  )
-  const label = (region && region !== '?') ? `${region}, ${code}` : code
-  return `<span title="${label}">${flag}</span> `
-}
-
 export const backupKey = (date) => `analytics/${date}.json`
 
 export const freshDay = (date) => ({
@@ -320,6 +303,17 @@ export async function handleAnalytics (req, env, hostname) {
 }
 
 function buildDashboard (allData, days, secret, hostname) {
+  const flag = (code) => {
+    if (!code || code === '?') return ''
+    const f = code.toUpperCase().replace(/./g, c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65))
+    return `<span title="${code}">${f}</span> `
+  }
+  const flagWithRegion = (code, region) => {
+    if (!code || code === '?') return ''
+    const f = code.toUpperCase().replace(/./g, c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65))
+    const label = (region && region !== '?') ? `${region}, ${code}` : code
+    return `<span title="${label}">${f}</span> `
+  }
   const tokenParam = secret ? `&secret=${secret}` : ''
   let totalHits = 0; let totalBots = 0; let totalUniques = 0
   let blogRss = 0; let podRss = 0
@@ -371,7 +365,7 @@ function buildDashboard (allData, days, secret, hostname) {
   const logsHtml = recentHits.slice(0, 100).map(h =>
     '<div class="log-row">' +
     `<span class="log-ts" data-ts="${h.ts}" data-days="${days}"></span>` +
-    `<span class="log-flag">${countryFlagWithRegion(h.country, h.region)}</span>` +
+    `<span class="log-flag">${flagWithRegion(h.country, h.region)}</span>` +
     `<span class="log-city">${h.city || '?'}</span>` +
     `<span class="log-path">${h.path}</span>` +
     '</div>'
@@ -379,7 +373,7 @@ function buildDashboard (allData, days, secret, hostname) {
 
   const bars = (items, isCountry = false) => items.map(([name, count]) =>
     `<div class="bar-wrap" title="${name}">` +
-    `<span class="label">${isCountry ? countryFlag(name) : ''}${name}</span>` +
+    `<span class="label">${isCountry ? flag(name) : ''}${name}</span>` +
     `<div class="bar" style="width:${Math.round(count / (items[0]?.[1] || 1) * 120)}px"></div>` +
     `<span class="count">${count}</span></div>`
   ).join('')

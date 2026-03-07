@@ -12,7 +12,7 @@ test('classifyHit: skips /api/beacon', t => {
   t.is(classifyHit('/api/beacon'), 'skip')
 })
 
-test('classifyHit: search path with query returns hit', t => {
+test('classifyHit: search with query returns hit', t => {
   t.is(classifyHit('/search?q=poop', 'Mozilla/5.0'), 'hit')
 })
 
