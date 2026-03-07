@@ -8,6 +8,14 @@ test('classifyHit: skips /api prefix', t => {
   t.is(classifyHit('/api/analytics'), 'skip')
 })
 
+test('classifyHit: skips /api/beacon', t => {
+  t.is(classifyHit('/api/beacon'), 'skip')
+})
+
+test('classifyHit: search path with query returns hit', t => {
+  t.is(classifyHit('/search?q=poop', 'Mozilla/5.0'), 'hit')
+})
+
 test('classifyHit: skips /.well-known prefix', t => {
   t.is(classifyHit('/.well-known/webfinger'), 'skip')
 })

@@ -106,22 +106,38 @@ const routeHandlers = {
   }
 }
 
+let isInitialLoad = true
+
 export function handleRouting () {
   const { route, params } = getRouteParams()
   setSearchTerm('')
+
+  // tell the worker about SPA navigation — worker is blind to client-side route changes
+  // skip initial load since the worker already tracked that request directly
+  if (!isInitialLoad && route !== '/search') {
+    navigator.sendBeacon('/api/beacon?path=' + encodeURIComponent(location.pathname + location.search))
+  }
+  isInitialLoad = false
 
   const resolvedRoute = route.startsWith('/posts/') ? ROUTES.POST : route
   const handler = routeHandlers[resolvedRoute] || routeHandlers.default
   handler({ params })
 }
 
+let searchBeaconTimer = null
+
 export function handleSearch (e) {
   const searchValue = e.target.value.toLowerCase()
   setSearchTerm(searchValue)
 
   if (searchValue) {
-    history.replaceState(null, '', '/search?q=' + encodeURIComponent(e.target.value))
+    history.replaceState(null, '', '/search?q=' + e.target.value)
+    clearTimeout(searchBeaconTimer)
+    searchBeaconTimer = setTimeout(() => {
+      navigator.sendBeacon('/api/beacon?path=' + encodeURIComponent(location.pathname + location.search))
+    }, 1000)
   } else {
+    clearTimeout(searchBeaconTimer)
     history.replaceState(null, '', '/')
   }
 

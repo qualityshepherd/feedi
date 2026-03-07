@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { applyHit, backupKey, buildHit, buildR2Backup, countryFlag, deserializeDay, detectPodApp, freshDay, isBot, serializeDay } from '../../worker/analytics.js'
+import { applyHit, backupKey, buildHit, buildR2Backup, deserializeDay, detectPodApp, freshDay, isBot, serializeDay } from '../../worker/analytics.js'
 
 test('Analytics: isBot detects php probe', t => {
   t.ok(isBot('/wp-login.php'))
@@ -87,16 +87,6 @@ test('Analytics: detectPodApp returns Other for unknown ua', t => {
 
 test('Analytics: detectPodApp returns Other for empty ua', t => {
   t.is(detectPodApp(''), 'Other')
-})
-
-test('Analytics: countryFlag returns span with flag and title', t => {
-  const result = countryFlag('US')
-  t.ok(result.includes('title="US"'))
-  t.ok(result.includes('<span'))
-})
-
-test('Analytics: countryFlag returns empty string for unknown', t => {
-  t.is(countryFlag('?'), '')
 })
 
 test('Backup: backupKey generates correct R2 path', t => {

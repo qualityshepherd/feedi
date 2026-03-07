@@ -245,43 +245,46 @@ export const classifyHit = (path, ua = '') => {
   return 'hit'
 }
 
+const doHit = async (req, env, body) => {
+  const stub = getSiteStub(req, env)
+  const res = await stub.fetch('https://do.local/hit', { method: 'POST', body: JSON.stringify(body) })
+  if (!res.ok) console.error('Analytics DO returned', res.status, 'for', JSON.stringify(body))
+}
+
 export async function trackHit (req, env) {
   if (!config.analytics) return
   const url = new URL(req.url)
-  const path = url.pathname + (url.search || '')
+  // beacon POSTs pass the real SPA path via ?path= since worker can't see client-side navigation
+  const path = url.searchParams.get('path') || (url.pathname + (url.search || ''))
   const ip = req.headers.get('cf-connecting-ip') || ''
   const ua = req.headers.get('user-agent') || ''
   const kind = classifyHit(path, ua)
 
   if (kind === 'skip') return
 
-  if (kind === 'rss-blog' || kind === 'rss-pod') {
-    const stub = getSiteStub(req, env)
-    await stub.fetch('https://do.local/hit', {
-      method: 'POST',
-      body: JSON.stringify({ rss: kind === 'rss-blog' ? 'blog' : 'pod', app: detectPodApp(ua) })
-    })
-    return
-  }
-
-  if (kind === 'bot') {
-    const ipHash = await hashIp(ip)
-    const cacheKey = new Request('https://bot-throttle.local/' + ipHash)
-    const cache = caches.default
-    if (await cache.match(cacheKey)) return
-    await cache.put(cacheKey, new Response('1', { headers: { 'Cache-Control': 'max-age=600' } }))
-    const stub = getSiteStub(req, env)
-    await stub.fetch('https://do.local/hit', { method: 'POST', body: JSON.stringify({ bot: true }) })
-    return
-  }
-
-  const cf = req.cf || {}
-  const ipHash = await hashIp(ip)
-  const hit = buildHit(path, cf, ipHash, req.headers.get('referer') || '')
   try {
-    const stub = getSiteStub(req, env)
-    await stub.fetch('https://do.local/hit', { method: 'POST', body: JSON.stringify(hit) })
-  } catch (err) { console.error('Analytics write failed:', err) }
+    if (kind === 'rss-blog' || kind === 'rss-pod') {
+      await doHit(req, env, { rss: kind === 'rss-blog' ? 'blog' : 'pod', app: detectPodApp(ua) })
+      return
+    }
+
+    if (kind === 'bot') {
+      const ipHash = await hashIp(ip)
+      const cacheKey = new Request('https://bot-throttle.local/' + ipHash)
+      const cache = caches.default
+      if (await cache.match(cacheKey)) return
+      await cache.put(cacheKey, new Response('1', { headers: { 'Cache-Control': 'max-age=600' } }))
+      await doHit(req, env, { bot: true })
+      return
+    }
+
+    const cf = req.cf || {}
+    const ipHash = await hashIp(ip)
+    const hit = buildHit(path, cf, ipHash, req.headers.get('referer') || '')
+    await doHit(req, env, hit)
+  } catch (err) {
+    console.error('Analytics trackHit failed', kind, path, err)
+  }
 }
 
 export async function handleAnalytics (req, env, hostname) {
@@ -365,16 +368,9 @@ function buildDashboard (allData, days, secret, hostname) {
     return `<div class="heatmap-cell" style="opacity:${opacity}" title="${label}: ${count}"></div>`
   }).join('')
 
-  const fmtTs = (ts) => {
-    const d = new Date(ts)
-    const date = days > 1 ? d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' : ''
-    const time = d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
-    return date + time
-  }
-
   const logsHtml = recentHits.slice(0, 100).map(h =>
     '<div class="log-row">' +
-    `<span class="log-ts">${fmtTs(h.ts)}</span>` +
+    `<span class="log-ts" data-ts="${h.ts}" data-days="${days}"></span>` +
     `<span class="log-flag">${countryFlagWithRegion(h.country, h.region)}</span>` +
     `<span class="log-city">${h.city || '?'}</span>` +
     `<span class="log-path">${h.path}</span>` +
@@ -456,5 +452,13 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
 <h2>top referrers</h2><div>${bars(topRefs)}</div>
 ${topPodApps.length ? `<h2>🎙️ podcast apps</h2><div>${bars(topPodApps)}</div>` : ''}
 ${logsHtml ? `<h2>recent hits</h2><div>${logsHtml}</div>` : ''}
-</div></body></html>`
+</div>
+<script>
+document.querySelectorAll('.log-ts[data-ts]').forEach(el => {
+  const ts = parseInt(el.dataset.ts)
+  const d = new Date(ts)
+  const date = parseInt(el.dataset.days) > 1 ? d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' : ''
+  el.textContent = date + d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
+})
+</script></body></html>`
 }

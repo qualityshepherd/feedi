@@ -19,7 +19,6 @@
     "rss:sitemap": "node ./gen/genr8Sitemap.js",
     "start": "npm run build:index && npm run build:feeds && npm run rss:blog && npm run rss:pod && npm run rss:sitemap",
     "test": "start-server-and-test server http://localhost:4242 \"node --test --test-reporter spec test/**/*.test.js\"",
-    "test:unit": "node --test --test-reporter spec test/unit/**/*.test.js",
     "test:e2e": "start-server-and-test server http://localhost:4242 \"node --test --test-concurrency=4 --test-reporter spec test/e2e/**/*.test.js\"",
     "test:debug": "HEADLESS=0 SLOWMO=100 start-server-and-test server http://localhost:4242 \"node --test --test-reporter spec test/e2e/**/*.test.js\"",
     "server": "npm start && sirv . --port 4242 --single --quiet",
@@ -28,10 +27,11 @@
     "pretty": "standard --fix"
   },
   "devDependencies": {
-    "sirv-cli": "^3.0.0",
     "puppeteer": "^24.3.1",
+    "sirv-cli": "^3.0.0",
     "standard": "^17.1.2",
-    "start-server-and-test": "^2.0.12"
+    "start-server-and-test": "^2.0.12",
+    "wrangler": "^4.71.0"
   },
   "dependencies": {
     "marked": "^15.0.12"
