@@ -254,11 +254,8 @@ test('buildR2Backup: returns null when nothing stored', t => {
 // Regression: alarm at midnight must save YESTERDAY not an empty freshDay.
 test('buildR2Backup regression: saves stored data not a fresh day', t => {
   const yesterday = '2026-03-05'
-  const day = freshDay(yesterday)
-  const hit = buildHit('/', { country: 'DE' }, 'abc')
-  const { day: withHit, uniques } = applyHit(day, new Set(), hit)
+  const { day: withHit, uniques } = applyHit(freshDay(yesterday), new Set(), buildHit('/', { country: 'DE' }, 'abc'))
   const stored = serializeDay(withHit, uniques)
-
   const backup = buildR2Backup(stored)
   t.ok(backup !== null)
   t.is(backup.key, `analytics/${yesterday}.json`)
