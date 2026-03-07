@@ -20,13 +20,12 @@ export default {
       return handleAnalytics(req, env, url.hostname)
     }
 
-    // SPA beacon — client sends real path via ?path= since worker can't see client-side navigation
     if (path === '/api/hit' && req.method === 'POST') {
       ctx.waitUntil(trackHit(req, env))
-      return new Response(null, { status: 204 })
+      return new Response('ok')
     }
 
-    // Fire analytics in background
+    // Fire analytics in background for initial page loads
     ctx.waitUntil(trackHit(req, env))
 
     return env.ASSETS.fetch(req)

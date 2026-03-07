@@ -12,23 +12,12 @@ const BOT_PATHS = ['.aws', '.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlr
   'v2/_catalog', 'v2/api-docs', 'v3/api-docs', 'trace.axd',
   '@vite', '.vscode', '.DS_Store', 'META-INF', 'pom.properties',
   'ediscovery', 'ecp/Current', 'https%3A']
-const RSS_PATHS = ['/assets/rss/blog.xml', '/assets/rss/pod.xml']
 const BOT_UAS = ['python', 'curl', 'wget', 'go-http', 'libwww', 'node-fetch', 'axios', 'urllib']
 
 export const isBot = (path, ua = '') =>
   BOT_PATHS.some(p => path.toLowerCase().includes(p)) ||
   SKIP_EXTENSIONS.some(e => path.toLowerCase().split('?')[0].endsWith(e)) ||
   BOT_UAS.some(b => ua.toLowerCase().includes(b))
-
-export const detectPodApp = (ua) => {
-  if (ua.includes('Overcast')) return 'Overcast'
-  if (ua.includes('PocketCasts')) return 'Pocket Casts'
-  if (ua.includes('Spotify')) return 'Spotify'
-  if (ua.includes('AppleCoreMedia')) return 'Apple Podcasts'
-  if (ua.includes('Castro')) return 'Castro'
-  if (ua.includes('Downcast')) return 'Downcast'
-  return 'Other'
-}
 
 export const countryFlag = (code) => {
   if (!code || code === '?') return ''
@@ -60,11 +49,7 @@ export const freshDay = (date) => ({
   byCountry: {},
   byCity: {},
   byReferrer: {},
-  recentHits: [],
-  rss: {
-    blog: { total: 0, byApp: {} },
-    pod: { total: 0, byApp: {} }
-  }
+  recentHits: []
 })
 
 export const buildHit = (path, cf = {}, ipHash, referrer = '', ts = Date.now()) => ({
@@ -103,13 +88,6 @@ export const applyHit = (day, uniques, hit) => {
 
   if (hit.bot) {
     next.bots++
-    return { day: next, uniques: nextUniques }
-  }
-
-  if (hit.rss) {
-    const feed = hit.rss === 'blog' ? next.rss.blog : next.rss.pod
-    feed.total++
-    if (hit.app) feed.byApp[hit.app] = (feed.byApp[hit.app] || 0) + 1
     return { day: next, uniques: nextUniques }
   }
 
@@ -236,11 +214,10 @@ export class AnalyticsDO {
 }
 
 // Pure: classifies a request path+ua into what kind of hit it is.
-// Returns 'skip' | 'rss-blog' | 'rss-pod' | 'bot' | 'hit'
+// Returns 'skip' | 'bot' | 'hit'
 export const classifyHit = (path, ua = '') => {
   if (SKIP_PATHS.some(p => path.startsWith(p))) return 'skip'
   const pathname = path.split('?')[0]
-  if (RSS_PATHS.includes(pathname)) return pathname.includes('blog') ? 'rss-blog' : 'rss-pod'
   if (isBot(path, ua)) return 'bot'
   return 'hit'
 }
@@ -248,21 +225,12 @@ export const classifyHit = (path, ua = '') => {
 export async function trackHit (req, env) {
   if (!config.analytics) return
   const url = new URL(req.url)
-  const path = url.pathname + (url.search || '')
+  const path = url.searchParams.get('path') || (url.pathname + (url.search || ''))
   const ip = req.headers.get('cf-connecting-ip') || ''
   const ua = req.headers.get('user-agent') || ''
   const kind = classifyHit(path, ua)
 
   if (kind === 'skip') return
-
-  if (kind === 'rss-blog' || kind === 'rss-pod') {
-    const stub = getSiteStub(req, env)
-    await stub.fetch('https://do.local/hit', {
-      method: 'POST',
-      body: JSON.stringify({ rss: kind === 'rss-blog' ? 'blog' : 'pod', app: detectPodApp(ua) })
-    })
-    return
-  }
 
   if (kind === 'bot') {
     const ipHash = await hashIp(ip)
@@ -319,10 +287,8 @@ export async function handleAnalytics (req, env, hostname) {
 function buildDashboard (allData, days, secret, hostname) {
   const tokenParam = secret ? `&secret=${secret}` : ''
   let totalHits = 0; let totalBots = 0; let totalUniques = 0
-  let blogRss = 0; let podRss = 0
   const byPath = {}; const byCountry = {}; const byReferrer = {}
   const byHour = Array(24).fill(0); const byDow = Array(7).fill(0)
-  const podApps = {}; const blogApps = {}
   const recentHits = []
 
   for (const { data } of allData) {
@@ -330,15 +296,11 @@ function buildDashboard (allData, days, secret, hostname) {
     totalHits += data.totalHits || 0
     totalBots += data.bots || 0
     totalUniques += data.uniques || 0
-    blogRss += data.rss?.blog?.total || 0
-    podRss += data.rss?.pod?.total || 0
     for (const [k, v] of Object.entries(data.byPath || {})) byPath[k] = (byPath[k] || 0) + v
     for (const [k, v] of Object.entries(data.byCountry || {})) byCountry[k] = (byCountry[k] || 0) + v
     for (const [k, v] of Object.entries(data.byReferrer || {})) byReferrer[k] = (byReferrer[k] || 0) + v
     ;(data.byHour || []).forEach((c, i) => { byHour[i] += c })
     ;(data.byDow || []).forEach((c, i) => { byDow[i] += c })
-    for (const [k, v] of Object.entries(data.rss?.pod?.byApp || {})) podApps[k] = (podApps[k] || 0) + v
-    for (const [k, v] of Object.entries(data.rss?.blog?.byApp || {})) blogApps[k] = (blogApps[k] || 0) + v
     recentHits.push(...(data.recentHits || []))
   }
 
@@ -347,8 +309,6 @@ function buildDashboard (allData, days, secret, hostname) {
   const topPaths = Object.entries(byPath).sort((a, b) => b[1] - a[1]).slice(0, 20)
   const topCountries = Object.entries(byCountry).sort((a, b) => b[1] - a[1]).slice(0, 10)
   const topRefs = Object.entries(byReferrer).sort((a, b) => b[1] - a[1]).slice(0, 10)
-  const topPodApps = Object.entries(podApps).sort((a, b) => b[1] - a[1])
-  const topBlogApps = Object.entries(blogApps).sort((a, b) => b[1] - a[1])
 
   const maxHour = Math.max(...byHour, 1)
   const maxDow = Math.max(...byDow, 1)
@@ -431,8 +391,6 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
   <div><strong>${totalUniques}</strong><span>unique</span></div>
   <div><strong>${allData.length}</strong><span>days</span></div>
   <div><strong>${totalBots}</strong><span>🤖 bots</span></div>
-  <div><strong>${blogRss}</strong><span>📡 rss${topBlogApps.length ? ' · ' + topBlogApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>
-  <div><strong>${podRss}</strong><span>🎙️ podcast${topPodApps.length ? ' · ' + topPodApps.slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ') : ''}</span></div>
 </div>
 <div class="maps">
   <div>
@@ -447,11 +405,10 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
 <h2>top pages</h2><div>${bars(topPaths)}</div>
 <h2>top countries</h2><div>${bars(topCountries, true)}</div>
 <h2>top referrers</h2><div>${bars(topRefs)}</div>
-${topPodApps.length ? `<h2>🎙️ podcast apps</h2><div>${bars(topPodApps)}</div>` : ''}
 ${logsHtml ? `<h2>recent hits</h2><div>${logsHtml}</div>` : ''}
 </div><script>
 (function(){
-  const multi = document.querySelectorAll('.days-nav a.active')[0]?.href.includes('days=1') === false;
+  const multi = document.querySelector('.days-nav a.active')?.href.includes('days=1') === false
   document.querySelectorAll('.log-ts[data-ts]').forEach(el => {
     const d = new Date(+el.dataset.ts)
     const date = multi ? d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' : ''
