@@ -1,5 +1,5 @@
 import { e2e as test } from '../testpup.js'
-import { locators as $, feediPage } from './pages/feedi.page.js'
+import { locators as $, feediPage } from './feedi.page.js'
 
 test('e2e: should search for post', async t => {
   await feediPage(t).goto()

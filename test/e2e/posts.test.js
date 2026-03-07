@@ -1,5 +1,5 @@
 import { e2e as test } from '../testpup.js'
-import { locators as $, feediPage } from './pages/feedi.page.js'
+import { locators as $, feediPage } from './feedi.page.js'
 import { readSiteIndex } from '../../src/state.js'
 
 const BASE = process.env.TEST_ENV || 'http://localhost:4242'

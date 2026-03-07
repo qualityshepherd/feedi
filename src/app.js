@@ -22,6 +22,7 @@ function setEventListeners () {
   document.addEventListener('click', (e) => {
     const a = e.target.closest('a')
     if (!a || !a.href) return
+    if (a.hasAttribute('download') || a.hash || e.metaKey || e.ctrlKey || a.target === '_blank') return
 
     const url = new URL(a.href)
     if (url.origin !== location.origin) {
