@@ -263,7 +263,9 @@ export async function trackHit (req, env) {
 
     const cf = req.cf || {}
     const ipHash = await hashIp(ip)
-    const hit = buildHit(path, cf, ipHash, req.headers.get('referer') || '')
+    const referer = req.headers.get('referer') || ''
+    const selfRef = referer && new URL(referer).hostname === new URL(req.url).hostname
+    const hit = buildHit(path, cf, ipHash, selfRef ? '' : referer)
     await doHit(req, env, hit)
   } catch (err) {
     console.error('Analytics trackHit failed', kind, path, err)
