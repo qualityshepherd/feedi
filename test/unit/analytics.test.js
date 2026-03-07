@@ -100,7 +100,7 @@ test('Analytics: countryFlag returns empty string for unknown', t => {
 })
 
 test('Backup: backupKey generates correct R2 path', t => {
-  t.is(backupKey('2026-03-01'), 'feedi-backups/analytics-2026-03-01.json')
+  t.is(backupKey('2026-03-01'), 'analytics/2026-03-01.json')
 })
 
 test('buildHit: has region field', t => {
@@ -265,7 +265,7 @@ test('buildR2Backup: uses stored date (yesterday) not today', t => {
   const yesterday = '2026-03-05'
   const stored = serializeDay(freshDay(yesterday), new Set(['ip1']))
   const backup = buildR2Backup(stored)
-  t.is(backup.key, `feedi-backups/analytics-${yesterday}.json`)
+  t.is(backup.key, `analytics/${yesterday}.json`)
 })
 
 test('buildR2Backup: data contains the actual hits from stored day', t => {
@@ -290,7 +290,7 @@ test('buildR2Backup: data includes uniques array (not Set, JSON-safe)', t => {
 test('buildR2Backup: key is correct R2 path format', t => {
   const stored = serializeDay(freshDay('2026-01-15'), new Set())
   const backup = buildR2Backup(stored)
-  t.is(backup.key, 'feedi-backups/analytics-2026-01-15.json')
+  t.is(backup.key, 'analytics/2026-01-15.json')
 })
 
 // Regression: alarm at midnight must save YESTERDAY not an empty freshDay.

@@ -24,5 +24,21 @@ export default {
     ctx.waitUntil(trackHit(req, env))
 
     return env.ASSETS.fetch(req)
+  },
+
+  async scheduled (event, env, ctx) {
+    // Safety net: if the DO alarm misfired, force a backup via cron
+    ctx.waitUntil((async () => {
+      try {
+        const hostname = new URL(`https://${env.ASSETS_HOST || 'feedi.brine.dev'}`).hostname
+        const id = env.ANALYTICS.idFromName(hostname)
+        const stub = env.ANALYTICS.get(id)
+        // Trigger alarm manually by calling the DO's alarm via a sentinel hit
+        // that reschedules if needed
+        await stub.fetch('https://do.local/ensureAlarm', { method: 'POST' })
+      } catch (err) {
+        console.error('Scheduled alarm check failed:', err)
+      }
+    })())
   }
 }

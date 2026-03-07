@@ -47,7 +47,7 @@ export const countryFlagWithRegion = (code, region) => {
   return `<span title="${label}">${flag}</span> `
 }
 
-export const backupKey = (date) => `feedi-backups/analytics-${date}.json`
+export const backupKey = (date) => `analytics/${date}.json`
 
 export const freshDay = (date) => ({
   date,
@@ -92,7 +92,8 @@ const getSiteStub = (req, env) => {
 
 const nextMidnight = () => {
   const d = new Date()
-  d.setUTCHours(24, 0, 0, 0)
+  d.setUTCDate(d.getUTCDate() + 1)
+  d.setUTCHours(0, 0, 0, 0)
   return d.getTime()
 }
 
@@ -189,6 +190,10 @@ export class AnalyticsDO {
       await this._save(applyHit(state.day, state.uniques, hit))
       return new Response('ok')
     }
+    if (req.method === 'POST' && url.pathname === '/ensureAlarm') {
+      await this._ensureAlarm()
+      return new Response('ok')
+    }
     if (req.method === 'GET' && url.pathname === '/today') {
       const { day } = await this._load()
       return new Response(JSON.stringify(day), { headers: { 'Content-Type': 'application/json' } })
@@ -197,16 +202,35 @@ export class AnalyticsDO {
   }
 
   async alarm () {
+    console.log('Analytics backup alarm fired')
     // Read raw storage — _load() guards on today's date and would return an empty
     // freshDay at midnight when stored.date is still yesterday, losing all data.
     const stored = await this.state.storage.get('today')
-    const backup = buildR2Backup(stored)
-    if (backup && this.env.R2) {
-      await this.env.R2.put(backup.key, backup.data, {
-        httpMetadata: { contentType: 'application/json' }
-      })
+    if (!stored) {
+      console.log('No analytics data to back up')
+      await this.state.storage.setAlarm(nextMidnight())
+      return
     }
-    await this._save({ day: freshDay(todayStr()), uniques: new Set() })
+    const backup = buildR2Backup(stored)
+    if (!this.env.R2) {
+      console.error('R2 binding missing — skipping backup')
+      await this.state.storage.setAlarm(nextMidnight())
+      return
+    }
+    if (backup) {
+      try {
+        await this.env.R2.put(backup.key, backup.data, {
+          httpMetadata: { contentType: 'application/json' }
+        })
+      } catch (err) {
+        console.error('R2 backup failed — keeping DO storage, will retry next alarm:', err)
+        await this.state.storage.setAlarm(nextMidnight())
+        return
+      }
+    }
+    const nextDate = new Date(stored.date)
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1)
+    await this._save({ day: freshDay(nextDate.toISOString().slice(0, 10)), uniques: new Set() })
     await this.state.storage.setAlarm(nextMidnight())
   }
 }
