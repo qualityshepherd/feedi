@@ -11,7 +11,7 @@ import {
   aggregateFeeds
 } from '../../gen/feedParser.js'
 
-// -- fixtures --
+// fixtures
 
 const rssXml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -48,7 +48,7 @@ const atomXml = `<?xml version="1.0" encoding="UTF-8"?>
 
 const feedConfig = { url: 'https://example.com/feed.xml' }
 
-// -- extractTag --
+// extractTag
 
 test('FeedParser: extractTag returns tag content', t => {
   t.is(extractTag('<title>Hello</title>', 'title'), 'Hello')
@@ -63,7 +63,7 @@ test('FeedParser: extractTag handles multiline content', t => {
   t.is(extractTag(xml, 'description'), 'some text')
 })
 
-// -- extractCdata --
+// extractCdata
 
 test('FeedParser: extractCdata strips CDATA wrapper', t => {
   t.is(extractCdata('<![CDATA[Hello World]]>'), 'Hello World')
@@ -77,7 +77,7 @@ test('FeedParser: extractCdata handles html inside CDATA', t => {
   t.is(extractCdata('<![CDATA[<p>Hello</p>]]>'), '<p>Hello</p>')
 })
 
-// -- extractAttr --
+// extractAttr
 
 test('FeedParser: extractAttr returns attribute value', t => {
   t.is(extractAttr('<link href="https://example.com"/>', 'link', 'href'), 'https://example.com')
@@ -87,7 +87,7 @@ test('FeedParser: extractAttr returns empty string when attr missing', t => {
   t.is(extractAttr('<link/>', 'link', 'href'), '')
 })
 
-// -- isAtom --
+// isAtom
 
 test('FeedParser: isAtom detects atom feed by xmlns', t => {
   t.ok(isAtom(atomXml))
@@ -97,7 +97,7 @@ test('FeedParser: isAtom returns false for rss', t => {
   t.falsy(isAtom(rssXml))
 })
 
-// -- parseFeedTitle --
+// parseFeedTitle
 
 test('FeedParser: parseFeedTitle extracts title from rss', t => {
   t.is(parseFeedTitle(rssXml), 'Test Blog')
@@ -107,7 +107,7 @@ test('FeedParser: parseFeedTitle extracts title from atom', t => {
   t.is(parseFeedTitle(atomXml), 'Atom Blog')
 })
 
-// -- parseFeed (RSS) --
+// parseFeed (RSS)
 
 test('FeedParser: parseFeed returns correct number of rss items', t => {
   const posts = parseFeed(rssXml, feedConfig)
@@ -140,7 +140,7 @@ test('FeedParser: parseFeed rss item author is empty string when missing', t => 
   t.is(second.author, '')
 })
 
-// -- parseFeed (Atom) --
+// parseFeed (Atom)
 
 test('FeedParser: parseFeed returns atom entries', t => {
   const posts = parseFeed(atomXml, { url: 'https://example.com/atom.xml' })
@@ -162,7 +162,7 @@ test('FeedParser: parseFeed atom entry extracts author name', t => {
   t.is(first.author, 'John Smith')
 })
 
-// -- limitFeed --
+// limitFeed
 
 test('FeedParser: limitFeed slices to given limit', t => {
   const posts = Array.from({ length: 15 }, (_, i) => ({ title: `Post ${i}` }))
@@ -185,7 +185,7 @@ test('FeedParser: limitFeed does not mutate original', t => {
   t.is(posts.length, 5)
 })
 
-// -- sortByDate --
+// sortByDate
 
 test('FeedParser: sortByDate sorts newest first', t => {
   const posts = [
@@ -208,7 +208,7 @@ test('FeedParser: sortByDate does not mutate original', t => {
   t.deepEqual(posts, original)
 })
 
-// -- aggregateFeeds --
+// aggregateFeeds
 
 test('FeedParser: aggregateFeeds combines posts from multiple feeds', t => {
   const feedResults = [

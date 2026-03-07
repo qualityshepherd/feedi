@@ -30,6 +30,7 @@ function puppeteerDsl (t, page, browser) {
     wait: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
     waitFor: (sel) => page.waitForSelector(sel),
     waitForNav: (opts) => page.waitForNavigation({ waitUntil: 'networkidle2', ...opts }),
+    refresh: () => page.reload({ waitUntil: 'networkidle0', timeout: 1000 }),
     type: async (sel, txt) => { await page.waitForSelector(sel); await page.type(sel, txt) },
     waitAndClick: async (sel, opts) => {
       await page.waitForSelector(sel, opts)
