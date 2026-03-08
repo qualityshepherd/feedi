@@ -89,7 +89,16 @@ export const resetDay = (stored) => {
 }
 
 export const applyHit = (day, uniques, hit) => {
-  const next = JSON.parse(JSON.stringify(day))
+  const next = {
+    ...day,
+    byPath: { ...day.byPath },
+    byCountry: { ...day.byCountry },
+    byCity: { ...day.byCity },
+    byReferrer: { ...day.byReferrer },
+    byHour: [...day.byHour],
+    byDow: [...day.byDow],
+    recentHits: [...(day.recentHits || [])]
+  }
   const nextUniques = new Set(uniques)
 
   if (hit.bot) {
@@ -250,6 +259,7 @@ export async function trackHit (req, env) {
   const ip = req.headers.get('cf-connecting-ip') || ''
   const ua = req.headers.get('user-agent') || ''
   const kind = classifyHit(path, ua)
+  if (path.length > 500) return
 
   if (kind === 'skip') return
 
