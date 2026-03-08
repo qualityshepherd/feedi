@@ -42,3 +42,10 @@ test('e2e: external links get target=_blank on click', async t => {
   const target = await page.getLinkTarget(externalSel)
   t.is(target, '_blank')
 })
+
+test('e2e: mobile viewport has no horizontal overflow', async t => {
+  await t.page.setViewport({ width: 375, height: 667 })
+  await t.goto(`${BASE}/feeds`)
+  const overflow = await t.eval(() => document.documentElement.scrollWidth > window.innerWidth)
+  t.is(overflow, false)
+})
