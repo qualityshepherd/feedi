@@ -217,7 +217,7 @@ nav a:hover {
 }
 
 #search:focus {
-  width: 200px;
+  width: min(200px, 45vw);
   outline: none;
 }
 
