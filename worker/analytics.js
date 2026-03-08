@@ -63,23 +63,29 @@ export const buildHit = (path, cf = {}, ipHash, referrer = '', ts = Date.now()) 
   referrer
 })
 
-const todayStr = () => new Date().toISOString().slice(0, 10)
+export const serializeDay = (day, uniques) => ({
+  ...day,
+  _uniqueArr: [...uniques],
+  uniques: uniques.size
+})
 
-const hashIp = async (ip) => {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip))
-  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
+export const deserializeDay = (stored) => {
+  const { _uniqueArr, ...day } = stored
+  return { day, uniques: new Set(_uniqueArr || []) }
 }
 
-const getSiteStub = (req, env) => {
-  const id = env.ANALYTICS.idFromName(new URL(req.url).hostname)
-  return env.ANALYTICS.get(id)
+// Pure: load stored data as-is. Never resets on date change — that's the alarm's job.
+export const loadDay = (stored, today) => {
+  if (stored) return deserializeDay(stored)
+  return { day: freshDay(today || new Date().toISOString().slice(0, 10)), uniques: new Set() }
 }
 
-const nextMidnight = () => {
-  const d = new Date()
-  d.setUTCDate(d.getUTCDate() + 1)
-  d.setUTCHours(0, 0, 0, 0)
-  return d.getTime()
+// Pure: advance to next day. Only called by alarm after backup.
+export const resetDay = (stored) => {
+  const { day } = deserializeDay(stored)
+  const next = new Date(day.date)
+  next.setUTCDate(next.getUTCDate() + 1)
+  return { day: freshDay(next.toISOString().slice(0, 10)), uniques: new Set() }
 }
 
 export const applyHit = (day, uniques, hit) => {
@@ -115,19 +121,7 @@ export const applyHit = (day, uniques, hit) => {
   return { day: next, uniques: nextUniques }
 }
 
-export const serializeDay = (day, uniques) => ({
-  ...day,
-  _uniqueArr: [...uniques],
-  uniques: uniques.size
-})
-
-export const deserializeDay = (stored) => {
-  const { _uniqueArr, ...day } = stored
-  return { day, uniques: new Set(_uniqueArr || []) }
-}
-
-// Pure: builds the R2 backup payload from raw storage (bypasses date guard in _load).
-// Returns { key, data } or null if nothing stored yet.
+// Pure: build R2 backup payload from raw storage.
 export const buildR2Backup = (stored) => {
   if (!stored) return null
   const { day, uniques } = deserializeDay(stored)
@@ -137,21 +131,29 @@ export const buildR2Backup = (stored) => {
   }
 }
 
+const todayStr = () => new Date().toISOString().slice(0, 10)
+
+const hashIp = async (ip) => {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip))
+  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+const getSiteStub = (req, env) => {
+  const id = env.ANALYTICS.idFromName(new URL(req.url).hostname)
+  return env.ANALYTICS.get(id)
+}
+
+const nextMidnight = () => {
+  const d = new Date()
+  d.setUTCDate(d.getUTCDate() + 1)
+  d.setUTCHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
 export class AnalyticsDO {
   constructor (state, env) {
     this.state = state
     this.env = env
-  }
-
-  async _load () {
-    const today = todayStr()
-    const stored = await this.state.storage.get('today')
-    if (stored && stored.date === today) return deserializeDay(stored)
-    return { day: freshDay(today), uniques: new Set() }
-  }
-
-  async _save ({ day, uniques }) {
-    await this.state.storage.put('today', serializeDay(day, uniques))
   }
 
   async _ensureAlarm () {
@@ -162,62 +164,72 @@ export class AnalyticsDO {
   async fetch (req) {
     await this._ensureAlarm()
     const url = new URL(req.url)
+
     if (req.method === 'POST' && url.pathname === '/hit') {
       const hit = await req.json()
-      const state = await this._load()
-      await this._save(applyHit(state.day, state.uniques, hit))
+      const stored = await this.state.storage.get('today')
+      const state = loadDay(stored)
+      const next = applyHit(state.day, state.uniques, hit)
+      await this.state.storage.put('today', serializeDay(next.day, next.uniques))
       return new Response('ok')
     }
+
     if (req.method === 'POST' && url.pathname === '/ensureAlarm') {
       await this._ensureAlarm()
       return new Response('ok')
     }
+
     if (req.method === 'GET' && url.pathname === '/today') {
-      const { day } = await this._load()
+      const stored = await this.state.storage.get('today')
+      const { day } = loadDay(stored)
       return new Response(JSON.stringify(day), { headers: { 'Content-Type': 'application/json' } })
     }
+
     return new Response('not found', { status: 404 })
   }
 
   async alarm () {
-    console.log('Analytics backup alarm fired')
-    // Read raw storage — _load() guards on today's date and would return an empty
-    // freshDay at midnight when stored.date is still yesterday, losing all data.
+    console.log('Analytics alarm fired — backing up and resetting')
     const stored = await this.state.storage.get('today')
+
     if (!stored) {
       console.log('No analytics data to back up')
       await this.state.storage.setAlarm(nextMidnight())
       return
     }
-    const backup = buildR2Backup(stored)
+
     if (!this.env.R2) {
       console.error('R2 binding missing — skipping backup')
       await this.state.storage.setAlarm(nextMidnight())
       return
     }
+
+    const backup = buildR2Backup(stored)
     if (backup) {
       try {
         await this.env.R2.put(backup.key, backup.data, {
           httpMetadata: { contentType: 'application/json' }
         })
+        console.log('Backed up to R2:', backup.key)
       } catch (err) {
-        console.error('R2 backup failed — keeping DO storage, will retry next alarm:', err)
+        console.error('R2 backup failed — retrying next alarm:', err)
         await this.state.storage.setAlarm(nextMidnight())
         return
       }
     }
-    const nextDate = new Date(stored.date)
-    nextDate.setUTCDate(nextDate.getUTCDate() + 1)
-    await this._save({ day: freshDay(nextDate.toISOString().slice(0, 10)), uniques: new Set() })
+
+    // Only reset AFTER successful R2 write
+    const next = resetDay(stored)
+    await this.state.storage.put('today', serializeDay(next.day, next.uniques))
     await this.state.storage.setAlarm(nextMidnight())
+    console.log('Reset to:', next.day.date)
   }
 }
 
-// Pure: classifies a request path+ua into what kind of hit it is.
+// Pure: classifies a request path+ua.
 // Returns 'skip' | 'bot' | 'hit'
 export const classifyHit = (path, ua = '') => {
   if (SKIP_PATHS.some(p => path.startsWith(p))) return 'skip'
-  const pathname = path.split('?')[0]
   if (isBot(path, ua)) return 'bot'
   return 'hit'
 }
@@ -245,7 +257,12 @@ export async function trackHit (req, env) {
 
   const cf = req.cf || {}
   const ipHash = await hashIp(ip)
-  const hit = buildHit(path, cf, ipHash, req.headers.get('referer') || '')
+  const referer = req.headers.get('referer') || ''
+  let referrer = ''
+  try {
+    if (referer && new URL(referer).hostname !== new URL(req.url).hostname) referrer = referer
+  } catch {}
+  const hit = buildHit(path, cf, ipHash, referrer)
   try {
     const stub = getSiteStub(req, env)
     await stub.fetch('https://do.local/hit', { method: 'POST', body: JSON.stringify(hit) })
