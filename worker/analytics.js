@@ -141,18 +141,12 @@ const getSiteStub = (req, env) => {
   return env.ANALYTICS.get(id)
 }
 
-const nextMidnight = (env) => {
-  if (env?.TEST_BACKUP) return Date.now() + 60 * 1000
+const nextMidnight = () => {
   const d = new Date()
   d.setUTCDate(d.getUTCDate() + 1)
   d.setUTCHours(0, 0, 0, 0)
   return d.getTime()
 }
-
-const alarmBackupKey = (env, date) =>
-  env?.TEST_BACKUP
-    ? `analytics/test/${date}-${new Date().toISOString().slice(11, 19).replace(/:/g, '')}.json`
-    : backupKey(date)
 
 export class AnalyticsDO {
   constructor (state, env) {
@@ -162,7 +156,7 @@ export class AnalyticsDO {
 
   async _ensureAlarm () {
     const alarm = await this.state.storage.getAlarm()
-    if (!alarm || this.env.TEST_BACKUP) await this.state.storage.setAlarm(nextMidnight(this.env))
+    if (!alarm) await this.state.storage.setAlarm(nextMidnight())
   }
 
   async fetch (req) {
@@ -178,13 +172,19 @@ export class AnalyticsDO {
       return new Response('ok')
     }
 
+    if (req.method === 'POST' && url.pathname === '/restore') {
+      const data = await req.json()
+      await this.state.storage.put('today', data)
+      return new Response('ok')
+    }
+
     if (req.method === 'POST' && url.pathname === '/ensureAlarm') {
       await this._ensureAlarm()
       return new Response('ok')
     }
 
     if (req.method === 'POST' && url.pathname === '/resetAlarm') {
-      await this.state.storage.setAlarm(nextMidnight(this.env))
+      await this.state.storage.setAlarm(nextMidnight())
       return new Response('ok')
     }
 
@@ -203,34 +203,34 @@ export class AnalyticsDO {
 
     if (!stored) {
       console.log('No analytics data to back up')
-      await this.state.storage.setAlarm(nextMidnight(this.env))
+      await this.state.storage.setAlarm(nextMidnight())
       return
     }
 
     if (!this.env.R2) {
       console.error('R2 binding missing — skipping backup')
-      await this.state.storage.setAlarm(nextMidnight(this.env))
+      await this.state.storage.setAlarm(nextMidnight())
       return
     }
 
     const backup = buildR2Backup(stored)
     if (backup) {
       try {
-        const key = alarmBackupKey(this.env, backup.key.replace('analytics/', '').replace('.json', ''))
-        await this.env.R2.put(key, backup.data, {
+        await this.env.R2.put(backup.key, backup.data, {
           httpMetadata: { contentType: 'application/json' }
         })
-        console.log('Backed up to R2:', key)
+        console.log('Backed up to R2:', backup.key)
       } catch (err) {
         console.error('R2 backup failed — retrying next alarm:', err)
-        await this.state.storage.setAlarm(nextMidnight(this.env))
+        await this.state.storage.setAlarm(nextMidnight())
         return
       }
     }
 
+    // Only reset AFTER successful R2 write
     const next = resetDay(stored)
     await this.state.storage.put('today', serializeDay(next.day, next.uniques))
-    await this.state.storage.setAlarm(nextMidnight(this.env))
+    await this.state.storage.setAlarm(nextMidnight())
     console.log('Reset to:', next.day.date)
   }
 }
@@ -295,13 +295,18 @@ export async function handleAnalytics (req, env, hostname) {
   const result = [{ date: todayData.date, data: todayData }]
 
   if (env.R2) {
+    const promises = []
     for (let i = 1; i < days; i++) {
       const d = new Date()
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().slice(0, 10)
-      const obj = await env.R2.get(backupKey(dateStr))
-      if (obj) result.push({ date: dateStr, data: await obj.json() })
+      promises.push(
+        env.R2.get(backupKey(dateStr))
+          .then(obj => obj ? obj.json().then(data => ({ date: dateStr, data })) : null)
+      )
     }
+    const historical = (await Promise.all(promises)).filter(Boolean)
+    result.push(...historical)
   }
 
   return new Response(JSON.stringify(result, null, 2), { headers: { 'Content-Type': 'application/json' } })
