@@ -1,5 +1,5 @@
 [![Deploy](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml/badge.svg?branch=main)](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml)
-# feedi
+# [feedi](https://feedi.brine.dev)
 Your blog and your RSS reader your podcast host... all on your domain. MACRO blogging: write when you have something to say, read what's worth reading, all in one feed. No algorithm. No platform. No comments.
 If someone you follow in your feed writes a response, you'll see it. That's the whole social model.
 ## what you get
