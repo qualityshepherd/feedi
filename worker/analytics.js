@@ -74,13 +74,13 @@ export const deserializeDay = (stored) => {
   return { day, uniques: new Set(_uniqueArr || []) }
 }
 
-// Pure: load stored data as-is. Never resets on date change — that's the alarm's job.
+// load stored data as-is
 export const loadDay = (stored, today) => {
   if (stored) return deserializeDay(stored)
   return { day: freshDay(today || new Date().toISOString().slice(0, 10)), uniques: new Set() }
 }
 
-// Pure: advance to next day. Only called by alarm after backup.
+// advance to next day
 export const resetDay = (stored) => {
   const { day } = deserializeDay(stored)
   const next = new Date(day.date)
@@ -130,7 +130,7 @@ export const applyHit = (day, uniques, hit) => {
   return { day: next, uniques: nextUniques }
 }
 
-// Pure: build R2 backup payload from raw storage.
+// build R2 backup payload from raw storage.
 export const buildR2Backup = (stored) => {
   if (!stored) return null
   const { day, uniques } = deserializeDay(stored)
@@ -244,7 +244,7 @@ export class AnalyticsDO {
   }
 }
 
-// Pure: classifies a request path+ua.
+// classifies a request path+ua.
 // Returns 'skip' | 'bot' | 'hit'
 export const classifyHit = (path, ua = '') => {
   if (SKIP_PATHS.some(p => path.startsWith(p))) return 'skip'

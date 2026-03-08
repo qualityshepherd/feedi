@@ -1,6 +1,3 @@
-// Pure content processing functions for feed items.
-// All exported for testability.
-
 const decodeEntity = (_, e) => {
   const n = e.toLowerCase()
   if (n === 'amp') return '&'

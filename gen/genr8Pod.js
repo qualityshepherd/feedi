@@ -1,12 +1,7 @@
 import { removeFuturePosts } from '../src/state.js'
 import { promises as fs } from 'fs'
 import config from '../feedi.config.js'
-
-// ── runner ────────────────────────────────────────────────────
-
 import { fileURLToPath } from 'url'
-
-// ── pure functions (exported for testing) ────────────────────
 
 export const extractAudioSrc = (html) => {
   const match = html.match(/<audio.*?src="(.*?)"/)

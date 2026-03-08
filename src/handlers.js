@@ -1,4 +1,3 @@
-/* global location, history */
 import config from '../feedi.config.js'
 import { elements } from './dom.js'
 import {

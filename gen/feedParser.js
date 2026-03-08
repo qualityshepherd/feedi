@@ -1,8 +1,3 @@
-/**
- * Pure feed parsing functions for RSS and Atom.
- * No side effects - safe to import in tests.
- */
-
 export const extractTag = (xml, tag) => {
   const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))
   return match ? match[1].trim() : ''
@@ -25,7 +20,7 @@ export const isAtom = (xml) =>
 export const parseFeedTitle = (xml) =>
   extractCdata(extractTag(xml, 'title'))
 
-// -- RSS --
+// RSS
 
 const splitItems = (xml) => {
   const items = []
@@ -56,7 +51,7 @@ const parseRssItem = (itemXml, feedMeta, isPodcast = false) => {
   }
 }
 
-// -- Atom --
+// Atom
 
 const splitEntries = (xml) => {
   const entries = []
@@ -82,7 +77,7 @@ const parseAtomEntry = (entryXml, feedMeta) => {
   }
 }
 
-// -- Public API --
+// Public API
 
 export const parseFeed = (xml, feedConfig) => {
   const feedMeta = { title: parseFeedTitle(xml), url: feedConfig.url }

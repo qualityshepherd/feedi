@@ -1,4 +1,4 @@
-// We use getters so DOM access is lazy — the actual query happens only when you
+// We use getters so DOM access is lazy; the actual query happens only when you
 // access the property. This helps in tests where document might not be defined (eg. Node)
 export const elements = {
   get main () { return document.querySelector('main') },
