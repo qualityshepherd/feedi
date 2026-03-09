@@ -65,7 +65,7 @@ Run `npm start` to rebuild.
 
 ## analytics
 
-![feedi analytics dashboard](/images/analytics.png)
+![feedi analytics dashboard](/assets/images/analytics.png)
 
 ```
 https://yourdomain.com/api/analytics?token=YOUR_SECRET&days=7
