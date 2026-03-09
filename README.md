@@ -2,19 +2,15 @@
 
 # [feedi](https://feedi.brine.dev)
 
-Your blog, your RSS reader, your podcast host — all on your domain. Write when you have something to say. Read what's worth reading. No algorithm. No platform. No comments. If someone you follow writes a response, you'll see it. That's the whole social model.
+[feedi](https://feedi.brine.dev) is a _mostly_ static blog webap that:
+ - turns your markdown files into a blog
+ - an RSS reader (MANY fediverse apps have an RSS feed; see [/feeds](https://feedi.brine.dev/feeds) for examples)
+ - a podcast host
+ - beautiful analytics
+ - fediverse discoverable via [Bridgy Fed](https://fed.brid.gy), your domain becomes your fedi handle (`@you@yourdomain.com`)
 
-## what you get
+ No algorithm. No platform. No likes. If someone you follow _blogs_ a response, you'll see it. 
 
-**Blog.** Markdown files, deploy on push. Your posts, your domain, your RSS feed.
-
-**Public RSS reader.** Add any feed to `feeds.json` — blogs, fedi accounts, anything with RSS. Your site becomes a public record of what you're paying attention to.
-
-**Analytics that actually work.** Every request hits your Cloudflare Worker on your own domain. uBlock, Brave, Safari ITP — none of it matters. Real numbers: hits, uniques, countries, referrers, hourly heatmap. Bots counted separately. No tracking scripts. Beautiful dashboard.
-
-**Podcast analytics.** Track feed downloads and which app your listeners use — Overcast, Pocket Casts, Apple Podcasts, Spotify, whatever. That data is usually locked behind hosting platforms. Not here.
-
-**Fediverse.** Via [Bridgy Fed](https://fed.brid.gy), your domain becomes your fedi handle (`@you@yourdomain.com`). No Mastodon account needed.
 
 ## requirements
 
