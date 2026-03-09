@@ -5,6 +5,14 @@
 
 [Demo](https://feedi.brine.dev)
 
+feedi turns your domain into:
+
+• a blog
+• an RSS reader
+• a podcast host
+• a Fediverse identity
+• a privacy-friendly analytics dashboard
+
 ## REQUIREMENTS
 - Node.js
 - [Cloudflare](https://cloudflare.com) account (free tier works)
@@ -61,7 +69,6 @@ Edit `feeds.json`:
   { "url": "https://example.com/feed.xml", "limit": 10 }
 ]
 ```
-Run `npm start` to rebuild.
 
 ## ANALYTICS
 
@@ -87,7 +94,6 @@ Your handle: `@you@yourdomain.com`
 ## TESTS
 ```bash
 npm test          # e2e + unit
-npm run test:unit
 ```
 
 MIT · brine
