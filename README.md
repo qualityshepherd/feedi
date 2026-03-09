@@ -33,7 +33,7 @@ wrangler kv namespace create KV
 ```
 Copy the KV namespace `id` into `wrangler.toml`, then:
 ```bash
-wrangler secret put API_SECRET   # your analytics password
+wrangler secret put ADMIN_SECRET   # your analytics password
 wrangler deploy
 ```
 Point your domain at Cloudflare. Done.
@@ -75,7 +75,7 @@ Edit `feeds.json`:
 ![feedi analytics dashboard](/assets/images/analytics.png)
 
 ```
-https://yourdomain.com/api/analytics?token=YOUR_SECRET&days=7
+https://yourdomain.com/api/analytics?secret=YOUR_SECRET&days=7
 ```
 
 ## PODCAST (optional)
@@ -85,11 +85,19 @@ npm run rss:pod
 ```
 
 ## FEDIVERSE (optional)
+feedi uses [Bridgy Fed](https://fed.brid.gy) to bridge your site into the Fediverse. No inbox, no HTTP signatures, no ActivityPub server — just RSS bridged to a Fediverse identity.
+
+Add this to your `index.html` `<head>`:
+```html
+<link rel="me" href="https://fed.brid.gy/yourdomain.com" />
+```
+Then register with Bridgy Fed:
 ```bash
-node gen/genr8Domain.js   # patches your domain into index.html
 curl -X POST https://fed.brid.gy/web/yourdomain.com
 ```
-Your handle: `@you@yourdomain.com`
+Your handle will be `@yourdomain.com@yourdomain.com`. Posts from your RSS feed will appear in followers' timelines automatically.
+
+> Custom handles (eg `@you@yourdomain.com`) are not yet fully supported by Bridgy Fed for web-bridged accounts.
 
 ## TESTS
 ```bash
