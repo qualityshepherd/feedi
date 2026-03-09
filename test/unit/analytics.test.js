@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { applyHit, backupKey, buildHit, buildR2Backup, countryFlag, deserializeDay, freshDay, isBot, loadDay, resetDay, serializeDay } from '../../worker/analytics.js'
+import { applyHit, backupKey, buildHit, buildR2Backup, countryFlag, classifyHit, deserializeDay, freshDay, isBot, loadDay, resetDay, serializeDay } from '../../worker/analytics.js'
 
 // isBot
 test('Analytics: isBot detects php probe', t => { t.ok(isBot('/wp-login.php')) })
@@ -16,6 +16,22 @@ test('Analytics: isBot is case insensitive', t => { t.ok(isBot('/XMLRPC.PHP')) }
 test('Analytics: isBot detects python UA', t => { t.ok(isBot('/', 'python-requests/2.28.0')) })
 test('Analytics: isBot detects curl UA', t => { t.ok(isBot('/', 'curl/7.88.1')) })
 test('Analytics: isBot allows real browser UA', t => { t.falsy(isBot('/', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)')) })
+
+// .DS_Store case-insensitive bug
+test('Analytics: isBot detects .DS_Store anywhere in path', t => { t.ok(isBot('/posts/.DS_Store')) })
+test('Analytics: isBot detects .DS_Store in subdir', t => { t.ok(isBot('/worker/.DS_Store')) })
+test('Analytics: isBot detects .DS_Store mixed case via lowercase path', t => { t.ok(isBot('/assets/.DS_Store')) })
+
+// template literal scraper detection
+test('Analytics: isBot detects unrendered template literal in path', t => { t.ok(isBot('/src/$' + '{url}')) })
+test('Analytics: isBot detects URL-encoded %24%7B template literal', t => { t.ok(isBot('/src/%24%7B')) })
+test('Analytics: isBot detects URL-encoded %7B brace', t => { t.ok(isBot('/src/%7Bavatar%7D')) })
+
+// classifyHit — /src should be skipped entirely, not counted as bot
+test('classifyHit: skips /src paths', t => { t.is(classifyHit('/src/app.js'), 'skip') })
+test('classifyHit: skips /src with subpath', t => { t.is(classifyHit('/src/%24%7Burl%7D'), 'skip') })
+test('classifyHit: normal post is a hit', t => { t.is(classifyHit('/posts/my-post'), 'hit') })
+test('classifyHit: .DS_Store is a bot', t => { t.is(classifyHit('/posts/.DS_Store'), 'bot') })
 
 // countryFlag
 test('Analytics: countryFlag returns span with flag and title', t => {

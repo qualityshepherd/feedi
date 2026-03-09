@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { sanitizeContent, stripHtml, linkifyHashtags, linkifyMentions, processContent } from '../../src/feedRules.js'
+import { sanitizeContent, stripHtml, linkifyHashtags, linkifyMentions, processContent, truncateContent } from '../../src/feedRules.js'
 
 // stripHtml — titles only
 
@@ -196,4 +196,54 @@ test('processContent: handles null feed url', t => {
 test('processContent: returns empty string for falsy', t => {
   t.is(processContent(null), '')
   t.is(processContent(''), '')
+})
+
+// truncateContent
+const longPlain = 'x'.repeat(3001)
+const longHtml = '<p>' + 'x'.repeat(3001) + '</p>'
+
+test('truncateContent: returns content unchanged when under maxLen', t => {
+  const short = '<p>hello world</p>'
+  t.is(truncateContent(short, 'https://example.com'), short)
+})
+
+test('truncateContent: returns empty string for falsy', t => {
+  t.is(truncateContent(null, 'https://example.com'), '')
+  t.is(truncateContent('', 'https://example.com'), '')
+})
+
+test('truncateContent: truncates long plain text and appends read-on link', t => {
+  const result = truncateContent(longPlain, 'https://example.com')
+  t.ok(result.includes('…'))
+  t.ok(result.includes('href="https://example.com"'))
+  t.ok(result.includes('read on site →'))
+})
+
+test('truncateContent: visible text is at or under maxLen', t => {
+  const result = truncateContent(longPlain, null)
+  const visibleLen = result.replace(/….*$/, '').replace(/<[^>]*>/g, '').length
+  t.ok(visibleLen <= 3000)
+})
+
+test('truncateContent: respects custom maxLen', t => {
+  const str = 'x'.repeat(200)
+  const result = truncateContent(str, null, 100)
+  t.ok(result.includes('…'))
+})
+
+test('truncateContent: does not cut inside an HTML tag', t => {
+  const result = truncateContent(longHtml, 'https://example.com')
+  t.falsy(result.match(/<[^>]*$/)) // no dangling open tag
+})
+
+test('truncateContent: read-on link opens in new tab', t => {
+  const result = truncateContent(longPlain, 'https://example.com')
+  t.ok(result.includes('target="_blank"'))
+  t.ok(result.includes('rel="noopener noreferrer"'))
+})
+
+test('truncateContent: no read-on link when url is null', t => {
+  const result = truncateContent(longPlain, null)
+  t.ok(result.includes('…'))
+  t.falsy(result.includes('<a'))
 })
