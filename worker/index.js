@@ -1,4 +1,3 @@
-import { handleWebfinger, handleActor } from './activitypub.js'
 import { trackHit, handleAnalytics, AnalyticsDO } from './analytics.js'
 
 export { AnalyticsDO }
@@ -10,9 +9,6 @@ export default {
   async fetch (req, env, ctx) {
     const url = new URL(req.url)
     const path = url.pathname
-
-    if (path === '/.well-known/webfinger') return handleWebfinger(req)
-    if (path === '/actor') return handleActor()
 
     if (path === '/api/analytics') {
       const secret = url.searchParams.get('secret')
@@ -38,8 +34,6 @@ export default {
         const hostname = new URL(`https://${env.ASSETS_HOST || 'feedi.brine.dev'}`).hostname
         const id = env.ANALYTICS.idFromName(hostname)
         const stub = env.ANALYTICS.get(id)
-        // Trigger alarm manually by calling the DO's alarm via a sentinel hit
-        // that reschedules if needed
         await stub.fetch('https://do.local/ensureAlarm', { method: 'POST' })
       } catch (err) {
         console.error('Scheduled alarm check failed:', err)
