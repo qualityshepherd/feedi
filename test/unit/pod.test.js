@@ -10,7 +10,7 @@
  */
 
 import { unit as test } from '../testpup.js'
-import { validatePodFeed } from '../../gen/genr8Pod.js'
+import { validatePodFeed, escapeXml } from '../../gen/genr8Pod.js'
 import { readFileSync, existsSync } from 'fs'
 
 const POD_XML = './assets/rss/pod.xml'
@@ -63,4 +63,28 @@ test('Pod: W3C feed validator passes', async t => {
     .filter(Boolean)
 
   t.ok(valid, `W3C says invalid:\n${errors.join('\n')}`)
+})
+
+test('escapeXml: escapes ampersand', t => {
+  t.is(escapeXml('D&D'), 'D&amp;D')
+})
+
+test('escapeXml: escapes less-than and greater-than', t => {
+  t.is(escapeXml('<tag>'), '&lt;tag&gt;')
+})
+
+test('escapeXml: escapes double quotes', t => {
+  t.is(escapeXml('"quoted"'), '&quot;quoted&quot;')
+})
+
+test('escapeXml: escapes single quotes', t => {
+  t.is(escapeXml("it's"), 'it&apos;s')
+})
+
+test('escapeXml: leaves clean strings untouched', t => {
+  t.is(escapeXml('hello world'), 'hello world')
+})
+
+test('escapeXml: handles multiple special chars', t => {
+  t.is(escapeXml('D&D <rules> "matter"'), 'D&amp;D &lt;rules&gt; &quot;matter&quot;')
 })

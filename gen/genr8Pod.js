@@ -16,6 +16,13 @@ export const resolveAudioUrl = (src, baseUrl) => {
 export const isRfc2822Date = (str) =>
   /^\w{3}, \d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2} (GMT|UTC|[+-]\d{4}|\w{2,4})$/.test(str.trim())
 
+export const escapeXml = str => str
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&apos;')
+
 export const buildPodItem = (podcast, cfg, length = 0) => {
   const baseUrl = `https://${cfg.domain}`
   const src = extractAudioSrc(podcast.html)
@@ -29,10 +36,10 @@ export const buildPodItem = (podcast, cfg, length = 0) => {
 
   return `
   <item>
-    <title>${podcast.meta.title}</title>
+    <title>${escapeXml(podcast.meta.title)}</title>
     <link>${baseUrl}/posts/${podcast.meta.slug}</link>
     <guid isPermaLink="true">${baseUrl}/posts/${podcast.meta.slug}</guid>
-    <description>${podcast.meta.description || ''}</description>
+    <description>${escapeXml(podcast.meta.description || '')}</description>
     <enclosure url="${audioUrl}" type="audio/mpeg" length="${length}" />
     <pubDate>${pubDate}</pubDate>
     <itunes:image href="${image}" />
@@ -64,9 +71,9 @@ export const buildPodFeed = (podcasts, cfg, lengths = {}) => {
   xmlns:content="http://purl.org/rss/1.0/modules/content/"
   xmlns:atom="http://www.w3.org/2005/Atom">
 <channel>
-  <title>${pod.title}</title>
+  <title>${escapeXml(pod.title)}</title>
   <link>${pod.link}</link>
-  <description>${pod.description}</description>
+  <description>${escapeXml(pod.description)}</description>
   <language>${cfg.podcast?.language || 'en-us'}</language>
   <itunes:image href="${pod.image}" />
   <image>
