@@ -5,12 +5,12 @@
 
 [Demo](https://feedi.brine.dev)
 
-## requirements
+## REQUIREMENTS
 - Node.js
 - [Cloudflare](https://cloudflare.com) account (free tier works)
 - A domain (optional but recommended)
 
-## setup
+## SETUP
 ```bash
 git clone https://github.com/qualityshepherd/feedi
 cd feedi
@@ -37,12 +37,12 @@ wrangler r2 bucket create your-bucket-name
 ```
 Set `r2Bucket` in `feedi.config.js` to match your bucket name, then deploy.
 
-## local dev
+## LOCAL dev
 ```bash
 npm run server   # builds everything, serves at localhost:4242
 ```
 
-## writing posts
+## WRITING posts
 Markdown files in `posts/`. Filename becomes the slug.
 ```markdown
 ---
@@ -54,7 +54,7 @@ Post content here.
 ```
 Future-dated posts are drafts — won't appear until that date.
 
-## adding feeds
+## ADDING feeds
 Edit `feeds.json`:
 ```json
 [
@@ -63,7 +63,7 @@ Edit `feeds.json`:
 ```
 Run `npm start` to rebuild.
 
-## analytics
+## ANALYTICS
 
 ![feedi analytics dashboard](/assets/images/analytics.png)
 
@@ -71,20 +71,20 @@ Run `npm start` to rebuild.
 https://yourdomain.com/api/analytics?token=YOUR_SECRET&days=7
 ```
 
-## podcast (optional)
+## PODCAST (optional)
 Uncomment `podcast` in `feedi.config.js`. Tag posts with `podcast` and include an `<audio>` element pointing to your file. Generate the feed:
 ```bash
 npm run rss:pod
 ```
 
-## fediverse (optional)
+## FEDIVERSE (optional)
 ```bash
 node gen/genr8Domain.js   # patches your domain into index.html
 curl -X POST https://fed.brid.gy/web/yourdomain.com
 ```
 Your handle: `@you@yourdomain.com`
 
-## tests
+## TESTS
 ```bash
 npm test          # e2e + unit
 npm run test:unit
