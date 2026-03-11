@@ -15,7 +15,9 @@ const BOT_PATHS = ['.aws', '.php', '.asp', '.aspx', '.env', '.git', 'wp-', 'xmlr
   '@vite', '.vscode', '.ds_store', 'meta-inf', 'pom.properties',
   'ediscovery', 'ecp/current', 'https%3a',
   '${', '%7b', '%24']
-const BOT_UAS = ['python', 'curl', 'wget', 'go-http', 'libwww', 'node-fetch', 'axios', 'urllib']
+const BOT_UAS = ['python', 'curl', 'wget', 'go-http', 'libwww', 'node-fetch', 'axios',
+  'urllib', 'headless', 'phantom', 'crawler', 'spider', 'bot', 'preview', 'linkexpander',
+  'facebookexternalhit', 'twitterbot', 'slackbot', 'discordbot']
 
 // Datacenter ASNs — real readers don't come from these networks
 const BOT_ASNS = new Set([
@@ -148,7 +150,7 @@ export const applyHit = (day, uniques, hit) => {
   next.recentHits = [
     { ts: hit.ts, path: hit.path, country: hit.country, region: hit.region, city: hit.city },
     ...(next.recentHits || [])
-  ].slice(0, 100)
+  ].slice(0, 420)
 
   return { day: next, uniques: nextUniques }
 }
