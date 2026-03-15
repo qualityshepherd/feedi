@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { applyHit, backupKey, buildHit, buildR2Backup, countryFlag, classifyHit, deserializeDay, freshDay, isBot, loadDay, resetDay, serializeDay } from '../../worker/analytics.js'
+import { applyHit, backupKey, buildHit, buildR2Backup, countryFlag, classifyHit, deserializeDay, freshDay, historicalDates, isBot, loadDay, resetDay, serializeDay } from '../../worker/analytics.js'
 
 // isBot
 test('Analytics: isBot detects php probe', t => { t.ok(isBot('/wp-login.php')) })
@@ -220,13 +220,19 @@ test('applyHit: bot hits without path use ?', t => {
 test('applyHit: bot hits increment byPathBots with asn', t => {
   const { day } = applyHit(freshDay('2026-03-03'), new Set(), { bot: true, path: '/mcp', asn: 16509, ts: Date.now() })
   t.is(day.byPathBots['/mcp'].count, 1)
-  t.is(day.byPathBots['/mcp'].asn, 16509)
+  t.deepEqual(day.byPathBots['/mcp'].asns, [16509])
 })
 test('applyHit: byPathBots accumulates count across multiple bot hits on same path', t => {
   const hit = { bot: true, path: '/mcp', asn: 16509, ts: Date.now() }
   const r1 = applyHit(freshDay('2026-03-03'), new Set(), hit)
   const { day } = applyHit(r1.day, r1.uniques, hit)
   t.is(day.byPathBots['/mcp'].count, 2)
+  t.is(day.byPathBots['/mcp'].asns.length, 1) // same asn, deduped
+})
+test('applyHit: byPathBots collects multiple unique asns', t => {
+  const r1 = applyHit(freshDay('2026-03-03'), new Set(), { bot: true, path: '/mcp', asn: 16509, ts: Date.now() })
+  const { day } = applyHit(r1.day, r1.uniques, { bot: true, path: '/mcp', asn: 14061, ts: Date.now() })
+  t.deepEqual(day.byPathBots['/mcp'].asns.sort(), [14061, 16509])
 })
 test('applyHit: real hits do not increment byPathBots', t => {
   const { day } = applyHit(freshDay('2026-03-03'), new Set(), buildHit('/mcp', {}, 'ip1'))
@@ -293,4 +299,33 @@ test('buildR2Backup regression: stored date differs from today — saves stored 
   t.ok(backup !== null)
   t.ok(backup.key.includes(yesterday))
   t.is(JSON.parse(backup.data).totalHits, 1) // not 0
+})
+
+// historicalDates — UTC date stepping for R2 key generation
+test('historicalDates: returns days-1 entries', t => {
+  const now = new Date('2026-03-15T10:00:00Z')
+  t.is(historicalDates(7, now).length, 6)
+})
+
+test('historicalDates: first entry is yesterday in UTC', t => {
+  const now = new Date('2026-03-15T10:00:00Z')
+  t.is(historicalDates(7, now)[0], '2026-03-14')
+})
+
+test('historicalDates: steps back correctly across month boundary', t => {
+  const now = new Date('2026-04-01T10:00:00Z')
+  const dates = historicalDates(3, now)
+  t.is(dates[0], '2026-03-31')
+  t.is(dates[1], '2026-03-30')
+})
+
+test('historicalDates: does not drift at UTC midnight boundary', t => {
+  // 23:30 UTC — local time in UTC-8 would be previous day, causing off-by-one with setDate
+  const now = new Date('2026-03-15T23:30:00Z')
+  t.is(historicalDates(2, now)[0], '2026-03-14')
+})
+
+test('historicalDates: days=1 returns empty (today only, no history)', t => {
+  const now = new Date('2026-03-15T10:00:00Z')
+  t.is(historicalDates(1, now).length, 0)
 })
