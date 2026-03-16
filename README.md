@@ -104,4 +104,4 @@ Your handle will be `@yourdomain.com@yourdomain.com`. Posts from your RSS feed w
 npm test          # e2e + unit
 ```
 
-MIT · brine
+AGPL · brine
