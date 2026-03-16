@@ -11,6 +11,9 @@ binding = "ASSETS"
 binding = "KV"
 id = "31af68a490ad48a2a5a92248ca0cf957"
 
+[vars]
+DOMAIN_NAME = "feedi.brine.dev"
+
 [[durable_objects.bindings]]
 name = "ANALYTICS"
 class_name = "AnalyticsDO"
