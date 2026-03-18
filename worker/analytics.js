@@ -11,8 +11,8 @@ const SKIP_EXTENSIONS = [
 ]
 
 const BOT_PREFIXES = [
-  '/account/', '/bak/', '/back/', '/billing/', '/checkout', '/cgi-bin/', '/conf.d/',
-  '/donate', '/error/', '/etc/', '/files/', '/file-upload/', '/fileupload/', '/form/',
+  '/account/', '/bak/', '/back/', '/billing/', '/checkout', '/cgi-bin/', '/conf.d/', '/debug/',
+  '/donate', '/error/', '/etc/', '/files/', '/file-upload/', '/fileupload/', '/file-manager/', '/form/',
   '/import/', '/log/', '/login', '/mcp', '/old/', '/opt/', '/order/', '/plans/', '/proc/',
   '/register', '/rest/', '/restore/', '/root/', '/shop/', '/sse', '/storage/', '/subscribe',
   '/upload/', '/v1/', '/v2/', '/v3/', '/var/', '/wallet/', '/webhook/', '/wp-'
@@ -247,11 +247,6 @@ export class AnalyticsDO {
     if (req.method === 'POST' && url.pathname === '/restore') {
       const data = await req.json()
       await this.state.storage.put('today', data)
-      return new Response('ok')
-    }
-
-    if (req.method === 'POST' && url.pathname === '/ensureAlarm') {
-      await this._ensureAlarm()
       return new Response('ok')
     }
 

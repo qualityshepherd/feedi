@@ -1,5 +1,25 @@
 import { unit as test } from '../testpup.js'
-import { getLimitedPosts, postMatchesSearch, renderTags } from '../../src/ui.js'
+import { isSpecialPost, isPod, getLimitedPosts, postMatchesSearch, renderTags } from '../../src/ui.js'
+
+test('UI: isSpecialPost returns true for posts with meta.page = true', t => {
+  t.ok(isSpecialPost({ meta: { page: true, slug: 'about' } }))
+})
+
+test('UI: isSpecialPost returns false for regular posts', t => {
+  t.falsy(isSpecialPost({ meta: { slug: 'my-post' } }))
+})
+
+test('UI: isPod returns true for posts with meta.pod = true', t => {
+  t.ok(isPod({ meta: { pod: true, slug: 'ep1' } }))
+})
+
+test('UI: isPod returns false for regular posts', t => {
+  t.falsy(isPod({ meta: { slug: 'my-post' } }))
+})
+
+test('UI: isPod returns false for pages', t => {
+  t.falsy(isPod({ meta: { page: true, slug: 'about' } }))
+})
 
 function fakeIndex () {
   return [

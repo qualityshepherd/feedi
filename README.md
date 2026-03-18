@@ -1,107 +1,112 @@
 [![Deploy](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml/badge.svg?branch=main)](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml)
 # [feedi](https://feedi.brine.dev)
 
-**feedi** is a _mostly-static_ web app that turns your domain into a blog, an RSS reader, a podcast host and a Fediverse handle. No algorithms. No platforms. $0 monthly hosting. Plus _beautiful_ analytics. 
+Feedi is a blog, RSS reader and podcast host, that runs on Cloudflare Workers' free tier, forever.
+
+_Webring/blogroll 2.0 that brings back Web 1.0_
 
 [Demo](https://feedi.brine.dev)
 
-feedi turns your domain into:
-
-• a blog
-• an RSS reader
-• a podcast host
-• a Fediverse identity
-• a privacy-friendly analytics dashboard
-
-## REQUIREMENTS
+## Requirements
 - Node.js
-- [Cloudflare](https://cloudflare.com) account (free tier works)
-- A domain (optional but recommended)
+- [Cloudflare](https://cloudflare.com) account (free tier works splendidly)
+- A domain/subdomain (optional but recommended)
 
-## SETUP
+## Setup
+
 ```bash
 git clone https://github.com/qualityshepherd/feedi
 cd feedi
 npm install
 ```
+
 Edit `feedi.config.js`: set your `domain`, `title`, `author`. Everything flows from there.
 
-### cloudflare
 ```bash
 wrangler login
 wrangler kv namespace create KV
 ```
+
 Copy the KV namespace `id` into `wrangler.toml`, then:
+
 ```bash
 wrangler secret put ADMIN_SECRET   # your analytics password
+npm start                          # builds everything
 wrangler deploy
 ```
-Point your domain at Cloudflare. Done.
 
-### r2 backups (optional)
-Daily analytics backups. Your data, your bucket, yours forever.
-```bash
-wrangler r2 bucket create your-bucket-name
-```
-Set `r2Bucket` in `feedi.config.js` to match your bucket name, then deploy.
+Add your custom domain on your Cloudflare Worker page and wait for it to propagate. Done.
 
-## LOCAL dev
+## Local dev
+
 ```bash
-npm run server   # builds everything, serves at localhost:4242
+npm run server   # builds and serves at localhost:4242
 ```
 
-## WRITING posts
-Markdown files in `posts/`. Filename becomes the slug.
+## Writing posts
+
+Markdown files go in `posts/`. Filename becomes the slug.
+
 ```markdown
 ---
 title: My Post
 date: 2026-01-01
-tags: [tag1, tag2]
+tags: tag1, tag2
 ---
+
 Post content here.
 ```
-Future-dated posts are drafts — won't appear until that date.
 
-## ADDING feeds
-Edit `feeds.json`:
+Future-dated posts are drafts and won't appear until that date.
+
+## RSS reader
+
+Edit `feeds.json` to add feeds. The worker fetches and caches them hourly. Most anything should work. Limit the number of items to fetch from each feed. Set the maxFeedItems (number of feeds) and contentLength (truncate feed length) in `feedi.config.js`.
+
 ```json
 [
-  { "url": "https://example.com/feed.xml", "limit": 10 }
+  { "url": "https://example.com/feed.xml", "limit": 4 }
 ]
 ```
 
-## ANALYTICS
+## Analytics
+
+Privacy-friendly, no third parties. View at:
+
+```
+https://yourdomain.com/api/analytics?secret=YOUR_SECRET
+```
 
 ![feedi analytics dashboard](/assets/images/analytics.png)
 
-```
-https://yourdomain.com/api/analytics?secret=YOUR_SECRET&days=7
-```
+### R2 backups (optional)
 
-## PODCAST (optional)
-Uncomment `podcast` in `feedi.config.js`. Tag posts with `podcast` and include an `<audio>` element pointing to your file. Generate the feed:
+Daily analytics backups to your own bucket:
+
 ```bash
-npm run rss:pod
+wrangler r2 bucket create your-bucket-name
 ```
 
-## FEDIVERSE (optional)
-feedi uses [Bridgy Fed](https://fed.brid.gy) to bridge your site into the Fediverse. No inbox, no HTTP signatures, no ActivityPub server — just RSS bridged to a Fediverse identity.
+Set `r2Bucket` in `feedi.config.js` to match, then deploy.
 
-Add this to your `index.html` `<head>`:
-```html
-<link rel="me" href="https://fed.brid.gy/yourdomain.com" />
-```
-Then register with Bridgy Fed:
+## Podcast (optional)
+
+Put episode posts in `pods/` instead of `posts/`. Same frontmatter, just add an `<audio>` element pointing to your file. The podcast RSS feed is generated automatically on build and validated by a unit test. 
+
+## Fediverse (optional)
+
+feedi uses [Bridgy Fed](https://fed.brid.gy) to bridge your RSS feed into the Fediverse. No ActivityPub server, no HTTP signatures. The `rel=me` link is stamped into `index.html` at build time from your config.
+
+Register once at [fed.brid.gy](https://fed.brid.gy); enter your domain and follow the prompts.
+
+Your handle: `@yourdomain.com@yourdomain.com`. New posts appear in followers' timelines automatically.
+
+## Tests
+
 ```bash
-curl -X POST https://fed.brid.gy/web/yourdomain.com
+npm test
 ```
-Your handle will be `@yourdomain.com@yourdomain.com`. Posts from your RSS feed will appear in followers' timelines automatically.
 
-> Custom handles (eg `@you@yourdomain.com`) are not yet fully supported by Bridgy Fed for web-bridged accounts.
-
-## TESTS
-```bash
-npm test          # e2e + unit
-```
+------
 
 AGPL · brine

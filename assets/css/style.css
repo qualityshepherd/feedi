@@ -388,6 +388,10 @@ footer {
   background: var(--color-surface-1);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
 }
 
 @media (max-width: 600px) {

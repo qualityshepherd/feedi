@@ -8,7 +8,7 @@ import {
   incrementDisplayedPosts
 } from './state.js'
 import {
-  renderAboutPage,
+  isPod,
   renderArchive,
   renderFilteredPosts,
   renderNotFoundPage,
@@ -21,10 +21,10 @@ import { loadAndRenderFeeds, getCachedFeeds, renderFeedsItems } from './feeds.js
 const ROUTES = {
   HOME: '/',
   POST: '/posts',
-  ABOUT: '/about',
   TAG: '/tag',
   ARCHIVE: '/archive',
-  READER: '/feeds'
+  READER: '/feeds',
+  PODS: '/pods'
 }
 
 const getRouteParams = () => {
@@ -47,7 +47,7 @@ const routeHandlers = {
     if (!config.separateFeeds) {
       await loadAndRenderFeeds()
     } else {
-      const posts = getPosts()
+      const posts = config.separatePods ? getPosts().filter(p => !isPod(p)) : getPosts()
       const displayedCount = getDisplayedPosts()
       renderPosts(posts, displayedCount)
       toggleLoadMoreButton(displayedCount < posts.length)
@@ -57,10 +57,6 @@ const routeHandlers = {
   [ROUTES.POST]: () => {
     const slug = location.pathname.split('/')[2]
     if (slug) renderSinglePost(slug)
-  },
-
-  [ROUTES.ABOUT]: () => {
-    renderAboutPage()
   },
 
   [ROUTES.TAG]: ({ params }) => {
@@ -88,6 +84,15 @@ const routeHandlers = {
       setSearchTerm('')
       const posts = getPosts()
       renderPosts(posts, posts.length)
+    }
+  },
+
+  [ROUTES.PODS]: () => {
+    if (config.separatePods) {
+      const pods = getPosts().filter(p => isPod(p))
+      renderPosts(pods, pods.length)
+    } else {
+      renderNotFoundPage()
     }
   },
 
@@ -123,8 +128,13 @@ export function handleRouting () {
   isInitialLoad = false
 
   const resolvedRoute = route.startsWith('/posts/') ? ROUTES.POST : route
-  const handler = routeHandlers[resolvedRoute] || routeHandlers.default
-  handler({ params })
+  const handler = routeHandlers[resolvedRoute]
+  if (handler) return handler({ params })
+
+  const page = getPosts().find(p => p.meta.page && `/${p.meta.slug}` === route)
+  if (page) return renderSinglePost(page.meta.slug)
+
+  routeHandlers.default()
 }
 
 let searchBeaconTimer = null
@@ -153,19 +163,14 @@ export function handleLoadMore () {
   if (location.pathname === ROUTES.READER) {
     const feeds = getCachedFeeds()
     if (feeds) renderFeedsItems(feeds)
+  } else if (location.pathname === ROUTES.PODS) {
+    const pods = getPosts().filter(p => isPod(p))
+    renderPosts(pods, displayedCount)
+    toggleLoadMoreButton(displayedCount < pods.length)
   } else {
-    const posts = getPosts()
+    const posts = config.separatePods ? getPosts().filter(p => !isPod(p)) : getPosts()
     renderPosts(posts, displayedCount)
     toggleLoadMoreButton(displayedCount < posts.length)
   }
 }
 
-export function closeMenu () {
-  if (elements.menuLinks) elements.menuLinks.style.display = 'none'
-}
-
-export function toggleMenu () {
-  const links = elements.menuLinks
-  if (!links) return
-  links.style.display = links.style.display === 'block' ? 'none' : 'block'
-}

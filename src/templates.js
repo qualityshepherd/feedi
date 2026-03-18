@@ -34,13 +34,6 @@ export const notFoundTemplate = (message = 'No results found.') => `
   <h2 class="not-found">${message}</h2>
 `
 
-export const aboutPageTemplate = () => `
-  <div class="post">
-    <h2>About</h2>
-    <p>Edit this in <code>src/templates.js</code></p>
-  </div>
-`
-
 export const archiveTemplate = post => `
   <p>
     <a href="/posts/${post.meta.slug}"><span class="archive">${post.meta.title}</span></a>

@@ -1,6 +1,7 @@
 import { unit as test } from '../testpup.js'
 import {
   sortByDate,
+  readSiteIndex,
   getState,
   getPosts,
   getDisplayedPosts,
@@ -10,11 +11,21 @@ import {
   setSearchTerm,
   incrementDisplayedPosts,
   updateState,
-  removeFuturePosts,
   resetState
 } from '../../src/state.js'
 
-// readSiteIndex requires a live server — tested in e2e/posts.test.js
+const BASE = process.env.TEST_ENV || 'http://localhost:4242'
+
+test('readSiteIndex: returns posts with titles from live server', async t => {
+  const data = await readSiteIndex(`${BASE}/index.json`)
+  t.ok(data.length > 0)
+  t.ok(data[0].meta.title)
+})
+
+test('readSiteIndex: excludes future-dated posts', async t => {
+  const data = await readSiteIndex(`${BASE}/index.json`)
+  t.ok(data.every(p => !p.meta.date || new Date(p.meta.date) <= new Date()))
+})
 
 const posts = [
   { meta: { date: '2023-01-01', title: 'A' } },
@@ -98,15 +109,6 @@ test('State: state updates should be immutable', t => {
 
   t.ok(JSON.stringify(getState()) !== JSON.stringify(initialState))
   t.is(initialState.posts.length, 0)
-})
-
-test('State: removeFuturePosts should filter out future posts', t => {
-  const fakePosts = [
-    { meta: { date: '2050-01-01', title: 'Future Post' } },
-    { meta: { date: '2020-01-01', title: 'Past Post' } }
-  ]
-
-  t.is(removeFuturePosts(fakePosts).length, 1)
 })
 
 test('State: resetState should restore initial state', t => {

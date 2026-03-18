@@ -1,19 +1,9 @@
 import { promises as fs } from 'fs'
+import { fileURLToPath } from 'url'
 import config from '../feedi.config.js'
 
 const domain = config.domain
 const url = `https://${domain}`
-
-// patch index.html bridgy rel=me link
-const patchHtml = async () => {
-  let html = await fs.readFile('/index.html', 'utf8')
-  html = html.replace(
-    /<link rel="me" href="[^"]*">/,
-    `<link rel="me" href="https://fed.brid.gy/${domain}">`
-  )
-  await fs.writeFile('/index.html', html, 'utf8')
-  console.log(`index.html rel=me → ${domain}`)
-}
 
 // patch feeds.json self-blog entry
 const patchFeeds = async () => {
@@ -56,6 +46,9 @@ binding = "ASSETS"
 binding = "KV"
 id = "${kvId}"
 
+[vars]
+DOMAIN_NAME = "${cfg.domain}"
+
 [[durable_objects.bindings]]
 name = "ANALYTICS"
 class_name = "AnalyticsDO"
@@ -65,7 +58,13 @@ tag = "v1"
 new_sqlite_classes = ["AnalyticsDO"]
 ${r2Section}
 [triggers]
-crons = ["0 2 * * *"]
+crons = ["0 * * * *", "0 2 * * *"]
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
 `
 }
 
@@ -80,11 +79,11 @@ const patchWrangler = async () => {
 }
 
 // only run when executed directly
-const isMain = process.argv[1] === new URL(import.meta.url).pathname
+const isMain = process.argv[1] === fileURLToPath(import.meta.url)
 if (isMain) {
   ;(async () => {
     try {
-      await Promise.all([patchHtml(), patchFeeds(), patchWrangler()])
+      await Promise.all([patchFeeds(), patchWrangler()])
     } catch (err) {
       console.error('genr8Domain failed:', err)
       process.exit(1)

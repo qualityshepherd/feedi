@@ -84,6 +84,17 @@ export const sanitizeContent = (str) => {
         .replace(/<script[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?<\/style>/gi, '')
         .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+        // strip tags that look like links or cause layout abuse
+        .replace(/<\/?u>/gi, '')
+        .replace(/<\/?ins>/gi, '')
+        .replace(/\s+style=(["'])[^"']*\1/gi, '')
+        // strip interactive/dangerous elements entirely
+        .replace(/<base[^>]*\/?>/gi, '')
+        .replace(/<input[^>]*\/?>/gi, '')
+        .replace(/<object[\s\S]*?<\/object>/gi, '')
+        .replace(/<embed[^>]*\/?>/gi, '')
+        // strip tags but keep inner content
+        .replace(/<\/?(form|button|select|option|textarea|marquee|blink)[^>]*>/gi, '')
         // strip on* event attributes, srcset, sizes from any tag
         .replace(/\s+on\w+="[^"]*"/gi, '')
         .replace(/\s+on\w+='[^']*'/gi, '')
@@ -119,7 +130,7 @@ export const linkifyHashtags = (str, feedOrigin = null) => {
 // Linkifies @mentions not already inside an <a>.
 export const linkifyMentions = (str, feedOrigin = null) => {
   if (!str) return ''
-  return str.replace(/([=/"w@]?)@([a-zA-Z0-9_]+)(?:@([a-zA-Z0-9._-]+\.[a-zA-Z]{2,}))?/g, (match, prefix, user, instance) => {
+  return str.replace(/([=/"@]?)@([a-zA-Z0-9_]+)(?:@([a-zA-Z0-9._-]+\.[a-zA-Z]{2,}))?/g, (match, prefix, user, instance) => {
     if (prefix) return match
     if (instance) return `<a href="https://${instance}/@${user}" target="_blank" rel="noopener noreferrer">${match}</a>`
     if (!feedOrigin) return match

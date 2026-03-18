@@ -39,9 +39,11 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
 .session-header:hover .log-city{color:var(--alt3)}
 .log-ts{color:var(--alt1);white-space:nowrap;cursor:default}
 .log-flag{text-align:center;font-size:1.2em}
-.log-city{color:var(--alt1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.log-city{color:var(--alt1);display:flex;gap:.25rem;overflow:hidden;cursor:pointer}
 .log-city:hover{color:var(--alt3)}
 .log-city.active{color:var(--alt3)}
+.log-city-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.log-city-count{white-space:nowrap;flex-shrink:0}
 .log-path{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log-ref{color:var(--alt1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.6;font-size:80%}
 .log-count{color:var(--alt1);font-family:mono;text-align:right;white-space:nowrap}
@@ -259,7 +261,7 @@ const renderLogs = () => {
     return \`<div class="session-header">\` +
       \`<span class="log-ts" title="\${s.ip || ''}">\${fmtTs(s.ts)}</span>\` +
       \`<span class="log-flag">\${flagWithRegion(s.country, s.region)}</span>\` +
-      \`<span class="log-city\${count > 1 ? ' active' : ''}" \${count > 1 ? \`onclick="filterIp('\${s.ip}')"\` : ''} style="\${count > 1 ? 'cursor:pointer' : ''}" title="\${s.city}">\${s.city || '?'}\${count > 1 ? \` (\${count})\` : ''}</span>\` +
+      \`<span class="log-city\${count > 1 ? ' active' : ''}" \${count > 1 ? \`onclick="filterIp('\${s.ip}')"\` : ''} style="\${count > 1 ? 'cursor:pointer' : ''}" title="\${s.city}"><span class="log-city-name">\${s.city || '?'}</span>\${count > 1 ? \`<span class="log-city-count">(\${count})</span>\` : ''}</span>\` +
       \`<span class="log-path" title="\${firstPath}">\${firstPath}</span>\` +
       \`<span class="log-ref">\${firstRef}</span>\` +
       \`</div>\`

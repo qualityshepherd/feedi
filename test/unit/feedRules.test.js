@@ -69,6 +69,53 @@ test('sanitizeContent: strips style tags', t => {
   t.ok(result.includes('hello'))
 })
 
+test('sanitizeContent: strips <u> tags but keeps content', t => {
+  const result = sanitizeContent('<p>this is <u>underlined</u> text</p>')
+  t.falsy(result.includes('<u>'))
+  t.ok(result.includes('underlined'))
+})
+
+test('sanitizeContent: strips <ins> tags but keeps content', t => {
+  const result = sanitizeContent('<p>this is <ins>inserted</ins> text</p>')
+  t.falsy(result.includes('<ins>'))
+  t.ok(result.includes('inserted'))
+})
+
+test('sanitizeContent: strips inline style attributes', t => {
+  const result = sanitizeContent('<p style="color:red;display:none">hello</p>')
+  t.falsy(result.includes('style='))
+  t.ok(result.includes('hello'))
+})
+
+test('sanitizeContent: strips form, input, button, select, textarea', t => {
+  const result = sanitizeContent('<form><input type="text"><button>go</button><select><option>x</option></select></form>')
+  t.falsy(result.includes('<form'))
+  t.falsy(result.includes('<input'))
+  t.falsy(result.includes('<button'))
+  t.falsy(result.includes('<select'))
+})
+
+test('sanitizeContent: strips <base> tag', t => {
+  const result = sanitizeContent('<base href="https://evil.com"><p>hello</p>')
+  t.falsy(result.includes('<base'))
+  t.ok(result.includes('hello'))
+})
+
+test('sanitizeContent: strips <object> and <embed>', t => {
+  const result = sanitizeContent('<object data="x.swf"></object><embed src="y.swf"><p>hello</p>')
+  t.falsy(result.includes('<object'))
+  t.falsy(result.includes('<embed'))
+  t.ok(result.includes('hello'))
+})
+
+test('sanitizeContent: strips <marquee> and <blink> but keeps content', t => {
+  const result = sanitizeContent('<marquee>scrolling</marquee> and <blink>blinking</blink>')
+  t.falsy(result.includes('<marquee'))
+  t.falsy(result.includes('<blink'))
+  t.ok(result.includes('scrolling'))
+  t.ok(result.includes('blinking'))
+})
+
 test('sanitizeContent: decodes &#39; to apostrophe', t => {
   t.ok(sanitizeContent('it&#39;s fine').includes("it's fine"))
 })
