@@ -5,6 +5,7 @@ import config from '../feedi.config.js'
 const isPodcast = post => post.meta.pod === true
 
 const subscribeLink = post => {
+  if (post.meta.page) return '' // no link on pages
   const href = isPodcast(post) ? '/assets/rss/pod.xml' : '/assets/rss/blog.xml'
   const title = isPodcast(post) ? 'Subscribe to podcast feed' : 'Subscribe to blog feed'
   return `<a class="rss-subscribe" href="${href}" title="${title}" target="_blank" rel="noopener noreferrer">◆ subscribe</a>`
