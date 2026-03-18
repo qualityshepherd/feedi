@@ -2,7 +2,7 @@ import { renderTags } from './ui.js'
 import { stripHtml, processContent, truncateContent } from './feedRules.js'
 import config from '../feedi.config.js'
 
-const isPodcast = post => post.meta.tags?.some(t => t.toLowerCase() === 'podcast')
+const isPodcast = post => post.meta.pod === true
 
 const subscribeLink = post => {
   const href = isPodcast(post) ? '/assets/rss/pod.xml' : '/assets/rss/blog.xml'
