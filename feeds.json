@@ -11,7 +11,6 @@
   { "url": "https://aftermath.site/feed", "limit": 3 },
   { "url": "https://thecreativeindependent.com/rss.xml", "limit": 3 },
   { "url": "https://theoldweirdamerica.blogspot.com/feeds/posts/default", "limit": 3 },
-  { "url": "https://www.dragcity.com/rss/news", "limit": 3 },
   { "url": "https://100r.ca/links/rss.xml", "limit": 3 },
   { "url": "https://brine.dev/assets/rss/blog.xml", "limit": 4 }
 ]
