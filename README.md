@@ -27,7 +27,7 @@ wrangler login
 wrangler kv namespace create KV
 ```
 
-Copy the KV namespace `id` into `wrangler.toml`, then:
+That will spit out a KV namespace `id`. Copy/paste it to `[[kv_namespaces]]` in `wrangler.toml`, then:
 
 ```bash
 wrangler secret put ADMIN_SECRET   # your analytics password
