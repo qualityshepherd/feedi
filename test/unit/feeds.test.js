@@ -7,7 +7,6 @@ test('feeds.json: all urls are valid', async t => {
   for (const feed of feeds) {
     t.ok(URL.canParse(feed.url), `Invalid URL: ${feed.url}`)
   }
-  t.pass()
 })
 
 test('feeds.json: all entries have a limit', async t => {
