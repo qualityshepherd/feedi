@@ -93,14 +93,6 @@ Set `r2Bucket` in `feedi.config.js` to match, then deploy.
 
 Put episode posts in `pods/` instead of `posts/`. Same frontmatter, just add an `<audio>` element pointing to your file. The podcast RSS feed is generated automatically on build and validated by a unit test. 
 
-## Fediverse (optional)
-
-feedi uses [Bridgy Fed](https://fed.brid.gy) to bridge your RSS feed into the Fediverse. No ActivityPub server, no HTTP signatures. The `rel=me` link is stamped into `index.html` at build time from your config.
-
-Register once at [fed.brid.gy](https://fed.brid.gy); enter your domain and follow the prompts.
-
-Your handle: `@yourdomain.com@yourdomain.com`. New posts appear in followers' timelines automatically.
-
 ## Tests
 
 ```bash

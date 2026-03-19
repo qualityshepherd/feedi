@@ -173,4 +173,3 @@ export function handleLoadMore () {
     toggleLoadMoreButton(displayedCount < posts.length)
   }
 }
-

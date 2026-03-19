@@ -14,7 +14,7 @@ const config = {
   // features
   analytics: true,
   separateFeeds: true, // true = /feeds page + nav link; false = feeds shown at /
-  separatePods: true,  // true = /pods page + nav link; false = pods mixed with posts at /
+  separatePods: true, // true = /pods page + nav link; false = pods mixed with posts at /
   r2Bucket: 'feedi-brine-dev', // must match bucket_name in wrangler.toml
 
   podcast: {
