@@ -9,7 +9,7 @@ const config = {
   image: '/assets/images/logo/feedi.png', // used as podcast cover art fallback
   maxPosts: 10,
   maxFeedItems: 100, // max items fetched per feed; 0 = no limit
-  contentLength: 3000, // max visible chars per feed; truncates and links to site
+  contentLength: 4200, // max visible chars per feed; truncates and links to site
 
   // features
   analytics: true,
