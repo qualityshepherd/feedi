@@ -102,6 +102,8 @@ export const sanitizeContent = (str) => {
         .replace(/\s+sizes=(["'])[\s\S]*?\1/gi, '')
         // drop <img> with relative src (external feeds won't resolve them)
         .replace(/<img[^>]*src="(?!https?:\/\/)[^"]*"[^>]*\/?>/gi, '')
+        // fix headings that go wrong...
+        .replace(/<(\/?)h[1-6][^>]*>/gi, '<$1strong>')
         // rewrite <a> tags — safe hrefs get target/rel, unsafe drop to inner text
         .replace(/<a([^>]*)>([\s\S]*?)<\/a>/gi, (_, attrs, inner) => {
           const hrefMatch = attrs.match(/href=["']([^"']*)["']/i)
