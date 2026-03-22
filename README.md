@@ -99,6 +99,4 @@ Put episode posts in `pods/` instead of `posts/`. Same frontmatter, just add an 
 npm test
 ```
 
-------
-
 AGPL · brine
