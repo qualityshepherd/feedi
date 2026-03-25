@@ -15,3 +15,5 @@ package-lock.json
 README.md
 .gitignore
 .assetsignore
+feeds.json
+feedIndex.json

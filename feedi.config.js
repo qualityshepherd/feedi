@@ -20,7 +20,7 @@ const config = {
   podcast: {
     author: 'feedi',
     email: 'you@example.com',
-    explicit: 'true',
+    explicit: 'yes',
     category: 'Leisure',
     language: 'en-us' // default: en-us
   }
