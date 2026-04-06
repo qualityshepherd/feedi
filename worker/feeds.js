@@ -30,12 +30,12 @@ export const refreshFeeds = async (env) => {
     return
   }
 
-  await env.KV.put(KV_KEY, JSON.stringify(aggregated), { expirationTtl: KV_TTL * 25 }) // 25h safety net
+  await env.FEEDS_CACHE.put(KV_KEY, JSON.stringify(aggregated), { expirationTtl: KV_TTL * 25 }) // 25h safety net
   console.log(`Cached ${aggregated.length} feed posts from ${successful.length}/${feeds.length} feeds`)
 }
 
 export const handleFeeds = async (env) => {
-  const cached = await env.KV.get(KV_KEY)
+  const cached = await env.FEEDS_CACHE.get(KV_KEY)
   if (cached) {
     return new Response(cached, {
       headers: {
@@ -48,7 +48,7 @@ export const handleFeeds = async (env) => {
   // cache miss — fetch live and store
   try {
     await refreshFeeds(env)
-    const fresh = await env.KV.get(KV_KEY)
+    const fresh = await env.FEEDS_CACHE.get(KV_KEY)
     return new Response(fresh || '[]', {
       headers: { 'Content-Type': 'application/json' }
     })

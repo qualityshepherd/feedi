@@ -8,8 +8,8 @@ not_found_handling = "single-page-application"
 binding = "ASSETS"
 
 [[kv_namespaces]]
-binding = "KV"
-id = "31af68a490ad48a2a5a92248ca0cf957"
+binding = "FEEDS_CACHE"
+id = "5ba3319ac1304f2fabc391fcbbae65ca"
 
 [vars]
 DOMAIN_NAME = "feedi.brine.dev"
@@ -34,25 +34,3 @@ enabled = true
 
 [observability.logs]
 enabled = true
-
-[env.staging]
-name = "feedi-brine-staging"
-
-[env.staging.vars]
-DOMAIN_NAME = "test.feedi.brine.dev"
-
-[[env.staging.kv_namespaces]]
-binding = "KV"
-id = "31af68a490ad48a2a5a92248ca0cf957"
-
-[[env.staging.durable_objects.bindings]]
-name = "ANALYTICS"
-class_name = "AnalyticsDO"
-
-[[env.staging.migrations]]
-tag = "v1"
-new_sqlite_classes = ["AnalyticsDO"]
-
-[[env.staging.r2_buckets]]
-binding = "R2"
-bucket_name = "feedi-brine-dev"

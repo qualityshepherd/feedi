@@ -72,7 +72,7 @@ export const sanitizeContent = (str) => {
         .replace(/<script[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?<\/style>/gi, '')
         .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
-        .replace(/<(\/?)\h[1-6][^>]*>/gi, '<$1strong>')
+        .replace(/<(\/?)[h][1-6][^>]*>/gi, '<$1strong>')
         .replace(/<\/?u>/gi, '')
         .replace(/<\/?ins>/gi, '')
         .replace(/\s+style=(["'])[^"']*\1/gi, '')

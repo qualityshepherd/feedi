@@ -33,7 +33,6 @@ test('Pod: has at least one episode', t => {
   t.ok(xml.includes('<item>'), 'no episodes found')
 })
 
-
 test('escapeXml: escapes ampersand', t => {
   t.is(escapeXml('D&D'), 'D&amp;D')
 })
