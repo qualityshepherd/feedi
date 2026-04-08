@@ -1,4 +1,3 @@
-[![Deploy](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml/badge.svg?branch=main)](https://github.com/qualityshepherd/feedi/actions/workflows/deploy.yaml)
 # [feedi](https://feedi.brine.dev)
 
 **Resonance over reach. Sovereignty over scale.**
