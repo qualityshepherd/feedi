@@ -1,4 +1,3 @@
-import config from '../feedi.config.js'
 import { elements } from './dom.js'
 import {
   getPosts,
@@ -16,7 +15,7 @@ import {
   renderSinglePost,
   toggleLoadMoreButton
 } from './ui.js'
-import { loadAndRenderFeeds, getCachedFeeds, renderFeedsItems } from './feeds.js'
+import { loadAndRenderFeeds, getCachedFeeds, renderFeedsItems, loadAndRenderDiscover } from './feeds.js'
 
 const ROUTES = {
   HOME: '/',
@@ -24,7 +23,8 @@ const ROUTES = {
   TAG: '/tag',
   ARCHIVE: '/archive',
   READER: '/feeds',
-  PODS: '/pods'
+  PODS: '/pods',
+  DISCOVER: '/discover'
 }
 
 const getRouteParams = () => {
@@ -40,18 +40,12 @@ const filterPostsByTag = (posts, tag) =>
   )
 
 const routeHandlers = {
-  [ROUTES.HOME]: async () => {
-    if (getDisplayedPosts() === 0) {
-      setDisplayedPosts(config.maxPosts)
-    }
-    if (!config.separateFeeds) {
-      await loadAndRenderFeeds()
-    } else {
-      const posts = config.separatePods ? getPosts().filter(p => !isPod(p)) : getPosts()
-      const displayedCount = getDisplayedPosts()
-      renderPosts(posts, displayedCount)
-      toggleLoadMoreButton(displayedCount < posts.length)
-    }
+  [ROUTES.HOME]: () => {
+    if (getDisplayedPosts() === 0) setDisplayedPosts(10)
+    const posts = getPosts().filter(p => !isPod(p))
+    const displayedCount = getDisplayedPosts()
+    renderPosts(posts, displayedCount)
+    toggleLoadMoreButton(displayedCount < posts.length)
   },
 
   [ROUTES.POST]: () => {
@@ -62,8 +56,7 @@ const routeHandlers = {
   [ROUTES.TAG]: ({ params }) => {
     const tag = params.get('t')
     if (tag) {
-      const posts = getPosts()
-      const filtered = filterPostsByTag(posts, tag)
+      const filtered = filterPostsByTag(getPosts(), tag)
       renderPosts(filtered, filtered.length)
     }
   },
@@ -72,8 +65,6 @@ const routeHandlers = {
     renderArchive(getPosts())
   },
 
-  // /search is not a nav route — URL state set by handleSearch via replaceState.
-  // Handler exists so shared/direct search URLs still work.
   '/search': ({ params }) => {
     const query = params.get('q')
     if (query) {
@@ -82,27 +73,23 @@ const routeHandlers = {
       renderFilteredPosts()
     } else {
       setSearchTerm('')
-      const posts = getPosts()
-      renderPosts(posts, posts.length)
+      renderPosts(getPosts(), getPosts().length)
     }
   },
 
   [ROUTES.PODS]: () => {
-    if (config.separatePods) {
-      const pods = getPosts().filter(p => isPod(p))
-      renderPosts(pods, pods.length)
-    } else {
-      renderNotFoundPage()
-    }
+    const pods = getPosts().filter(p => isPod(p))
+    renderPosts(pods, pods.length)
   },
 
   [ROUTES.READER]: async () => {
-    if (config.separateFeeds) {
-      setDisplayedPosts(config.maxFeedItems === 0 ? Infinity : (config.maxFeedItems || 20))
-      await loadAndRenderFeeds()
-    } else {
-      renderNotFoundPage()
-    }
+    setDisplayedPosts(100)
+    await loadAndRenderFeeds()
+  },
+
+  [ROUTES.DISCOVER]: async () => {
+    setDisplayedPosts(100)
+    await loadAndRenderDiscover()
   },
 
   default: () => {
@@ -114,14 +101,9 @@ let isInitialLoad = true
 
 export function handleRouting () {
   const { route, params } = getRouteParams()
-  // length and recursion check: no 200 char urls or that repeat the same directory pattern
-  if (route.length > 200 || /\/([^/]+)\/(?:[^/]+\/)*\1(?:\/|$)/.test(route)) {
-    return // don't track, don't render, just stop.
-  }
+  if (route.length > 200 || /\/([^/]+)\/(?:[^/]+\/)*\1(?:\/|$)/.test(route)) return
   setSearchTerm('')
-  window.scrollTo(0, 0) // top of page
-  // tell the worker about SPA navigation — worker is blind to client-side route changes
-  // skip initial load since the worker already tracked that request directly
+  window.scrollTo(0, 0)
   if (!isInitialLoad && route !== '/search') {
     navigator.sendBeacon('/api/hit?path=' + encodeURIComponent(location.pathname + location.search))
   }
@@ -157,10 +139,12 @@ export function handleSearch (e) {
   renderFilteredPosts()
 }
 
-export function handleLoadMore () {
+export async function handleLoadMore () {
   incrementDisplayedPosts()
   const displayedCount = getDisplayedPosts()
-  if (location.pathname === ROUTES.READER) {
+  if (location.pathname === ROUTES.DISCOVER) {
+    await loadAndRenderDiscover()
+  } else if (location.pathname === ROUTES.READER) {
     const feeds = getCachedFeeds()
     if (feeds) renderFeedsItems(feeds)
   } else if (location.pathname === ROUTES.PODS) {
@@ -168,7 +152,7 @@ export function handleLoadMore () {
     renderPosts(pods, displayedCount)
     toggleLoadMoreButton(displayedCount < pods.length)
   } else {
-    const posts = config.separatePods ? getPosts().filter(p => !isPod(p)) : getPosts()
+    const posts = getPosts().filter(p => !isPod(p))
     renderPosts(posts, displayedCount)
     toggleLoadMoreButton(displayedCount < posts.length)
   }

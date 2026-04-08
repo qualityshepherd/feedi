@@ -1,12 +1,13 @@
 import { renderTags } from './ui.js'
 import { stripHtml, processContent, truncateContent } from './feedRules.js'
-import config from '../feedi.config.js'
 
-const isPodcast = post => post.meta.pod === true
+const CONTENT_LENGTH = 4200
+
+const isPodcast = post => !!post.meta.audioUrl
 
 const subscribeLink = post => {
   if (post.meta.page) return '' // no link on pages
-  const href = isPodcast(post) ? '/assets/rss/pod.xml' : '/assets/rss/blog.xml'
+  const href = isPodcast(post) ? '/rss/pod' : '/rss/blog'
   const title = isPodcast(post) ? 'Subscribe to podcast feed' : 'Subscribe to blog feed'
   return `<a class="rss-subscribe" href="${href}" title="${title}" target="_blank" rel="noopener noreferrer">◆ subscribe</a>`
 }
@@ -18,6 +19,7 @@ export const postsTemplate = post => `
     </a>
     <div class="date">${post.meta.date}</div>
     <div>${post.html}</div>
+    ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
     <div class="tags">${renderTags(post.meta.tags)} ${subscribeLink(post)}</div>
   </div>
 `
@@ -27,6 +29,7 @@ export const singlePostTemplate = post => `
     <h2>${post.meta.title}</h2>
     <div class="date">${post.meta.date}</div>
     <div class="post-content">${post.html}</div>
+    ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:1rem 0"></audio>` : ''}
     <div class="tags">${renderTags(post.meta.tags)} ${subscribeLink(post)}</div>
   </article>
 `
@@ -77,7 +80,7 @@ export const feedsItemTemplate = (item) => {
     ${item.title
       ? `${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">` : ''}<h2 class="post-title">${stripHtml(item.title)}</h2>${url ? '</a>' : ''}`
       : ''}
-    ${item.content ? `<div class="feed-content">${processContent(truncateContent(item.content, url, config.contentLength ?? 3000), item.feed?.url)}</div>` : ''}
+    ${item.content ? `<div class="feed-content">${processContent(truncateContent(item.content, url, CONTENT_LENGTH), item.feed?.url)}</div>` : ''}
   </div>
   `
 }

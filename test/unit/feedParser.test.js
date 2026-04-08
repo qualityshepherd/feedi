@@ -9,7 +9,7 @@ import {
   limitFeed,
   sortByDate,
   aggregateFeeds
-} from '../../gen/feedParser.js'
+} from '../../worker/feedParser.js'
 
 // fixtures
 

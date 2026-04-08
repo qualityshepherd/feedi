@@ -1,28 +1,27 @@
-import config from '../feedi.config.js'
+const MAX_POSTS = 10
 
 const initialState = {
   posts: [],
-  displayedPosts: config.maxPosts,
+  displayedPosts: MAX_POSTS,
   searchTerm: ''
 }
 
-// state container
 let currentState = { ...initialState }
 
 export const getState = () => ({ ...currentState })
-export const getPosts = () => [...currentState.posts] // returns shallow copy
+export const getPosts = () => [...currentState.posts]
 export const getDisplayedPosts = () => currentState.displayedPosts
 export const getSearchTerm = () => currentState.searchTerm
 
 export const updateState = (updates) => {
-  currentState = { ...currentState, ...updates } // shallow merge
+  currentState = { ...currentState, ...updates }
   return getState()
 }
 
 export const setPosts = (posts) => updateState({ posts: [...posts] })
 export const setDisplayedPosts = (count) => updateState({ displayedPosts: count })
 export const setSearchTerm = (term) => updateState({ searchTerm: term })
-export const incrementDisplayedPosts = (increment = config.maxPosts) =>
+export const incrementDisplayedPosts = (increment = MAX_POSTS) =>
   updateState({ displayedPosts: currentState.displayedPosts + increment })
 
 export const resetState = () => {
@@ -30,14 +29,11 @@ export const resetState = () => {
   return getState()
 }
 
-// utility functions
 export async function readSiteIndex (pathToIndex) {
   try {
     const res = await fetch(pathToIndex)
     validateResponse(res)
-
     const index = await res.json()
-
     return sortByDate(index)
   } catch (err) {
     console.error('Failed to load index.json:', err)
@@ -58,7 +54,5 @@ function parseDate (str) {
 }
 
 function validateResponse (res) {
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} - ${res.statusText}`)
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`)
 }

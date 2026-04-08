@@ -8,17 +8,18 @@ import {
 } from './templates.js'
 
 export const isSpecialPost = post => post.meta.page === true
-export const isPod = post => post.meta.pod === true
+export const isPod = post => !!post.meta.audioUrl
 
 export const getLimitedPosts = (posts, limit) => posts.slice(0, Math.max(0, limit))
 
 export const postMatchesSearch = (post, searchTerm) => {
   if (!searchTerm) return true
   const terms = searchTerm.toLowerCase().split(' ').filter(Boolean)
+  const text = (post.html || '').replace(/<[^>]+>/g, ' ')
   return terms.every(term =>
     (post.meta.title || '').toLowerCase().includes(term) ||
-    (post.markdown || '').toLowerCase().includes(term) ||
-    (post.meta.tags || []).some(tag => tag.toLowerCase().includes(term))
+    (post.meta.tags || []).some(tag => tag.toLowerCase().includes(term)) ||
+    text.toLowerCase().includes(term)
   )
 }
 

@@ -76,7 +76,7 @@ h2{margin:3rem 0 .75rem;font-size:82.5%;color:var(--alt1);letter-spacing:.15em;t
 <script>
 const params = new URLSearchParams(location.search)
 const days = parseInt(params.get('days') || '1')
-const secret = params.get('secret') || ''
+const token = localStorage.getItem('feedi_token') || ''
 const DOW = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 const SESSION_GAP = 30 * 60 * 1000 // 30 minutes
 
@@ -103,11 +103,10 @@ const COUNTRY_NAMES = {
 
 const countryName = code => COUNTRY_NAMES[code] || code
 
-const tokenParam = secret ? \`&secret=\${secret}\` : ''
 document.getElementById('hostname').textContent = location.hostname
-document.getElementById('nav').innerHTML = [1, 3, 7, 30, 365].map(d => {
-  const label = d === 1 ? 'today' : d === 3 ? '3d' : d === 7 ? 'week' : d === 30 ? 'month' : 'year'
-  return \`<a href="?days=\${d}\${tokenParam}"\${days === d ? ' class="active"' : ''}>\${label}</a>\`
+document.getElementById('nav').innerHTML = [1, 2, 7, 30, 365].map(d => {
+  const label = d === 1 ? 'today' : d === 2 ? '2d' : d === 7 ? 'week' : d === 30 ? '30d' : 'year'
+  return \`<a href="?days=\${d}"\${days === d ? ' class="active"' : ''}>\${label}</a>\`
 }).join('')
 
 const flag = (code) => {
@@ -322,14 +321,14 @@ const render = (allData) => {
   renderLogs()
 }
 
-fetch(\`/api/analytics?days=\${days}\${tokenParam}\`)
+fetch(\`/api/analytics?days=\${days}\`, { headers: token ? { Authorization: \`Bearer \${token}\` } : {} })
   .then(r => {
     if (r.status === 401) throw new Error('unauthorized')
     if (!r.ok) throw new Error(\`\${r.status}\`)
     return r.json()
   })
   .then(render)
-  .catch(err => { document.getElementById('summary').textContent = err.message === 'unauthorized' ? '🔒 add ?secret= to the URL' : 'failed to load' })
+  .catch(err => { document.getElementById('summary').textContent = err.message === 'unauthorized' ? '🔒 log in at /admin first' : 'failed to load' })
 </script>
 </body>
 </html>

@@ -1,4 +1,3 @@
-import config from '../feedi.config.js'
 import ANALYTICS_TEMPLATE from './analyticsTemplate.js'
 
 const SKIP_PATHS = [
@@ -367,7 +366,6 @@ export const classifyHit = (path, ua = '', asn = null) => {
 }
 
 export async function trackHit (req, env) {
-  if (!config.analytics) return
   const url = new URL(req.url)
   const path = url.searchParams.get('path') || (url.pathname + (url.search || ''))
   const ip = req.headers.get('cf-connecting-ip') || ''

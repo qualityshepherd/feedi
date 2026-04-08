@@ -1,7 +1,6 @@
 import { unit as test } from '../testpup.js'
 import {
   sortByDate,
-  readSiteIndex,
   getState,
   getPosts,
   getDisplayedPosts,
@@ -12,20 +11,7 @@ import {
   incrementDisplayedPosts,
   updateState,
   resetState
-} from '../../src/state.js'
-
-const BASE = process.env.TEST_ENV || 'http://localhost:4242'
-
-test('readSiteIndex: returns posts with titles from live server', async t => {
-  const data = await readSiteIndex(`${BASE}/index.json`)
-  t.ok(data.length > 0)
-  t.ok(data[0].meta.title)
-})
-
-test('readSiteIndex: excludes future-dated posts', async t => {
-  const data = await readSiteIndex(`${BASE}/index.json`)
-  t.ok(data.every(p => !p.meta.date || new Date(p.meta.date) <= new Date()))
-})
+} from '../../assets/src/state.js'
 
 const posts = [
   { meta: { date: '2023-01-01', title: 'A' } },

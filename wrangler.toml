@@ -3,16 +3,18 @@ main = "worker/index.js"
 compatibility_date = "2025-01-01"
 
 [assets]
-directory = "."
+directory = "assets"
 not_found_handling = "single-page-application"
 binding = "ASSETS"
-
-[[kv_namespaces]]
-binding = "FEEDS_CACHE"
-id = "5ba3319ac1304f2fabc391fcbbae65ca"
+run_worker_first = true
 
 [vars]
 DOMAIN_NAME = "feedi.brine.dev"
+OWNER = "14QvqWeWgoQu5AB5dqrUpqmasLH92Pp9kgbL3puL2DU"  # paste your pubkey here after deriving it at /admin
+
+[[kv_namespaces]]
+binding = "FEEDI_KV"
+id = "5ba3319ac1304f2fabc391fcbbae65ca"
 
 [[durable_objects.bindings]]
 name = "ANALYTICS"
@@ -34,3 +36,28 @@ enabled = true
 
 [observability.logs]
 enabled = true
+
+# DEV
+
+[env.dev]
+name = "feedi3"
+
+[env.dev.vars]
+DOMAIN_NAME = "feedi.brine.dev"
+OWNER = "14QvqWeWgoQu5AB5dqrUpqmasLH92Pp9kgbL3puL2DU"  # paste your pubkey here after deriving it at /admin
+
+[[env.dev.kv_namespaces]]
+binding = "FEEDI_KV"
+id = "5ba3319ac1304f2fabc391fcbbae65ca"
+
+[[env.dev.durable_objects.bindings]]
+name = "ANALYTICS"
+class_name = "AnalyticsDO"
+
+[[env.dev.migrations]]
+tag = "v1"
+new_sqlite_classes = ["AnalyticsDO"]
+
+[[env.dev.r2_buckets]]
+binding = "R2"
+bucket_name = "feedi-brine-dev"

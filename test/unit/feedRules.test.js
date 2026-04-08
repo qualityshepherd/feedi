@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { sanitizeContent, stripHtml, linkifyHashtags, linkifyMentions, processContent, truncateContent } from '../../src/feedRules.js'
+import { sanitizeContent, stripHtml, linkifyHashtags, linkifyMentions, processContent, truncateContent } from '../../assets/src/feedRules.js'
 
 // stripHtml — titles only
 
