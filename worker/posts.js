@@ -28,16 +28,28 @@ const json = (data, status = 200) =>
   })
 
 const getPost = (kv, slug) => kv.get(`post:${slug}`, { type: 'json' })
-const putPost = (kv, post) => kv.put(`post:${post.slug}`, JSON.stringify(post))
-const deletePost = (kv, slug) => kv.delete(`post:${slug}`)
 const invalidateIndex = (kv) => kv.delete('index:cache')
 
-const getAllPosts = async (kv) => {
+const putPost = async (kv, post) => {
+  await kv.put(`post:${post.slug}`, JSON.stringify(post))
+  await kv.delete('posts:all')
+}
+
+const deletePost = async (kv, slug) => {
+  await kv.delete(`post:${slug}`)
+  await kv.delete('posts:all')
+}
+
+export const getAllPosts = async (kv) => {
+  const cached = await kv.get('posts:all', { type: 'json' })
+  if (cached) return cached
   const list = await kv.list({ prefix: 'post:' })
   const posts = await Promise.all(
     (list.keys || []).map(k => kv.get(k.name, { type: 'json' }))
   )
-  return posts.filter(Boolean)
+  const all = posts.filter(Boolean)
+  await kv.put('posts:all', JSON.stringify(all))
+  return all
 }
 
 export const handleIndex = async (env) => {

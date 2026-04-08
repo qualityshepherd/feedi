@@ -1,3 +1,5 @@
+import { getAllPosts } from './posts.js'
+
 const escXml = (s = '') =>
   String(s)
     .replace(/&/g, '&amp;')
@@ -27,7 +29,8 @@ const postItem = (post, baseUrl) => {
   const safeHtml = (post.html || '')
     .replace(/src="(?!https?:\/\/)/g, `src="${baseUrl}/`)
     .replace(/]]>/g, ']]&gt;')
-  const audioUrl = post.audioUrl?.startsWith('http') ? post.audioUrl : `${baseUrl}${post.audioUrl}`
+  const audio = post.audioUrl || ''
+  const audioUrl = audio.startsWith('http') ? audio : `${baseUrl}${audio.startsWith('/') ? audio : `/${audio}`}`
   const enclosure = post.audioUrl
     ? `\n  <enclosure url="${escXml(audioUrl)}" length="0" type="audio/mpeg"/>`
     : ''
@@ -43,14 +46,6 @@ const postItem = (post, baseUrl) => {
   </item>`
 }
 
-const getAllPosts = async (kv) => {
-  const list = await kv.list({ prefix: 'post:' })
-  const posts = await Promise.all((list.keys || []).map(k => kv.get(k.name, { type: 'json' })))
-  return posts
-    .filter(p => p && p.status === 'published')
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-}
-
 export const handleRss = async (req, env) => {
   const path = new URL(req.url).pathname
   const kv = env.FEEDI_KV
@@ -62,7 +57,9 @@ export const handleRss = async (req, env) => {
   }
   const base = `https://${cfg.domain}`
 
-  const allPosts = await getAllPosts(kv)
+  const allPosts = (await getAllPosts(kv))
+    .filter(p => p.status === 'published')
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
 
   if (path === '/rss/blog') {
     const posts = allPosts.filter(p => !p.audioUrl)
