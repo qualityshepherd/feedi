@@ -38,9 +38,17 @@ const parseRssItem = (itemXml, feedMeta, isPodcast = false) => {
   const enclosureUrl = extractAttr(itemXml, 'enclosure', 'url')
   const enclosureType = extractAttr(itemXml, 'enclosure', 'type') || ''
   const isAudioEnclosure = enclosureType.startsWith('audio/')
+  const isImageEnclosure = enclosureType.startsWith('image/')
   const content = extractCdata(
     extractTag(itemXml, 'content:encoded') || extractTag(itemXml, 'description')
   )
+  const mediaUrl = extractAttr(itemXml, 'media:content', 'url')
+  const imgUrl = (mediaUrl && !content.includes(mediaUrl))
+    ? mediaUrl
+    : (enclosureUrl && isImageEnclosure && !content.includes(enclosureUrl))
+        ? enclosureUrl
+        : ''
+  const imgTag = imgUrl ? `<img src="${imgUrl}" loading="lazy" style="max-width:100%;display:block;margin-top:0.5em;">` : ''
   const audioTag = enclosureUrl && isPodcast && isAudioEnclosure && !content.includes('<audio')
     ? `<audio controls src="${enclosureUrl}" style="width:100%;margin-top:1em;"></audio>`
     : ''
@@ -50,7 +58,7 @@ const parseRssItem = (itemXml, feedMeta, isPodcast = false) => {
     title,
     url: extractCdata(extractTag(itemXml, 'link')).replace(/<[^>]+>/g, '').trim(),
     date: extractTag(itemXml, 'pubDate') || extractTag(itemXml, 'dc:date') || '',
-    content: content + audioTag,
+    content: content + imgTag + audioTag,
     author: extractCdata(extractTag(itemXml, 'dc:creator') || extractTag(itemXml, 'author')),
     feed: feedMeta
   }

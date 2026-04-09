@@ -30,10 +30,22 @@ function setEventListeners () {
   })
 }
 
+const show = id => { const el = document.getElementById(id); if (el) el.hidden = false }
+
 ;(async () => {
   const index = await readSiteIndex('/index.json')
   setPosts(index)
   setDisplayedPosts(10)
   setEventListeners()
   handleRouting()
+
+  if (index.some(p => p.meta.audioUrl)) show('pods-nav-link')
+
+  Promise.all([
+    fetch('/feeds/aggregated').then(r => r.json()).catch(() => []),
+    fetch('/discover.json').then(r => r.json()).catch(() => [])
+  ]).then(([feeds, discover]) => {
+    if (feeds.length) show('feeds-nav-link')
+    if (discover.length) show('discover-nav-link')
+  })
 })()

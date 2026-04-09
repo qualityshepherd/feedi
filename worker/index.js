@@ -87,7 +87,7 @@ export default {
     }
 
     // Discover
-    if (path === '/discover.json' || path.startsWith('/discover/') || path === '/discover' || path.startsWith('/api/discover')) {
+    if (path === '/discover.json' || path.startsWith('/discover/') || path.startsWith('/api/discover')) {
       return handleDiscover(req, env, ctx)
     }
 

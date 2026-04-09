@@ -46,7 +46,6 @@ const toFeedItem = (post) => {
     title: post.meta.title,
     content: post.html,
     date: post.meta.date,
-    author: post.meta.author,
     feed: { title: domain, url: instanceUrl }
   }
 }

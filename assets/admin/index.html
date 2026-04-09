@@ -520,7 +520,7 @@ async function renderDiscover () {
           </div>
           <div class="flex-1 flex gap-2 flex-wrap">${tags}</div>
           <div class="post-row-actions">
-            <button class="btn btn-sm" data-add-feed="${escHtml(i.url + '/rss/blog')}" title="Add their blog RSS to your feeds">+ feeds</button>
+            <button class="btn btn-sm btn-danger" data-remove="${escHtml(i.url)}">remove</button>
             <button class="btn btn-sm btn-danger" data-block="${escHtml(i.url)}">block</button>
           </div>
         </div>`
@@ -530,6 +530,12 @@ async function renderDiscover () {
       const res = await api('POST', '/api/feeds', { url: btn.dataset.addFeed })
       if (res.error) { showError('discover-error', res.error); return }
       btn.textContent = 'added ✓'; btn.disabled = true
+    }))
+
+    el.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', async () => {
+      const res = await api('DELETE', '/api/discover', { url: btn.dataset.remove })
+      if (res.error) { showError('discover-error', res.error); return }
+      await renderDiscover()
     }))
 
     el.querySelectorAll('[data-block]').forEach(btn => btn.addEventListener('click', async () => {

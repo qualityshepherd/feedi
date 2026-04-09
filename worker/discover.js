@@ -47,7 +47,7 @@ export const aggregatePosts = (results, { maxPerInstance = 50 } = {}) =>
   results
     .filter(Boolean)
     .flatMap(({ instanceUrl, posts }) =>
-      posts.slice(0, maxPerInstance).map(post => ({
+      posts.filter(p => !p.meta?.page).slice(0, maxPerInstance).map(post => ({
         ...post,
         meta: { ...post.meta, instanceUrl }
       }))
@@ -68,7 +68,8 @@ const fetchInstance = async (url) => {
     const data = await res.json()
     // Support opt-out via JSON field on wrapped format
     if (data && !Array.isArray(data) && data.discoverable === false) return null
-    const posts = Array.isArray(data) ? data : []
+    const allPosts = Array.isArray(data) ? data : []
+    const posts = allPosts.filter(p => !p.meta?.page)
 
     const tags = [...new Set(
       posts.flatMap(p => (p.meta?.tags || []).map(normalizeTag)).filter(Boolean)
@@ -288,6 +289,17 @@ export const handleDiscover = async (req, env, ctx) => {
     ctx.waitUntil(refreshDiscover(env))
 
     return json({ ok: true, url: normalized })
+  }
+
+  // DELETE /api/discover — remove an instance
+  if (method === 'DELETE' && path === '/api/discover') {
+    let body
+    try { body = await req.json() } catch { return json({ error: 'invalid json' }, 400) }
+    const normalized = isValidDiscoverUrl(body.url)
+    if (!normalized) return json({ error: 'invalid url' }, 400)
+    const known = await kv.get('discover:known', { type: 'json' }) || []
+    await kv.put('discover:known', JSON.stringify(known.filter(i => i.url !== normalized)))
+    return json({ ok: true })
   }
 
   // GET /api/discover/blocked — list blocked instances

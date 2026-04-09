@@ -30,7 +30,7 @@ export const singlePostTemplate = post => `
     ${post.meta.page ? '' : `<div class="date">${post.meta.date}</div>`}
     <div class="post-content">${post.html}</div>
     ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:1rem 0"></audio>` : ''}
-    <div class="tags">${renderTags(post.meta.tags)} ${subscribeLink(post)}</div>
+    ${post.meta.page ? '' : `<div class="tags">${renderTags(post.meta.tags)} ${subscribeLink(post)}</div>`}
   </article>
 `
 

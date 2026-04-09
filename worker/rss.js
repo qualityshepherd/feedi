@@ -58,7 +58,7 @@ export const handleRss = async (req, env) => {
   const base = `https://${cfg.domain}`
 
   const allPosts = (await getAllPosts(kv))
-    .filter(p => p.status === 'published')
+    .filter(p => p.status === 'published' && p.type !== 'page')
     .sort((a, b) => new Date(b.date) - new Date(a.date))
 
   if (path === '/rss/blog') {
