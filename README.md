@@ -4,7 +4,7 @@
 
 Feedi is a blog, RSS reader, podcast host, and peer discovery network that runs on Cloudflare Workers' free tier, forever.
 
-Each feedi instance is a node. Nodes publish `peers.json` — a list of other known feedi domains. The cron job fetches posts from all peers and caches the result. No handshake, no algorithm, no follower counts. Just public JSON and HTTP GETs. The mesh emerges from people linking to people they find interesting.
+Each feedi instance is a node. Nodes publish their post index publicly. The cron job fetches posts from all known instances and caches the result. No handshake, no algorithm, no follower counts. Just public JSON and HTTP GETs. The mesh emerges from people linking to people they find interesting.
 
 [Demo](https://feedi.brine.dev)
 
@@ -21,9 +21,10 @@ cd feedi
 npm install
 wrangler login
 wrangler kv namespace create FEEDI_KV
+wrangler r2 bucket create your-bucket-name
 ```
 
-Paste the KV namespace `id` into `wrangler.toml`, then:
+Paste the KV namespace `id` and R2 bucket name into `wrangler.toml`, then:
 
 ```bash
 wrangler deploy
@@ -35,48 +36,30 @@ Add your custom domain in the Cloudflare dashboard and wait for propagation.
 
 ## Writing posts
 
-Go to `/admin` — create, edit, publish from the browser. Markdown with live preview.
+Go to `/admin` — create, edit, publish from the browser. Markdown with live preview. Drag, drop, or paste images to upload.
 
 Export your posts anytime as JSON or a zip of `.md` files. You're never locked in.
 
-## RSS reader
+## RSS feeds
 
-Edit `feeds.json` to follow external RSS/Atom feeds. The worker fetches and caches them hourly.
+Add external RSS/Atom feeds from `/admin → feeds`. The worker fetches and caches them hourly. Each feed has a configurable post limit.
 
-```json
-[
-  { "url": "https://example.com/feed.xml", "limit": 4 }
-]
-```
+Your own feeds are available at:
+- `/rss/blog` — posts
+- `/rss/pod` — podcast episodes
+- `/rss/all` — everything
 
-## Peers
+## Discover
 
-Add feedi instances you want to follow at `/admin`. Their posts appear in `/peers/feed`, aggregated and sorted by date. When you add a peer, their peers are surfaced as suggestions — the network meshes out organically.
-
-```json
-// peers.json — auto-generated, public
-[
-  { "url": "https://feedi.brine.dev", "title": "brine's feedi" }
-]
-```
-
-## Analytics
-
-Privacy-friendly, no third parties. View at `/api/analytics?secret=YOUR_SECRET`.
-
-### R2 backups (optional)
-
-Daily analytics backups to R2:
-
-```bash
-wrangler r2 bucket create your-bucket-name
-```
-
-Set `r2Bucket` in `feedi.config.js` to match, then deploy.
+Add feedi instances you want to follow at `/admin → discover`. Their posts appear at `/discover`, aggregated and sorted by date. When you add an instance, their known instances are surfaced as suggestions — the network meshes out organically.
 
 ## Podcast (optional)
 
-Put episode posts in `pods/` instead of `posts/`. Same frontmatter, add an `<audio>` element. Podcast RSS feed is generated automatically.
+Set an audio URL on any post to make it a podcast episode. Supports relative paths (`/uploads/ep1.mp3`) or absolute URLs. The podcast RSS feed is generated automatically at `/rss/pod`.
+
+## Analytics
+
+Privacy-friendly, no third parties. Visible in `/admin → analytics`. Tracks hits, uniques, top paths, countries, and RSS subscribers. No cookies, IPs are hashed.
 
 ## Local dev
 

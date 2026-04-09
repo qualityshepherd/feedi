@@ -52,7 +52,7 @@ export const refreshFeeds = async (env) => {
   const now = new Date().toISOString()
   const statusMap = {}
   results.forEach(r => {
-    statusMap[r.config.url] = { code: r.code, fetched: now }
+    statusMap[r.config.url] = { code: r.code, fetched: now, ...(r.error ? { error: r.error } : {}) }
   })
   await env.FEEDI_KV.put('feeds:status', JSON.stringify(statusMap))
 
@@ -169,7 +169,7 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
       existing[idx].url = newUrl
     }
 
-    if (body.title !== undefined) existing[idx].title = body.title.trim()
+    if (typeof body.title === 'string') existing[idx].title = body.title.trim()
     if (body.limit !== undefined) existing[idx].limit = Math.max(1, Math.min(50, parseInt(body.limit) || 10))
 
     await kv.put('feeds:list', JSON.stringify(existing))

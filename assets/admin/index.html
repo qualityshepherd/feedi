@@ -264,7 +264,11 @@ const timeAgo = (iso) => {
   return h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`
 }
 const statusDot = (s) => {
-  if (!s || s.code === null) return `<span class="status-dot status-null" title="never fetched"></span>`
+  if (!s) return `<span class="status-dot status-null" title="never fetched"></span>`
+  if (s.code === null || s.code === 0) {
+    const title = s.error ? `error: ${s.error}` : 'never fetched'
+    return `<span class="status-dot status-error" title="${escHtml(title)}${s.fetched ? ` · ${timeAgo(s.fetched)}` : ''}"></span>`
+  }
   const cls = s.code === 200 ? 'status-ok' : s.code === 429 ? 'status-warn' : s.code >= 400 ? 'status-error' : 'status-null'
   const label = s.code === 429 ? '429 Rate Limited' : s.code >= 500 ? `${s.code} Server Error` : s.code >= 400 ? `${s.code} Error` : `${s.code} OK`
   return `<span class="status-dot ${cls}" title="${label}${s.fetched ? ` · ${timeAgo(s.fetched)}` : ''}"></span>`
