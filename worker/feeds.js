@@ -3,6 +3,10 @@ import { memberByToken, isOwnerPubkey } from './auth.js'
 
 const KV_KEY = 'feeds:aggregated'
 const KV_TTL = 60 * 60
+// Cache aggregated feeds for ~25h: hourly refresh means one missed cron still serves stale content
+const FEED_CACHE_TTL = KV_TTL * 25
+// Keep feed status for 7 days so history survives missed refreshes
+const FEED_STATUS_TTL = KV_TTL * 24 * 7
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -57,7 +61,7 @@ export const refreshFeeds = async (env) => {
   results.forEach(r => {
     statusMap[r.config.url] = { code: r.code, fetched: now, ...(r.error ? { error: r.error } : {}) }
   })
-  await env.FEEDI_KV.put('feeds:status', JSON.stringify(statusMap))
+  await env.FEEDI_KV.put('feeds:status', JSON.stringify(statusMap), { expirationTtl: FEED_STATUS_TTL })
 
   const feedConfig = await env.FEEDI_KV.get('feeds:config', { type: 'json' }) || {}
   const maxItems = feedConfig.maxItems || 100
@@ -69,7 +73,7 @@ export const refreshFeeds = async (env) => {
     return
   }
 
-  await env.FEEDI_KV.put(KV_KEY, JSON.stringify(aggregated), { expirationTtl: KV_TTL * 25 })
+  await env.FEEDI_KV.put(KV_KEY, JSON.stringify(aggregated), { expirationTtl: FEED_CACHE_TTL })
   console.log(`[feeds] cached ${aggregated.length} posts from ${successful.length}/${feeds.length} feeds`)
 }
 

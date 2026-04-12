@@ -11,6 +11,12 @@ export { AnalyticsDO }
 export const isAuthorized = (secret, adminSecret) =>
   !!secret && !!adminSecret && secret === adminSecret
 
+const json = (data, status = 200) =>
+  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
+
+// These /api/* paths are intentionally public (no token required)
+const PUBLIC_API = new Set(['/api/challenge', '/api/login', '/api/me', '/api/hit'])
+
 const PRIVATE = [
   '/worker/', '/test/', '/node_modules/',
   '/wrangler.toml', '/package.json', '/package-lock.json',
@@ -27,17 +33,24 @@ export default {
       return new Response(null, { status: 302, headers: { Location: '/admin' } })
     }
 
-    // Analytics
-    if (path === '/api/analytics') {
-      const token = req.headers.get('authorization')?.replace('Bearer ', '')
-      const pubkey = token ? await memberByToken(token, env.FEEDI_KV) : null
-      if (!pubkey || !isOwnerPubkey(pubkey, env)) return new Response('Unauthorized', { status: 401 })
-      return handleAnalytics(req, env, url.hostname)
-    }
-
     if (path === '/api/hit' && req.method === 'POST') {
       ctx.waitUntil(trackHit(req, env))
       return new Response('ok')
+    }
+
+    // Auth gate — all /api/* routes not in PUBLIC_API require a valid token
+    if (path.startsWith('/api/') && !PUBLIC_API.has(path)) {
+      const token = req.headers.get('authorization')?.replace('Bearer ', '')
+      const pubkey = token ? await memberByToken(token, env.FEEDI_KV) : null
+      if (!pubkey) return json({ error: 'unauthorized' }, 401)
+    }
+
+    // Analytics (owner-only)
+    if (path === '/api/analytics') {
+      const token = req.headers.get('authorization')?.replace('Bearer ', '')
+      const pubkey = token ? await memberByToken(token, env.FEEDI_KV) : null
+      if (!isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
+      return handleAnalytics(req, env, url.hostname)
     }
 
     // RSS feeds
@@ -63,7 +76,7 @@ export default {
 
     if (path === '/feeds/refresh' && req.method === 'POST') {
       const secret = url.searchParams.get('secret')
-      if (!isAuthorized(secret, env.ADMIN_SECRET)) return new Response('Unauthorized', { status: 401 })
+      if (!isAuthorized(secret, env.ADMIN_SECRET)) return json({ error: 'unauthorized' }, 401)
       await refreshFeeds(env)
       return new Response('refreshed')
     }
