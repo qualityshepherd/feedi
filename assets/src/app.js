@@ -95,7 +95,7 @@ const show = id => { const el = document.getElementById(id); if (el) el.hidden =
   setEventListeners()
   handleRouting()
 
-  if (index.some(p => p.meta.audioUrl)) { show('pods-nav-link'); show('rss-pod-row') }
+  if (index.some(p => p.meta.audioUrl)) show('rss-pod-row')
 
   fetch('/feeds/aggregated').then(r => r.json()).catch(() => []).then(feeds => {
     if (feeds.length) show('feeds-nav-link')

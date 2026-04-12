@@ -57,9 +57,33 @@ export function renderSinglePost (slug) {
   toggleLoadMoreButton(false)
 }
 
-export function renderArchive (posts) {
-  elements.main.innerHTML = posts.filter(p => !isSpecialPost(p) && !isPod(p)).map(archiveTemplate).join('')
+export function renderArchive (posts, filter = 'all', onFilter) {
+  const all = posts.filter(p => !isSpecialPost(p))
+  const hasPods = all.some(isPod)
+
+  const visible = filter === 'blog'
+    ? all.filter(p => !isPod(p))
+    : filter === 'pod'
+      ? all.filter(isPod)
+      : all
+
+  const filterBar = hasPods
+    ? `
+    <div class="archive-filters">
+      <button class="archive-filter${filter === 'all' ? ' active' : ''}" data-filter="all">all</button>
+      <button class="archive-filter${filter === 'blog' ? ' active' : ''}" data-filter="blog">blog</button>
+      <button class="archive-filter${filter === 'pod' ? ' active' : ''}" data-filter="pod">podcast</button>
+    </div>`
+    : ''
+
+  elements.main.innerHTML = filterBar + visible.map(archiveTemplate).join('')
   toggleLoadMoreButton(false)
+
+  if (onFilter) {
+    elements.main.querySelectorAll('.archive-filter').forEach(btn => {
+      btn.addEventListener('click', () => onFilter(btn.dataset.filter))
+    })
+  }
 }
 
 export function renderNotFoundPage () {

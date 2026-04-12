@@ -7,7 +7,6 @@ import {
   incrementDisplayedPosts
 } from './state.js'
 import {
-  isPod,
   renderArchive,
   renderFilteredPosts,
   renderNotFoundPage,
@@ -22,8 +21,7 @@ const ROUTES = {
   POST: '/posts',
   TAG: '/tag',
   ARCHIVE: '/archive',
-  READER: '/feeds',
-  PODS: '/pods'
+  READER: '/feeds'
 }
 
 const getRouteParams = () => {
@@ -41,7 +39,7 @@ const filterPostsByTag = (posts, tag) =>
 const routeHandlers = {
   [ROUTES.HOME]: () => {
     if (getDisplayedPosts() === 0) setDisplayedPosts(10)
-    const posts = getPosts().filter(p => !isPod(p))
+    const posts = getPosts()
     const displayedCount = getDisplayedPosts()
     renderPosts(posts, displayedCount)
     toggleLoadMoreButton(displayedCount < posts.length)
@@ -61,7 +59,8 @@ const routeHandlers = {
   },
 
   [ROUTES.ARCHIVE]: () => {
-    renderArchive(getPosts())
+    const render = (filter) => renderArchive(getPosts(), filter, render)
+    render('all')
   },
 
   '/search': ({ params }) => {
@@ -74,11 +73,6 @@ const routeHandlers = {
       setSearchTerm('')
       renderPosts(getPosts(), getPosts().length)
     }
-  },
-
-  [ROUTES.PODS]: () => {
-    const pods = getPosts().filter(p => isPod(p))
-    renderPosts(pods, pods.length)
   },
 
   [ROUTES.READER]: async () => {
@@ -139,12 +133,8 @@ export async function handleLoadMore () {
   if (location.pathname === ROUTES.READER) {
     const feeds = getCachedFeeds()
     if (feeds) renderFeedsItems(feeds)
-  } else if (location.pathname === ROUTES.PODS) {
-    const pods = getPosts().filter(p => isPod(p))
-    renderPosts(pods, displayedCount)
-    toggleLoadMoreButton(displayedCount < pods.length)
   } else {
-    const posts = getPosts().filter(p => !isPod(p))
+    const posts = getPosts()
     renderPosts(posts, displayedCount)
     toggleLoadMoreButton(displayedCount < posts.length)
   }

@@ -353,6 +353,41 @@ blockquote {
   color: var(--color-text-secondary);
 }
 
+.archive-filters {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+
+.archive-filter {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  text-transform: uppercase;
+}
+
+.archive-filter:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-muted);
+}
+
+.archive-filter.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.archive-pod .archive::before {
+  content: '♪ ';
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+}
+
 #load-more {
   display: none;
   margin: 30px auto;
@@ -437,8 +472,17 @@ a.feed-meta:hover {
   color: var(--color-accent);
 }
 
+.feed-source-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .feed-meta .date {
   margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .feed-avatar {
@@ -487,8 +531,8 @@ a.feed-meta:hover {
 }
 
 .feed-thumb {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   object-fit: cover;
   border-radius: 4px;
   flex-shrink: 0;

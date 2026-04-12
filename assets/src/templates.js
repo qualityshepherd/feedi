@@ -37,7 +37,7 @@ export const notFoundTemplate = (message = 'No results found.') => `
 `
 
 export const archiveTemplate = post => `
-  <p>
+  <p${post.meta.audioUrl ? ' class="archive-pod"' : ''}>
     <a href="/posts/${post.meta.slug}"><span class="archive">${post.meta.title}</span></a>
     <span class="date">${post.meta.date}</span>
   </p>
@@ -56,7 +56,7 @@ const feedDomain = (url) => {
 const thumbPlaceholder = (label) => {
   const letter = (label || '?')[0].toUpperCase()
   const hue = [...(label || '')].reduce((h, c) => h + c.charCodeAt(0), 0) % 360
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" fill="hsl(${hue},25%,22%)"/><text x="40" y="54" font-size="38" font-family="sans-serif" fill="hsl(${hue},40%,65%)" text-anchor="middle">${letter}</text></svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" fill="hsl(${hue},25%,22%)"/><text x="60" y="78" font-size="56" font-family="sans-serif" fill="hsl(${hue},40%,65%)" text-anchor="middle">${letter}</text></svg>`
   return `data:image/svg+xml,${encodeURIComponent(svg)}`
 }
 
@@ -81,7 +81,7 @@ export const feedsItemTemplate = (item) => {
       ? `<a class="feed-meta" href="${url}" target="_blank" rel="noopener noreferrer">`
       : '<div class="feed-meta">'}
       ${avatar ? `<img class="feed-avatar" src="${avatar}" alt="" onerror="this.style.display='none'">` : ''}
-      <span>${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
+      <span class="feed-source-name" title="${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}">${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
       <span class="date">${dateStr}</span>
     ${url ? '</a>' : '</div>'}
     <div class="feed-body feed-open">

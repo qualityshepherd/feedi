@@ -8,6 +8,43 @@ const getAllPublished = async (kv) => {
   return posts.filter(p => p && p.status === 'published').sort((a, b) => new Date(b.date) - new Date(a.date))
 }
 
+export const handlePageRoute = async (req, env) => {
+  const slug = new URL(req.url).pathname.slice(1)
+  if (!slug) return env.ASSETS.fetch(req)
+
+  const [post, htmlRes] = await Promise.all([
+    getPost(env.FEEDI_KV, slug),
+    env.ASSETS.fetch(new Request(new URL('/', req.url)))
+  ])
+
+  const html = await htmlRes.text()
+
+  if (!post || post.status !== 'published' || post.type !== 'page') {
+    return new Response(html, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } })
+  }
+  const base = new URL(req.url).origin
+  const url = `${base}/${post.slug}`
+  const title = post.title
+  const description = post.description || stripTags(post.html || '').slice(0, 200).trim()
+
+  const meta = [
+    `<title>${escXml(title)}</title>`,
+    `<meta property="og:title" content="${escXml(title)}">`,
+    `<meta property="og:url" content="${escXml(url)}">`,
+    '<meta property="og:type" content="article">',
+    description ? `<meta property="og:description" content="${escXml(description)}">` : '',
+    description ? `<meta name="description" content="${escXml(description)}">` : ''
+  ].filter(Boolean).join('\n  ')
+
+  const injected = html
+    .replace(/<title>[^<]*<\/title>/, '')
+    .replace('<head>', `<head>\n  ${meta}`)
+
+  return new Response(injected, {
+    headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public, max-age=300' }
+  })
+}
+
 export const handleRobots = (req) => {
   const base = new URL(req.url).origin
   return new Response(

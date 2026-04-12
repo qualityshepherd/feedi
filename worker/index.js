@@ -4,7 +4,7 @@ import { handleRss } from './rss.js'
 import { handleUpload, handleServeUpload, handleListUploads } from './upload.js'
 import { handleAuth, memberByToken, isOwnerPubkey } from './auth.js'
 import { handlePosts, handleIndex } from './posts.js'
-import { handleRobots, handleSitemap, handlePostRoute } from './seo.js'
+import { handleRobots, handleSitemap, handlePostRoute, handlePageRoute } from './seo.js'
 
 export { AnalyticsDO }
 
@@ -109,6 +109,12 @@ export default {
     // Block private paths
     if (PRIVATE.some(p => path === p || path.startsWith(p))) {
       return new Response('Not found', { status: 404 })
+    }
+
+    // Page routes (type:page posts at root level, e.g. /about)
+    const segments = path.split('/').filter(Boolean)
+    if (segments.length === 1 && !path.includes('.')) {
+      return handlePageRoute(req, env)
     }
 
     ctx.waitUntil(trackHit(req, env))
