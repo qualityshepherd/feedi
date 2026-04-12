@@ -15,7 +15,7 @@ import {
   renderSinglePost,
   toggleLoadMoreButton
 } from './ui.js'
-import { loadAndRenderFeeds, getCachedFeeds, renderFeedsItems, loadAndRenderDiscover } from './feeds.js'
+import { loadAndRenderFeeds, getCachedFeeds, renderFeedsItems } from './feeds.js'
 
 const ROUTES = {
   HOME: '/',
@@ -23,8 +23,7 @@ const ROUTES = {
   TAG: '/tag',
   ARCHIVE: '/archive',
   READER: '/feeds',
-  PODS: '/pods',
-  DISCOVER: '/discover'
+  PODS: '/pods'
 }
 
 const getRouteParams = () => {
@@ -87,11 +86,6 @@ const routeHandlers = {
     await loadAndRenderFeeds()
   },
 
-  [ROUTES.DISCOVER]: async () => {
-    setDisplayedPosts(100)
-    await loadAndRenderDiscover()
-  },
-
   default: () => {
     renderNotFoundPage()
   }
@@ -142,9 +136,7 @@ export function handleSearch (e) {
 export async function handleLoadMore () {
   incrementDisplayedPosts()
   const displayedCount = getDisplayedPosts()
-  if (location.pathname === ROUTES.DISCOVER) {
-    await loadAndRenderDiscover()
-  } else if (location.pathname === ROUTES.READER) {
+  if (location.pathname === ROUTES.READER) {
     const feeds = getCachedFeeds()
     if (feeds) renderFeedsItems(feeds)
   } else if (location.pathname === ROUTES.PODS) {

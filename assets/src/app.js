@@ -28,6 +28,58 @@ function setEventListeners () {
   elements.searchForm?.addEventListener('submit', (e) => {
     e.preventDefault()
   })
+
+  // ── search expand/collapse ─────────────────────────────────────────────────
+  const btnSearch = document.getElementById('btn-search')
+  const searchForm = document.getElementById('search-form')
+  const searchInput = document.getElementById('search')
+
+  btnSearch?.addEventListener('click', () => {
+    searchForm.hidden = false
+    btnSearch.hidden = true
+    searchInput.focus()
+  })
+
+  searchInput?.addEventListener('blur', () => {
+    if (!searchInput.value) {
+      searchForm.hidden = true
+      btnSearch.hidden = false
+    }
+  })
+
+  searchInput?.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      searchInput.value = ''
+      searchForm.hidden = true
+      btnSearch.hidden = false
+      handleSearch()
+    }
+  })
+
+  // ── rss dropdown ───────────────────────────────────────────────────────────
+  const btnRss = document.getElementById('btn-rss')
+  const rssDropdown = document.getElementById('rss-dropdown')
+
+  btnRss?.addEventListener('click', (e) => {
+    e.stopPropagation()
+    rssDropdown.hidden = !rssDropdown.hidden
+  })
+
+  document.addEventListener('click', (e) => {
+    if (!rssDropdown.hidden && !e.target.closest('.nav-rss-wrap')) {
+      rssDropdown.hidden = true
+    }
+  })
+
+  document.querySelectorAll('.nav-dropdown-copy').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const url = location.origin + btn.dataset.path
+      await navigator.clipboard.writeText(url)
+      const orig = btn.textContent
+      btn.textContent = 'copied!'
+      setTimeout(() => { btn.textContent = orig }, 1500)
+    })
+  })
 }
 
 const show = id => { const el = document.getElementById(id); if (el) el.hidden = false }
@@ -39,13 +91,9 @@ const show = id => { const el = document.getElementById(id); if (el) el.hidden =
   setEventListeners()
   handleRouting()
 
-  if (index.some(p => p.meta.audioUrl)) show('pods-nav-link')
+  if (index.some(p => p.meta.audioUrl)) { show('pods-nav-link'); show('rss-pod-row') }
 
-  Promise.all([
-    fetch('/feeds/aggregated').then(r => r.json()).catch(() => []),
-    fetch('/discover.json').then(r => r.json()).catch(() => [])
-  ]).then(([feeds, discover]) => {
+  fetch('/feeds/aggregated').then(r => r.json()).catch(() => []).then(feeds => {
     if (feeds.length) show('feeds-nav-link')
-    if (discover.length) show('discover-nav-link')
   })
 })()

@@ -4,7 +4,6 @@ import { handleRss } from './rss.js'
 import { handleUpload, handleServeUpload } from './upload.js'
 import { handleAuth, memberByToken, isOwnerPubkey } from './auth.js'
 import { handlePosts, handleIndex } from './posts.js'
-import { handleDiscover, refreshDiscover } from './discover.js'
 import { handleRobots, handleSitemap, handlePostRoute } from './seo.js'
 
 export { AnalyticsDO }
@@ -86,11 +85,6 @@ export default {
       return handleIndex(env)
     }
 
-    // Discover
-    if (path === '/discover.json' || path.startsWith('/discover/') || path.startsWith('/api/discover')) {
-      return handleDiscover(req, env, ctx)
-    }
-
     // SEO
     if (path === '/robots.txt') return handleRobots(req)
     if (path === '/sitemap.xml') return handleSitemap(req, env)
@@ -118,11 +112,6 @@ export default {
   },
 
   async scheduled (event, env, ctx) {
-    ctx.waitUntil(
-      Promise.all([
-        refreshFeeds(env).catch(err => console.error('Feed refresh failed:', err)),
-        refreshDiscover(env).catch(err => console.error('Discover refresh failed:', err))
-      ])
-    )
+    ctx.waitUntil(refreshFeeds(env).catch(err => console.error('Feed refresh failed:', err)))
   }
 }

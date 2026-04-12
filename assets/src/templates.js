@@ -1,7 +1,5 @@
 import { renderTags } from './ui.js'
-import { stripHtml, processContent, truncateContent } from './feedRules.js'
-
-const CONTENT_LENGTH = 4200
+import { stripHtml, blurb, extractFirstImage } from './feedRules.js'
 
 const isPodcast = post => !!post.meta.audioUrl
 
@@ -55,6 +53,13 @@ const feedDomain = (url) => {
   try { return new URL(url).hostname } catch { return '' }
 }
 
+const thumbPlaceholder = (label) => {
+  const letter = (label || '?')[0].toUpperCase()
+  const hue = [...(label || '')].reduce((h, c) => h + c.charCodeAt(0), 0) % 360
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><rect width="80" height="80" fill="hsl(${hue},25%,22%)"/><text x="40" y="54" font-size="38" font-family="sans-serif" fill="hsl(${hue},40%,65%)" text-anchor="middle">${letter}</text></svg>`
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`
+}
+
 const safeUrl = (url) => {
   try {
     const { protocol } = new URL(url)
@@ -65,22 +70,27 @@ const safeUrl = (url) => {
 export const feedsItemTemplate = (item) => {
   const url = safeUrl(item.url)
   const domain = feedDomain(url)
-  const avatar = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : ''
+  const avatar = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : ''
   const dateStr = formatDate(item.date)
+  const thumb = extractFirstImage(item.content || '') || thumbPlaceholder(item.feed?.title || domain)
+  const text = blurb(item.content || '')
 
   return `
-  <div class="post feed-post">
+  <div class="post feed-post" data-url="${url}">
     ${url
       ? `<a class="feed-meta" href="${url}" target="_blank" rel="noopener noreferrer">`
       : '<div class="feed-meta">'}
-      ${avatar ? `<img class="feed-avatar" src="${avatar}" alt="">` : ''}
+      ${avatar ? `<img class="feed-avatar" src="${avatar}" alt="" onerror="this.style.display='none'">` : ''}
       <span>${item.author ? `${item.author} · ` : ''}${item.feed?.title || domain}</span>
       <span class="date">${dateStr}</span>
     ${url ? '</a>' : '</div>'}
-    ${item.title
-      ? `${url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">` : ''}<h2 class="post-title">${stripHtml(item.title)}</h2>${url ? '</a>' : ''}`
-      : ''}
-    ${item.content ? `<div class="feed-content">${processContent(truncateContent(item.content, url, CONTENT_LENGTH), item.feed?.url)}</div>` : ''}
+    <div class="feed-body feed-open">
+      <img class="feed-thumb" src="${thumb}" alt="" loading="lazy">
+      <div class="feed-body-text">
+        ${item.title ? `<h2 class="post-title">${stripHtml(item.title)}</h2>` : ''}
+        ${text ? `<p class="feed-blurb">${text}</p>` : ''}
+      </div>
+    </div>
   </div>
   `
 }

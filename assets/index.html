@@ -9,6 +9,7 @@
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="alternate" type="application/rss+xml" href="/rss/blog" title="Blog feed" />
+    <link rel="alternate" type="application/rss+xml" href="/rss/all" title="All posts feed" />
     <link rel="alternate" type="application/rss+xml" href="/rss/pod" title="Podcast feed" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
     <link
@@ -48,13 +49,40 @@
         <a href="/">Home</a>
         <a id="feeds-nav-link" href="/feeds" hidden>Feeds</a>
         <a id="pods-nav-link" href="/pods" hidden>Podcast</a>
-        <a id="discover-nav-link" href="/discover" hidden>Discover</a>
         <a href="/archive">Archive</a>
         <a href="/about">About</a>
 
-        <form aria-label="search">
-          <input id="search" name="q" type="search" placeholder="🔍 search" />
-        </form>
+        <div class="nav-rss-wrap">
+          <button class="nav-icon-btn" id="btn-rss" aria-label="RSS feeds" title="RSS feeds">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><circle cx="5" cy="19" r="2"/><path d="M4 4v3a13 13 0 0 1 13 13h3A16 16 0 0 0 4 4z"/><path d="M4 11v3a6 6 0 0 1 6 6h3a9 9 0 0 0-9-9z"/></svg>
+          </button>
+          <div class="nav-dropdown" id="rss-dropdown" hidden>
+            <div class="nav-dropdown-item">
+              <span class="nav-dropdown-label">blog</span>
+              <code class="nav-dropdown-url">/rss/blog</code>
+              <button class="nav-dropdown-copy" data-path="/rss/blog">copy</button>
+            </div>
+            <div class="nav-dropdown-item" id="rss-pod-row" hidden>
+              <span class="nav-dropdown-label">podcast</span>
+              <code class="nav-dropdown-url">/rss/pod</code>
+              <button class="nav-dropdown-copy" data-path="/rss/pod">copy</button>
+            </div>
+            <div class="nav-dropdown-item">
+              <span class="nav-dropdown-label">all</span>
+              <code class="nav-dropdown-url">/rss/all</code>
+              <button class="nav-dropdown-copy" data-path="/rss/all">copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-search-wrap">
+          <button class="nav-icon-btn" id="btn-search" aria-label="Search" title="Search">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <form aria-label="search" id="search-form" hidden>
+            <input id="search" name="q" type="search" placeholder="search" />
+          </form>
+        </div>
       </nav>
     </header>
 

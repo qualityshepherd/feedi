@@ -214,10 +214,6 @@ label.label-inline { margin: 0; font-size: 0.82rem; }
 .confirm-box { margin-top: var(--s4); padding: var(--s4); border: 1px solid var(--color-danger); border-radius: var(--radius-sm); }
 .confirm-box p { margin-bottom: var(--s3); font-size: 0.9rem; }
 
-/* Discover */
-.post-row.discover-row { flex-wrap: wrap; gap: var(--s2); }
-.discover-count { font-size: 0.8rem; margin-left: var(--s2); }
-
 /* Feeds */
 .post-row.feed-row { flex-wrap: nowrap; }
 .feed-row .post-row-title { min-width: 0; }

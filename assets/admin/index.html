@@ -15,7 +15,6 @@
       <a href="#new" id="nav-new" class="hidden">+ new</a>
       <a href="#list" id="nav-posts" class="hidden">posts</a>
       <a href="#pages" id="nav-pages" class="hidden">pages</a>
-      <a href="#discover" id="nav-discover" class="hidden">discover</a>
       <a href="#feeds" id="nav-feeds" class="hidden">feeds</a>
       <a href="#analytics" id="nav-analytics" class="hidden">analytics</a>
       <a href="#settings" id="nav-settings" class="hidden nav-icon" title="settings" aria-label="settings">⚙</a>
@@ -76,25 +75,6 @@
     <div id="page-list" class="post-list"></div>
   </div>
 
-  <!-- discover -->
-  <div id="view-discover" class="hidden">
-    <div class="view-header">
-      <h2 class="view-title">discover</h2>
-    </div>
-    <div class="row field">
-      <div class="field" style="flex:3">
-        <label for="discover-url-input">seed a feedi instance (bootstraps the mesh)</label>
-        <input type="url" id="discover-url-input" placeholder="https://feedi.example.dev">
-      </div>
-    </div>
-    <button class="btn btn-primary field" id="btn-add-discover">add instance</button>
-    <div class="error hidden" id="discover-error"></div>
-    <div id="discover-list" class="post-list"></div>
-    <div id="discover-blocked-section" class="hidden">
-      <h3 class="a-section">blocked instances</h3>
-      <div id="discover-blocked-list" class="post-list"></div>
-    </div>
-  </div>
 
   <!-- feeds -->
   <div id="view-feeds" class="hidden">
@@ -295,7 +275,6 @@ const routes = {
   '#new': () => showNew('post'),
   '#new-page': () => showNew('page'),
   '#pages': showPages,
-  '#discover': showDiscover,
   '#feeds': showFeeds,
   '#analytics': showAnalytics,
   '#settings': showSettings
@@ -312,8 +291,8 @@ const routeEditor = () => {
 window.addEventListener('hashchange', routeEditor)
 
 // ── views ─────────────────────────────────────────────────────────────────────
-const VIEWS = ['view-login', 'view-list', 'view-pages', 'view-discover', 'view-feeds', 'view-analytics', 'view-settings', 'view-editor']
-const NAV_IDS = ['nav-new', 'nav-posts', 'nav-pages', 'nav-discover', 'nav-feeds', 'nav-analytics', 'nav-settings']
+const VIEWS = ['view-login', 'view-list', 'view-pages', 'view-feeds', 'view-analytics', 'view-settings', 'view-editor']
+const NAV_IDS = ['nav-new', 'nav-posts', 'nav-pages', 'nav-feeds', 'nav-analytics', 'nav-settings']
 
 const showView = (id) => { VIEWS.forEach(v => $(v).classList.add('hidden')); $(id).classList.remove('hidden') }
 const showNav = () => NAV_IDS.forEach(id => $(id).classList.remove('hidden'))
@@ -382,12 +361,6 @@ async function showEdit (slug) {
   $('btn-publish').textContent = post.status === 'published' ? 'update' : 'publish'
   $('editor-error').classList.add('hidden')
   showView('view-editor'); showNav()
-}
-
-async function showDiscover () {
-  if (!token) return showLogin()
-  showView('view-discover'); showNav()
-  await renderDiscover()
 }
 
 async function showFeeds () {
@@ -497,68 +470,6 @@ async function renderPageList () {
       <span class="badge ${p.status === 'published' ? 'badge-published' : ''}">${p.status}</span>
       <div class="post-row-actions"><a href="#edit/${p.slug}" class="btn btn-sm">edit</a></div>
     </div>`).join('')
-}
-
-async function renderDiscover () {
-  const [instances, blocked] = await Promise.all([api('GET', '/api/discover'), api('GET', '/api/discover/blocked')])
-  const el = $('discover-list')
-  const known = Array.isArray(instances) ? instances.filter(i => !i.blocked) : []
-
-  if (!known.length) {
-    el.innerHTML = '<p class="muted">no instances yet. seed one above to bootstrap the mesh.</p>'
-  } else {
-    el.innerHTML = known.map(i => {
-      const domain = (() => { try { return new URL(i.url).hostname } catch { return i.url } })()
-      const dot = !i.lastSeen ? 'status-null' : i.status === 200 ? 'status-ok' : 'status-error'
-      const tags = (i.tags || []).slice(0, 6).map(t => `<span class="badge">${escHtml(t)}</span>`).join(' ')
-      return `
-        <div class="post-row discover-row">
-          <span class="status-dot ${dot}" title="${i.lastSeen ? new Date(i.lastSeen).toLocaleString() : 'never fetched'}"></span>
-          <div class="post-row-title">
-            <a href="${escHtml(i.url)}" target="_blank" rel="noopener">${escHtml(domain)}</a>
-            ${i.postCount ? `<span class="muted discover-count">${i.postCount} posts</span>` : ''}
-          </div>
-          <div class="flex-1 flex gap-2 flex-wrap">${tags}</div>
-          <div class="post-row-actions">
-            <button class="btn btn-sm btn-danger" data-remove="${escHtml(i.url)}">remove</button>
-            <button class="btn btn-sm btn-danger" data-block="${escHtml(i.url)}">block</button>
-          </div>
-        </div>`
-    }).join('')
-
-    el.querySelectorAll('[data-add-feed]').forEach(btn => btn.addEventListener('click', async () => {
-      const res = await api('POST', '/api/feeds', { url: btn.dataset.addFeed })
-      if (res.error) { showError('discover-error', res.error); return }
-      btn.textContent = 'added ✓'; btn.disabled = true
-    }))
-
-    el.querySelectorAll('[data-remove]').forEach(btn => btn.addEventListener('click', async () => {
-      const res = await api('DELETE', '/api/discover', { url: btn.dataset.remove })
-      if (res.error) { showError('discover-error', res.error); return }
-      await renderDiscover()
-    }))
-
-    el.querySelectorAll('[data-block]').forEach(btn => btn.addEventListener('click', async () => {
-      const res = await api('POST', '/api/discover/block', { url: btn.dataset.block })
-      if (res.error) { showError('discover-error', res.error); return }
-      await renderDiscover()
-    }))
-  }
-
-  const blockedList = Array.isArray(blocked) ? blocked : []
-  const blockedSection = $('discover-blocked-section')
-  if (!blockedList.length) { blockedSection.classList.add('hidden'); return }
-  blockedSection.classList.remove('hidden')
-  $('discover-blocked-list').innerHTML = blockedList.map(url => `
-    <div class="post-row">
-      <div class="post-row-title muted">${escHtml(url)}</div>
-      <div class="post-row-actions"><button class="btn btn-sm" data-unblock="${escHtml(url)}">unblock</button></div>
-    </div>`).join('')
-  $('discover-blocked-list').querySelectorAll('[data-unblock]').forEach(btn => btn.addEventListener('click', async () => {
-    const res = await api('DELETE', '/api/discover/block', { url: btn.dataset.unblock })
-    if (res.error) { showError('discover-error', res.error); return }
-    await renderDiscover()
-  }))
 }
 
 async function renderFeeds () {
@@ -842,8 +753,6 @@ $('feed-max-items').addEventListener('change', async () => {
 $('feed-url-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-add-feed').click() })
 $('feed-title-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-add-feed').click() })
 $('feed-limit-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-add-feed').click() })
-$('discover-url-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-add-discover').click() })
-
 $('btn-add-feed').addEventListener('click', async () => {
   const url = $('feed-url-input').value.trim()
   if (!url) return
@@ -854,16 +763,6 @@ $('btn-add-feed').addEventListener('click', async () => {
   $('feed-title-input').value = ''
   $('feed-limit-input').value = '10'
   await renderFeeds()
-})
-
-$('btn-add-discover').addEventListener('click', async () => {
-  const url = $('discover-url-input').value.trim()
-  if (!url) return
-  $('discover-error').classList.add('hidden')
-  const res = await api('POST', '/api/discover', { url })
-  if (res.error) { showError('discover-error', res.error); return }
-  $('discover-url-input').value = ''
-  await renderDiscover()
 })
 
 // ── analytics ─────────────────────────────────────────────────────────────────
