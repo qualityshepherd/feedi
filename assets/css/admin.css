@@ -35,7 +35,7 @@ body {
 a { color: var(--color-accent); text-decoration: none; }
 a:hover { color: var(--color-accent-hover); }
 
-#app { max-width: 65ch; margin: 0 auto; padding: var(--s8) var(--s4); }
+#app { max-width: 720px; margin: 0 auto; padding: var(--s8) var(--s4); }
 
 header {
   display: flex;
