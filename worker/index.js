@@ -114,8 +114,8 @@ export default {
     // Post pages — inject OG meta + fix direct URL navigation
     if (path.startsWith('/posts/')) return handlePostRoute(req, env)
 
-    // Admin UI — serve single HTML file for all /admin routes
-    if (path === '/admin' || path.startsWith('/admin/')) {
+    // Admin UI — serve single HTML file for all /admin routes (but pass through static assets)
+    if (path === '/admin' || (path.startsWith('/admin/') && !path.includes('.'))) {
       return env.ASSETS.fetch(new Request(new URL('/admin/index.html', req.url)))
     }
 

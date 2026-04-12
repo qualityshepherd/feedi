@@ -293,7 +293,6 @@ nav a:hover {
   clip-path: polygon(20% 0%,0% 20%,30% 50%,0% 80%,20% 100%,50% 70%,80% 100%,100% 80%,70% 50%,100% 20%,80% 0%,50% 30%);
 }
 
-h1,
 h2,
 h3,
 h4,
@@ -338,7 +337,6 @@ h4 {
   color: var(--color-accent);
 }
 
-.small,
 .date {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
@@ -490,23 +488,6 @@ a.feed-meta:hover {
   line-height: 1.6;
 }
 
-.rss-feed-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-
-.rss-feed-item {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-}
-
-.rss-feed-url {
-  font-family: monospace;
-  font-size: 1rem;
-}
 
 .feed-body {
   display: flex;
