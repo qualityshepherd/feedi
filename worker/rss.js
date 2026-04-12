@@ -7,9 +7,17 @@ const escXml = (s = '') =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
 
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 const rfc822 = (dateStr) => {
   const d = dateStr ? new Date(dateStr) : new Date()
-  return isNaN(d) ? new Date().toUTCString() : d.toUTCString()
+  if (isNaN(d)) return rfc822()
+  const dd = String(d.getUTCDate()).padStart(2, '0')
+  const hh = String(d.getUTCHours()).padStart(2, '0')
+  const mm = String(d.getUTCMinutes()).padStart(2, '0')
+  const ss = String(d.getUTCSeconds()).padStart(2, '0')
+  return `${DAYS[d.getUTCDay()]}, ${dd} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()} ${hh}:${mm}:${ss} GMT`
 }
 
 const channelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
@@ -19,7 +27,7 @@ const channelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
   <link>https://${escXml(cfg.domain)}</link>
   <description>${escXml(cfg.description)}</description>
   <language>${escXml(cfg.language || 'en-us')}</language>
-  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+  <lastBuildDate>${rfc822()}</lastBuildDate>
   <atom:link href="https://${escXml(cfg.domain)}${selfUrl}" rel="self" type="application/rss+xml"/>`
 
 const podChannelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
@@ -29,11 +37,12 @@ const podChannelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
   <link>https://${escXml(cfg.domain)}</link>
   <description>${escXml(cfg.description)}</description>
   <language>${escXml(cfg.language || 'en-us')}</language>
-  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+  <lastBuildDate>${rfc822()}</lastBuildDate>
   <atom:link href="https://${escXml(cfg.domain)}${selfUrl}" rel="self" type="application/rss+xml"/>
   <itunes:author>${escXml(cfg.title)}</itunes:author>
   <itunes:summary>${escXml(cfg.description)}</itunes:summary>
-  <itunes:explicit>false</itunes:explicit>${cfg.image ? `\n  <itunes:image href="${escXml(cfg.image)}"/>` : ''}`
+  <itunes:explicit>false</itunes:explicit>
+  <itunes:category text="${escXml(cfg.podcastCategory || 'Technology')}"/>${cfg.image ? `\n  <itunes:image href="${escXml(cfg.image)}"/>` : ''}`
 
 const channelClose = () => '\n</channel>\n</rss>'
 

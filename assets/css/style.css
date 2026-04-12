@@ -382,11 +382,6 @@ blockquote {
   color: var(--color-accent);
 }
 
-.archive-pod .archive::before {
-  content: '♪ ';
-  color: var(--color-text-muted);
-  font-family: var(--font-body);
-}
 
 #load-more {
   display: none;

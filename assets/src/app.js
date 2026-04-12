@@ -14,6 +14,7 @@ function setEventListeners () {
     if (a.hasAttribute('download') || a.hash || e.metaKey || e.ctrlKey || a.target === '_blank') return
 
     const url = new URL(a.href)
+    if (url.pathname.startsWith('/admin')) return
     if (url.origin !== location.origin) {
       a.target = '_blank'
       a.rel = 'noopener noreferrer'
@@ -96,6 +97,7 @@ const show = id => { const el = document.getElementById(id); if (el) el.hidden =
   handleRouting()
 
   if (index.some(p => p.meta.audioUrl)) show('rss-pod-row')
+  if (localStorage.getItem('feedi_token')) show('nav-admin')
 
   fetch('/feeds/aggregated').then(r => r.json()).catch(() => []).then(feeds => {
     if (feeds.length) show('feeds-nav-link')

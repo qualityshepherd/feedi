@@ -124,6 +124,15 @@
     <h2 class="view-title field">settings</h2>
 
     <div class="settings-field field">
+      <label>rss</label>
+      <div class="flex gap-3 items-center flex-wrap">
+        <a class="btn btn-sm" id="validate-blog" href="#" target="_blank" rel="noopener">validate blog</a>
+        <a class="btn btn-sm" id="validate-pod" href="#" target="_blank" rel="noopener">validate podcast</a>
+        <a class="btn btn-sm" id="validate-all" href="#" target="_blank" rel="noopener">validate all</a>
+      </div>
+    </div>
+
+    <div class="settings-field mt-6 field">
       <label>cache</label>
       <div class="flex gap-3 items-center flex-wrap">
         <button class="btn btn-sm" id="btn-cache-bust" title="Clear the cached post index — next page load rebuilds it">bust cache</button>
@@ -594,6 +603,10 @@ $('attach-file').addEventListener('change', async e => {
 })
 
 // ── settings ──────────────────────────────────────────────────────────────────
+const validatorBase = 'https://validator.w3.org/feed/check.cgi?url='
+$('validate-blog').href = validatorBase + encodeURIComponent(location.origin + '/rss/blog')
+$('validate-pod').href = validatorBase + encodeURIComponent(location.origin + '/rss/pod')
+$('validate-all').href = validatorBase + encodeURIComponent(location.origin + '/rss/all')
 $('btn-cache-bust').addEventListener('click', async () => {
   const res = await api('POST', '/api/cache/bust')
   if (res.error) { alert(res.error); return }
