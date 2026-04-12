@@ -71,6 +71,10 @@ function setEventListeners () {
     }
   })
 
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !rssDropdown.hidden) rssDropdown.hidden = true
+  })
+
   document.querySelectorAll('.nav-dropdown-copy').forEach(btn => {
     btn.addEventListener('click', async () => {
       const url = location.origin + btn.dataset.path

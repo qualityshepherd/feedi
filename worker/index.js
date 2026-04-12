@@ -1,7 +1,7 @@
 import { trackHit, handleAnalytics, AnalyticsDO } from './analytics.js'
 import { handleFeeds, refreshFeeds, handleFeedsAdmin } from './feeds.js'
 import { handleRss } from './rss.js'
-import { handleUpload, handleServeUpload } from './upload.js'
+import { handleUpload, handleServeUpload, handleListUploads } from './upload.js'
 import { handleAuth, memberByToken, isOwnerPubkey } from './auth.js'
 import { handlePosts, handleIndex } from './posts.js'
 import { handleRobots, handleSitemap, handlePostRoute } from './seo.js'
@@ -51,6 +51,10 @@ export default {
 
     if (path === '/api/upload' && req.method === 'POST') {
       return handleUpload(req, env)
+    }
+
+    if (path === '/api/uploads' && req.method === 'GET') {
+      return handleListUploads(req, env)
     }
 
     if (path.startsWith('/uploads/')) {

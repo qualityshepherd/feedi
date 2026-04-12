@@ -11,7 +11,7 @@ export const slugify = (title) =>
 
 export const buildIndex = (posts) =>
   posts
-    .filter(p => p.status === 'published' && p.type !== 'page')
+    .filter(p => p.status === 'published')
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .map(({ slug, title, description, date, author, tags, html, audioUrl, type }) => ({
       meta: { slug, title, description: description || '', date, author, tags, audioUrl: audioUrl || '', page: type === 'page' },

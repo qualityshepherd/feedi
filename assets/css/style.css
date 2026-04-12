@@ -191,7 +191,7 @@ nav {
 }
 
 nav a {
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   color: var(--color-text-secondary);
 }
 

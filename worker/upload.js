@@ -32,6 +32,15 @@ export const handleUpload = async (req, env) => {
   return json({ url: `/uploads/${key}` })
 }
 
+export const handleListUploads = async (req, env) => {
+  const token = req.headers?.get('authorization')?.replace('Bearer ', '')
+  const pubkey = await memberByToken(token, env.FEEDI_KV)
+  if (!pubkey || !isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
+
+  const list = await env.R2.list()
+  return json((list.objects || []).map(o => ({ key: o.key, size: o.size })))
+}
+
 export const handleServeUpload = async (req, env) => {
   const key = new URL(req.url).pathname.replace('/uploads/', '')
   if (!key) return new Response('Not found', { status: 404 })

@@ -116,7 +116,7 @@ export function handleRouting () {
 let searchBeaconTimer = null
 
 export function handleSearch (e) {
-  const searchValue = e.target.value.toLowerCase()
+  const searchValue = (e?.target?.value ?? '').toLowerCase()
   setSearchTerm(searchValue)
 
   if (searchValue) {

@@ -134,8 +134,8 @@
     <div class="settings-field mt-6 field">
       <label>export</label>
       <div class="flex gap-3 items-center flex-wrap">
-        <button class="btn btn-sm" id="btn-backup-json">export json</button>
-        <button class="btn btn-sm" id="btn-backup-md">export markdown</button>
+        <button class="btn btn-sm" id="btn-backup">backup</button>
+        <span class="muted" id="backup-status"></span>
       </div>
     </div>
 
@@ -159,8 +159,7 @@
       <div id="delete-all-confirm" class="confirm-box hidden">
         <p>This will permanently delete all posts and pages. Consider exporting first.</p>
         <div class="flex gap-3 flex-wrap mb-3">
-          <button class="btn btn-sm" id="btn-export-before-delete">export json first</button>
-          <button class="btn btn-sm" id="btn-export-md-before-delete">export zip first</button>
+          <button class="btn btn-sm" id="btn-export-before-delete">backup first</button>
         </div>
         <div class="flex gap-3">
           <button class="btn btn-danger" id="btn-delete-all-confirm">yes, delete everything</button>
@@ -590,28 +589,57 @@ $('btn-cache-bust').addEventListener('click', async () => {
   setTimeout(() => { $('btn-cache-bust').textContent = 'bust cache' }, 2000)
 })
 
-$('btn-backup-json').addEventListener('click', async () => {
-  const res = await fetch('/api/backup', { headers: { Authorization: `Bearer ${token}` } })
-  const url = URL.createObjectURL(await res.blob())
-  Object.assign(document.createElement('a'), { href: url, download: 'feedi-backup.json' }).click()
-  URL.revokeObjectURL(url)
-})
+const doBackup = async () => {
+  const btn = $('btn-backup')
+  const status = $('backup-status')
+  btn.disabled = true
+  btn.textContent = 'exporting...'
+  status.textContent = ''
+  try {
+    const [posts, feedsRaw, uploadsList] = await Promise.all([
+      api('GET', '/api/backup'),
+      api('GET', '/api/feeds'),
+      api('GET', '/api/uploads')
+    ])
+    const JSZip = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')
+    const zip = new JSZip.default()
 
-$('btn-backup-md').addEventListener('click', async () => {
-  const posts = await api('GET', '/api/backup')
-  if (!Array.isArray(posts)) return
-  const JSZip = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')
-  const zip = new JSZip.default()
-  posts.forEach(p => zip.file(`${p.slug}.md`, `---\ntitle: ${p.title}\ndate: ${p.date}\nauthor: ${p.author}\ntags: [${(p.tags || []).join(', ')}]\nstatus: ${p.status}\n---\n${p.markdown}`))
-  const url = URL.createObjectURL(await zip.generateAsync({ type: 'blob' }))
-  Object.assign(document.createElement('a'), { href: url, download: 'feedi-posts.zip' }).click()
-  URL.revokeObjectURL(url)
-})
+    zip.file('posts.json', JSON.stringify(posts, null, 2))
+    zip.file('feeds.json', JSON.stringify((feedsRaw || []).map(({ url, title, limit }) => ({ url, title, limit })), null, 2))
+
+    if (Array.isArray(posts)) {
+      posts.forEach(p => {
+        zip.file(`posts/${p.slug}.md`, `---\ntitle: ${p.title}\ndate: ${p.date}\nauthor: ${p.author}\ntags: [${(p.tags || []).join(', ')}]\nstatus: ${p.status}\n---\n${p.markdown}`)
+      })
+    }
+
+    if (Array.isArray(uploadsList) && uploadsList.length) {
+      status.textContent = `downloading ${uploadsList.length} uploads...`
+      await Promise.all(uploadsList.map(async ({ key }) => {
+        const res = await fetch(`/uploads/${key}`)
+        if (res.ok) zip.file(`uploads/${key}`, await res.blob())
+      }))
+    }
+
+    const blob = await zip.generateAsync({ type: 'blob' })
+    const url = URL.createObjectURL(blob)
+    Object.assign(document.createElement('a'), { href: url, download: 'feedi-backup.zip' }).click()
+    URL.revokeObjectURL(url)
+    status.textContent = 'done'
+    setTimeout(() => { status.textContent = '' }, 3000)
+  } catch (err) {
+    status.textContent = `export failed: ${err.message}`
+  } finally {
+    btn.disabled = false
+    btn.textContent = 'backup'
+  }
+}
+
+$('btn-backup').addEventListener('click', doBackup)
 
 $('btn-delete-all').addEventListener('click', () => $('delete-all-confirm').classList.remove('hidden'))
 $('btn-delete-all-cancel').addEventListener('click', () => $('delete-all-confirm').classList.add('hidden'))
-$('btn-export-before-delete').addEventListener('click', () => $('btn-backup-json').click())
-$('btn-export-md-before-delete').addEventListener('click', () => $('btn-backup-md').click())
+$('btn-export-before-delete').addEventListener('click', doBackup)
 $('btn-delete-all-confirm').addEventListener('click', async () => {
   const res = await api('DELETE', '/api/posts')
   if (res.error) return
