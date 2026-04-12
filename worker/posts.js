@@ -32,14 +32,12 @@ const invalidateIndex = (kv) => kv.delete('index:cache')
 
 const putPost = async (kv, post) => {
   await kv.put(`post:${post.slug}`, JSON.stringify(post))
-  const cached = await kv.get('posts:all', { type: 'json' })
-  if (cached) await kv.put('posts:all', JSON.stringify([...cached.filter(p => p.slug !== post.slug), post]))
+  await kv.delete('posts:all')
 }
 
 const deletePost = async (kv, slug) => {
   await kv.delete(`post:${slug}`)
-  const cached = await kv.get('posts:all', { type: 'json' })
-  if (cached) await kv.put('posts:all', JSON.stringify(cached.filter(p => p.slug !== slug)))
+  await kv.delete('posts:all')
 }
 
 export const getAllPosts = async (kv) => {

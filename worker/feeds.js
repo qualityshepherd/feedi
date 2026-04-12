@@ -44,11 +44,14 @@ export const refreshFeeds = async (env) => {
     feeds = feeds || []
   }
 
-  if (!feeds.length) return
+  if (!feeds.length) {
+    await env.FEEDI_KV.delete(KV_KEY)
+    return
+  }
 
   const results = await Promise.all(feeds.map(fetchFeed))
 
-  // store per-feed status
+  // store per-feed status only if something changed
   const now = new Date().toISOString()
   const statusMap = {}
   results.forEach(r => {

@@ -406,8 +406,8 @@ blockquote {
 
 img[alt="thumb"] {
   float: right;
-  width: 200px;
-  height: 200px;
+  width: 150px;
+  height: 150px;
   margin: var(--space-3);
   padding: var(--space-1);
   border-radius: var(--radius-lg);
@@ -745,9 +745,8 @@ footer {
   }
 
   img[alt="thumb"] {
-    float: none;
-    display: block;
-    margin: var(--space-4) auto;
+    width: 100px;
+    height: 100px;
   }
 }
 
