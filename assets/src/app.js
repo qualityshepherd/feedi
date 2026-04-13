@@ -1,4 +1,4 @@
-import { readSiteIndex, setPosts, setDisplayedPosts } from './state.js'
+import { readSiteIndex, setPosts, setDisplayedPosts, getPageSize } from './state.js'
 import { elements } from './dom.js'
 import { handleLoadMore, handleRouting, handleSearch } from './handlers.js'
 
@@ -92,7 +92,7 @@ const show = id => { const el = document.getElementById(id); if (el) el.hidden =
 ;(async () => {
   const index = await readSiteIndex('/index.json')
   setPosts(index)
-  setDisplayedPosts(10)
+  setDisplayedPosts(getPageSize())
   setEventListeners()
   handleRouting()
 

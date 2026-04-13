@@ -100,6 +100,8 @@ async function showPages () {
 function showSettings () {
   if (!token) return showLogin()
   showView('view-settings'); showNav()
+  const stored = localStorage.getItem('feedi_page_size')
+  $('page-size-input').value = stored ? parseInt(stored, 10) : 10
 }
 
 function showNew (type = 'post') {
@@ -227,6 +229,25 @@ document.querySelectorAll('.eye-btn').forEach(btn => {
 })
 
 // ── renders ───────────────────────────────────────────────────────────────────
+const postToggle = (slug, published) => `
+  <label class="publish-toggle" title="${published ? 'published' : 'draft'}">
+    <input type="checkbox" class="publish-toggle-input" data-slug="${escHtml(slug)}" ${published ? 'checked' : ''}>
+    <span class="publish-toggle-track"></span>
+  </label>`
+
+const bindToggles = (el) => {
+  el.querySelectorAll('.publish-toggle-input').forEach(input => {
+    input.addEventListener('change', async () => {
+      const status = input.checked ? 'published' : 'draft'
+      input.disabled = true
+      const res = await api('PATCH', `/api/posts/${input.dataset.slug}`, { status })
+      input.disabled = false
+      if (res.error) { input.checked = !input.checked; return }
+      input.closest('.publish-toggle').title = status
+    })
+  })
+}
+
 async function renderList () {
   const all = await api('GET', '/api/posts')
   const posts = Array.isArray(all) ? all.filter(p => p.type !== 'page') : []
@@ -236,9 +257,10 @@ async function renderList () {
     <div class="post-row">
       <div class="post-row-title">${escHtml(p.title)}</div>
       <span class="post-row-meta">${p.date}</span>
-      <span class="badge ${p.status === 'published' ? 'badge-published' : ''}">${p.status}</span>
+      ${postToggle(p.slug, p.status === 'published')}
       <div class="post-row-actions"><a href="#edit/${p.slug}" class="btn btn-sm">edit</a></div>
     </div>`).join('')
+  bindToggles(el)
 }
 
 async function renderPageList () {
@@ -250,9 +272,10 @@ async function renderPageList () {
     <div class="post-row">
       <div class="post-row-title">/${escHtml(p.slug)}</div>
       <span class="post-row-meta">${escHtml(p.title)}</span>
-      <span class="badge ${p.status === 'published' ? 'badge-published' : ''}">${p.status}</span>
+      ${postToggle(p.slug, p.status === 'published')}
       <div class="post-row-actions"><a href="#edit/${p.slug}" class="btn btn-sm">edit</a></div>
     </div>`).join('')
+  bindToggles(el)
 }
 
 async function renderFeeds () {
@@ -371,6 +394,16 @@ $('attach-file').addEventListener('change', async e => {
 })
 
 // ── settings ──────────────────────────────────────────────────────────────────
+$('btn-save-page-size').addEventListener('click', () => {
+  const n = parseInt($('page-size-input').value, 10)
+  if (isNaN(n) || n < 1) return
+  localStorage.setItem('feedi_page_size', String(n))
+  const status = $('page-size-status')
+  status.textContent = 'saved'
+  status.classList.remove('hidden')
+  setTimeout(() => status.classList.add('hidden'), 2000)
+})
+
 const validatorBase = 'https://validator.w3.org/feed/check.cgi?url='
 $('validate-blog').href = validatorBase + encodeURIComponent(location.origin + '/rss/blog')
 $('validate-pod').href = validatorBase + encodeURIComponent(location.origin + '/rss/pod')
@@ -442,11 +475,11 @@ $('btn-delete-all-confirm').addEventListener('click', async () => {
 })
 
 // ── import ────────────────────────────────────────────────────────────────────
-const setImportStatus = (msg) => {
+const setImportStatus = (msg, persist = false) => {
   const el = $('import-status')
   el.textContent = msg
   el.classList.remove('hidden')
-  setTimeout(() => el.classList.add('hidden'), 5000)
+  if (!persist) setTimeout(() => el.classList.add('hidden'), 5000)
 }
 
 const parseMdPost = (text, filename) => {
@@ -470,6 +503,7 @@ $('btn-import-md').addEventListener('click', () => $('import-md-file').click())
 
 $('import-json-file').addEventListener('change', async (e) => {
   const file = e.target.files[0]; if (!file) return; e.target.value = ''
+  setImportStatus('importing…', true)
   let posts
   try { posts = JSON.parse(await file.text()) } catch { setImportStatus('invalid json file'); return }
   if (!Array.isArray(posts)) { setImportStatus('expected an array of posts'); return }
@@ -481,6 +515,7 @@ $('import-json-file').addEventListener('change', async (e) => {
 
 $('import-md-file').addEventListener('change', async (e) => {
   const file = e.target.files[0]; if (!file) return; e.target.value = ''
+  setImportStatus('importing…', true)
   const { default: JSZip } = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm')
   const zip = await new JSZip().loadAsync(file)
   const posts = []

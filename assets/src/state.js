@@ -1,8 +1,18 @@
-const MAX_POSTS = 10
+const DEFAULT_PAGE_SIZE = 10
+const storage = typeof localStorage !== 'undefined' ? localStorage : { getItem: () => null, setItem: () => {} }
+
+export const getPageSize = () => {
+  const n = parseInt(storage.getItem('feedi_page_size'), 10)
+  return (!isNaN(n) && n > 0) ? n : DEFAULT_PAGE_SIZE
+}
+
+export const setPageSize = (n) => {
+  if (!isNaN(n) && n > 0) storage.setItem('feedi_page_size', String(n))
+}
 
 const initialState = {
   posts: [],
-  displayedPosts: MAX_POSTS,
+  displayedPosts: getPageSize(),
   searchTerm: ''
 }
 
@@ -21,7 +31,7 @@ export const updateState = (updates) => {
 export const setPosts = (posts) => updateState({ posts: [...posts] })
 export const setDisplayedPosts = (count) => updateState({ displayedPosts: count })
 export const setSearchTerm = (term) => updateState({ searchTerm: term })
-export const incrementDisplayedPosts = (increment = MAX_POSTS) =>
+export const incrementDisplayedPosts = (increment = getPageSize()) =>
   updateState({ displayedPosts: currentState.displayedPosts + increment })
 
 export const resetState = () => {
