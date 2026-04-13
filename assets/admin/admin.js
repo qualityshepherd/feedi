@@ -15,6 +15,13 @@ const download = (filename, content, type) => {
   Object.assign(document.createElement('a'), { href: url, download: filename }).click()
   URL.revokeObjectURL(url)
 }
+const normalizeDate = (d) => {
+  if (!d) return ''
+  const [y, m, day] = String(d).split('-')
+  if (!y || !m || !day) return d
+  return `${y}-${m.padStart(2, '0')}-${day.padStart(2, '0')}`
+}
+
 const timeAgo = (iso) => {
   const m = Math.floor((Date.now() - new Date(iso)) / 60000)
   if (m < 1) return 'just now'
@@ -97,11 +104,15 @@ async function showPages () {
   await renderPageList()
 }
 
-function showSettings () {
+async function showSettings () {
   if (!token) return showLogin()
   showView('view-settings'); showNav()
   const stored = localStorage.getItem('feedi_page_size')
   $('page-size-input').value = stored ? parseInt(stored, 10) : 10
+  const settings = await api('GET', '/api/settings')
+  if (settings && !settings.error) {
+    $('site-image-input').value = settings.siteImage || ''
+  }
 }
 
 function showNew (type = 'post') {
@@ -133,7 +144,7 @@ async function showEdit (slug) {
   $('editor-title').textContent = currentType === 'page' ? 'edit page' : 'edit post'
   setEditorMode(currentType)
   $('editor-title-input').value = post.title
-  $('editor-date').value = post.date
+  $('editor-date').value = normalizeDate(post.date)
   $('editor-description').value = post.description || ''
   $('editor-tags').value = (post.tags || []).join(', ')
   $('editor-audio').value = post.audioUrl || ''
@@ -394,14 +405,14 @@ $('attach-file').addEventListener('change', async e => {
 })
 
 // ── settings ──────────────────────────────────────────────────────────────────
-$('btn-save-page-size').addEventListener('click', () => {
+$('page-size-input').addEventListener('change', () => {
   const n = parseInt($('page-size-input').value, 10)
-  if (isNaN(n) || n < 1) return
-  localStorage.setItem('feedi_page_size', String(n))
-  const status = $('page-size-status')
-  status.textContent = 'saved'
-  status.classList.remove('hidden')
-  setTimeout(() => status.classList.add('hidden'), 2000)
+  if (!isNaN(n) && n > 0) localStorage.setItem('feedi_page_size', String(n))
+})
+
+$('site-image-input').addEventListener('change', async () => {
+  const url = $('site-image-input').value.trim()
+  await api('PATCH', '/api/settings', { siteImage: url })
 })
 
 const validatorBase = 'https://validator.w3.org/feed/check.cgi?url='
@@ -435,7 +446,7 @@ const doBackup = async () => {
 
     if (Array.isArray(posts)) {
       posts.forEach(p => {
-        zip.file(`posts/${p.slug}.md`, `---\ntitle: ${p.title}\ndate: ${p.date}\nauthor: ${p.author}\ntags: [${(p.tags || []).join(', ')}]\nstatus: ${p.status}\n---\n${p.markdown}`)
+        zip.file(`posts/${p.slug}.md`, `---\ntitle: ${p.title}\ndate: ${p.date}\nauthor: ${p.author}\ntags: [${(p.tags || []).join(', ')}]\nstatus: ${p.status}${p.audioUrl ? `\naudioUrl: ${p.audioUrl}` : ''}\n---\n${p.markdown}`)
       })
     }
 
@@ -495,7 +506,19 @@ const parseMdPost = (text, filename) => {
     const inner = meta.tags.match(/^\[([^\]]*)\]$/)
     meta.tags = inner ? inner[1].split(',').map(t => t.trim()).filter(Boolean) : [meta.tags]
   }
-  return { title: meta.title || filename.replace(/\.md$/, ''), date: meta.date || null, author: meta.author || null, tags: meta.tags || [], status: meta.status || 'draft', markdown: m[2].trim() }
+  const post = { title: meta.title || filename.replace(/\.md$/, ''), date: meta.date || null, author: meta.author || null, tags: meta.tags || [], status: meta.status || 'draft', audioUrl: meta.audioUrl || '', markdown: m[2].trim() }
+  return extractAudio(post)
+}
+
+const extractAudio = (post) => {
+  if (post.audioUrl) return post
+  const m = (post.markdown || '').match(/<audio[^>]+src="([^"]+)"/)
+  if (!m) return post
+  return {
+    ...post,
+    audioUrl: m[1],
+    markdown: post.markdown.replace(/<audio[^>]*>[\s\S]*?<\/audio>|<audio[^>]* \/>/gi, '').trim()
+  }
 }
 
 $('btn-import-json').addEventListener('click', () => $('import-json-file').click())
@@ -507,7 +530,7 @@ $('import-json-file').addEventListener('change', async (e) => {
   let posts
   try { posts = JSON.parse(await file.text()) } catch { setImportStatus('invalid json file'); return }
   if (!Array.isArray(posts)) { setImportStatus('expected an array of posts'); return }
-  const res = await api('POST', '/api/backup', posts)
+  const res = await api('POST', '/api/backup', posts.map(extractAudio))
   if (res.error) { setImportStatus(res.error); return }
   setImportStatus(`imported ${res.imported} post${res.imported !== 1 ? 's' : ''}${res.errors?.length ? `, ${res.errors.length} failed` : ''}`)
   await renderList()
@@ -721,11 +744,12 @@ const analyticsRenderSessions = () => {
       const d = new Date(ts)
       const tsStr = (analyticsDays > 1 ? d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' : '') +
         d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
-      const clickable = !analyticsActiveIp && count > 1
+      const clickable = analyticsActiveIp || count > 1
+      const onclick = analyticsActiveIp ? 'analyticsFilterIp(null)' : `analyticsFilterIp('${escHtml(s.ip)}')`
       return `<div class="a-hit">
         <span class="a-ts">${tsStr}</span>
-        <span>${country ? flag(country) : ''}</span>
-        <span class="a-city${clickable ? ' multi' : ''}" onclick="${clickable ? `analyticsFilterIp('${escHtml(s.ip)}')` : ''}" title="${escHtml(city || '')}">${escHtml(city || '?')}${count > 1 ? ` (${count})` : ''}</span>
+        <span class="a-flag">${country ? flag(country) : ''}</span>
+        <span class="a-city${clickable ? ' multi' : ''}" onclick="${clickable ? onclick : ''}" title="${escHtml(city || '')}">${escHtml(city || '?')}${count > 1 ? ` (${count})` : ''}</span>
         <span class="a-path">${escHtml(p)}</span>
       </div>`
     })

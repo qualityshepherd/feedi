@@ -1,5 +1,16 @@
 import { getAllPosts } from './posts.js'
 
+const extractFirstImg = (html = '') => {
+  const m = html.match(/<img[^>]+src="([^"]+)"/)
+  return m ? m[1] : ''
+}
+
+const resolveUrl = (url, base) => {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return `${base}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
 const escXml = (s = '') =>
   String(s)
     .replace(/&/g, '&amp;')
@@ -21,7 +32,7 @@ const rfc822 = (dateStr) => {
 }
 
 const channelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">
 <channel>
   <title>${escXml(cfg.title)}</title>
   <link>https://${escXml(cfg.domain)}</link>
@@ -46,12 +57,13 @@ const podChannelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
 
 const channelClose = () => '\n</channel>\n</rss>'
 
-const postItem = (post, baseUrl) => {
+const postItem = (post, baseUrl, siteImage = '') => {
   const url = `${baseUrl}/posts/${post.slug}`
   const safeHtml = (post.html || '')
     .replace(/src="(?!https?:\/\/)/g, `src="${baseUrl}/`)
     .replace(/]]>/g, ']]&gt;')
   const summary = post.description || safeHtml.replace(/<[^>]+>/g, '').slice(0, 280)
+  const imgUrl = resolveUrl(extractFirstImg(safeHtml) || siteImage, baseUrl)
   return `
   <item>
     <title>${escXml(post.title)}</title>
@@ -59,7 +71,7 @@ const postItem = (post, baseUrl) => {
     <guid isPermaLink="true">${url}</guid>
     <pubDate>${rfc822(post.date)}</pubDate>
     <description>${escXml(summary)}</description>
-    <content:encoded><![CDATA[${safeHtml}]]></content:encoded>
+    <content:encoded><![CDATA[${safeHtml}]]></content:encoded>${imgUrl ? `\n    <media:content url="${escXml(imgUrl)}" medium="image"/>` : ''}
   </item>`
 }
 
@@ -89,14 +101,17 @@ const podItem = (post, baseUrl) => {
 export const handleRss = async (req, env) => {
   const path = new URL(req.url).pathname
   const kv = env.FEEDI_KV
+  const settings = await kv.get('settings', { type: 'json' }) || {}
   const cfg = {
     title: env.SITE_TITLE || 'feedi',
     description: env.SITE_DESCRIPTION || '',
     domain: env.DOMAIN_NAME || '',
     language: 'en-us',
-    image: env.PODCAST_IMAGE || ''
+    image: env.PODCAST_IMAGE || '',
+    podcastCategory: env.PODCAST_CATEGORY || ''
   }
   const base = `https://${cfg.domain}`
+  const siteImage = settings.siteImage || ''
 
   const allPosts = (await getAllPosts(kv))
     .filter(p => p.status === 'published' && p.type !== 'page')
@@ -105,7 +120,7 @@ export const handleRss = async (req, env) => {
   if (path === '/rss/blog') {
     const posts = allPosts.filter(p => !p.audioUrl)
     const xml = channelOpen(cfg, '/rss/blog') +
-      posts.map(p => postItem(p, base)).join('') +
+      posts.map(p => postItem(p, base, siteImage)).join('') +
       channelClose()
     return rssResponse(xml)
   }
@@ -120,7 +135,7 @@ export const handleRss = async (req, env) => {
 
   if (path === '/rss/all') {
     const xml = channelOpen(cfg, '/rss/all') +
-      allPosts.map(p => postItem(p, base)).join('') +
+      allPosts.map(p => postItem(p, base, siteImage)).join('') +
       channelClose()
     return rssResponse(xml)
   }

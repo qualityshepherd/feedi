@@ -147,7 +147,7 @@ export const handlePosts = async (req, env) => {
       markdown: content ?? post.markdown,
       html: content != null ? marked(content) : post.html,
       tags: tags ?? post.tags,
-      date: date ?? post.date,
+      date: date || post.date,
       status: status ?? post.status,
       updatedAt: new Date().toISOString().slice(0, 10),
       audioUrl: audioUrl !== undefined ? audioUrl.trim() : (post.audioUrl || ''),
@@ -178,6 +178,24 @@ export const handlePosts = async (req, env) => {
     await Promise.all(posts.map(p => deletePost(kv, p.slug)))
     await invalidateIndex(kv)
     return json({ deleted: posts.length })
+  }
+
+  // GET /api/settings
+  if (method === 'GET' && path === '/api/settings') {
+    if (!isOwner) return json({ error: 'forbidden' }, 403)
+    const settings = await kv.get('settings', { type: 'json' }) || {}
+    return json(settings)
+  }
+
+  // PATCH /api/settings
+  if (method === 'PATCH' && path === '/api/settings') {
+    if (!isOwner) return json({ error: 'forbidden' }, 403)
+    let body
+    try { body = await req.json() } catch { return json({ error: 'invalid json' }, 400) }
+    const current = await kv.get('settings', { type: 'json' }) || {}
+    const updated = { ...current, ...body }
+    await kv.put('settings', JSON.stringify(updated))
+    return json(updated)
   }
 
   // POST /api/cache/bust
