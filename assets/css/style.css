@@ -64,6 +64,7 @@
   --font-heading: "header", system-ui, sans-serif;
   --font-mono: "mono", monospace;
 
+  --text-xs: 0.85rem;
   --text-sm: 1rem;
   --text-md: 1.1rem;
   --text-lg: 1.3rem;
@@ -459,7 +460,7 @@ ol {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-text-muted);
   margin-bottom: 4px;
   text-decoration: none;
