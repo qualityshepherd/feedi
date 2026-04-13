@@ -109,6 +109,8 @@ async function showSettings () {
   showView('view-settings'); showNav()
   const stored = localStorage.getItem('feedi_page_size')
   $('page-size-input').value = stored ? parseInt(stored, 10) : 10
+  const config = await api('GET', '/api/feeds/config')
+  if (config && !config.error) $('feed-max-items').value = config.maxItems ?? 100
   const settings = await api('GET', '/api/settings')
   if (settings && !settings.error) {
     $('site-image-input').value = settings.siteImage || ''
@@ -164,11 +166,8 @@ async function showFeeds () {
   if (!token) return showLogin()
   showView('view-feeds'); showNav()
   const config = await api('GET', '/api/feeds/config')
-  if (!config.error) {
-    $('feed-default-limit').value = config.defaultLimit ?? 10
-    $('feed-max-items').value = config.maxItems ?? 100
-  }
-  $('feed-limit-input').value = config.defaultLimit ?? 10
+  const lastLimit = localStorage.getItem('feedi_feed_limit')
+  $('feed-limit-input').value = lastLimit ?? config.defaultLimit ?? 5
   await renderFeeds()
 }
 
@@ -303,6 +302,7 @@ const setEditorMode = (type) => {
   $('editor-title-input').placeholder = isPage ? 'About' : 'Post title'
   $('editor-url-preview').classList.toggle('hidden', !isPage)
   $('editor-date-field').classList.toggle('hidden', isPage)
+  $('editor-description-field').classList.toggle('hidden', isPage)
   $('editor-tags-field').classList.toggle('hidden', isPage)
   $('editor-audio-field').classList.toggle('hidden', isPage)
   updateUrlPreview()
@@ -413,6 +413,9 @@ $('attach-file').addEventListener('change', async e => {
 $('page-size-input').addEventListener('change', () => {
   const n = parseInt($('page-size-input').value, 10)
   if (!isNaN(n) && n > 0) localStorage.setItem('feedi_page_size', String(n))
+})
+$('feed-max-items').addEventListener('change', async () => {
+  await api('PATCH', '/api/feeds/config', { maxItems: parseInt($('feed-max-items').value) || 100 })
 })
 
 $('site-image-input').addEventListener('change', async () => {
@@ -626,14 +629,6 @@ function bindFeedRows (el, feeds) {
   })
 }
 
-$('feed-default-limit').addEventListener('change', async () => {
-  const val = parseInt($('feed-default-limit').value) || 10
-  await api('PATCH', '/api/feeds/config', { defaultLimit: val })
-  $('feed-limit-input').value = val
-})
-$('feed-max-items').addEventListener('change', async () => {
-  await api('PATCH', '/api/feeds/config', { maxItems: parseInt($('feed-max-items').value) || 100 })
-})
 $('feed-url-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-add-feed').click() })
 $('feed-title-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-add-feed').click() })
 $('feed-limit-input').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-add-feed').click() })
@@ -643,9 +638,9 @@ $('btn-add-feed').addEventListener('click', async () => {
   $('feeds-error').classList.add('hidden')
   const res = await api('POST', '/api/feeds', { url, title: $('feed-title-input').value.trim(), limit: parseInt($('feed-limit-input').value) || 10 })
   if (res.error) { showError('feeds-error', res.error); return }
+  localStorage.setItem('feedi_feed_limit', $('feed-limit-input').value)
   $('feed-url-input').value = ''
   $('feed-title-input').value = ''
-  $('feed-limit-input').value = $('feed-default-limit').value
   await renderFeeds()
 })
 
@@ -684,12 +679,18 @@ const analyticsAggregate = (allData) => {
   const byPath = {}; const byCountry = {}; const byPathBots = {}; const byRss = {}; const byDevice = { mobile: 0, desktop: 0 }
   const byHour = Array(24).fill(0); const byDow = Array(7).fill(0)
   const recentHits = []
+  const ipDayCounts = {}
   for (const { data: d } of allData) {
     if (!d) continue
     totalHits += d.totalHits || 0
     totalBots += d.bots || 0
     const u = d.uniques
-    totalUniques += Array.isArray(u) ? u.length : (typeof u === 'number' ? u : 0)
+    if (Array.isArray(u)) {
+      totalUniques += u.length
+      for (const ip of u) ipDayCounts[ip] = (ipDayCounts[ip] || 0) + 1
+    } else {
+      totalUniques += typeof u === 'number' ? u : 0
+    }
     for (const [k, v] of Object.entries(d.byPath || {})) byPath[k] = (byPath[k] || 0) + v
     for (const [k, v] of Object.entries(d.byCountry || {})) byCountry[k] = (byCountry[k] || 0) + v
     for (const [k, v] of Object.entries(d.byPathBots || {})) {
@@ -709,7 +710,8 @@ const analyticsAggregate = (allData) => {
     recentHits.push(...(d.recentHits || []))
   }
   recentHits.sort((a, b) => b.ts - a.ts)
-  return { totalHits, totalBots, totalUniques, byPath, byCountry, byPathBots, byRss, byDevice, byHour, byDow, recentHits }
+  const returning = Object.values(ipDayCounts).filter(c => c > 1).length
+  return { totalHits, totalBots, totalUniques, returning, byPath, byCountry, byPathBots, byRss, byDevice, byHour, byDow, recentHits }
 }
 
 const analyticsGroupSessions = (hits) => {
@@ -799,6 +801,7 @@ async function renderAnalytics () {
     <div class="a-stats">
       <div class="a-stat"><div class="a-val">${fmt(s.totalHits)}</div><div class="a-lbl">hits</div></div>
       <div class="a-stat"><div class="a-val">${fmt(s.totalUniques)}</div><div class="a-lbl">unique</div></div>
+      ${s.returning > 0 ? `<div class="a-stat"><div class="a-val">${fmt(s.returning)}</div><div class="a-lbl">returning</div></div>` : ''}
       <div class="a-stat"><div class="a-val">${allData.length}</div><div class="a-lbl">days</div></div>
       <div class="a-stat a-tip-wrap"><div class="a-val">${fmt(s.totalBots)}</div><div class="a-lbl">🤖 bots</div><div class="a-tip">${
         Object.entries(s.byPathBots).sort((a, b) => b[1].count - a[1].count).slice(0, 10).map(([p, v]) =>

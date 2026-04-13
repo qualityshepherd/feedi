@@ -80,10 +80,6 @@
   <div id="view-feeds" class="hidden">
     <div class="view-header">
       <h2 class="view-title"><a href="/feeds">feeds</a></h2>
-      <label for="feed-default-limit" class="label-inline">post limit</label>
-      <input type="number" id="feed-default-limit" value="10" min="1" max="50" class="input-xs">
-      <label for="feed-max-items" class="label-inline">max total</label>
-      <input type="number" id="feed-max-items" value="100" min="1" class="input-sm">
     </div>
     <div class="row field">
       <div class="field" style="flex:3">
@@ -123,18 +119,20 @@
   <div id="view-settings" class="hidden">
     <h2 class="view-title field">settings</h2>
 
-    <div class="settings-field field">
-      <label>posts per page <span class="label-note">home feed</span></label>
-      <div class="flex gap-3 items-center">
+    <div class="row field" style="max-width:480px">
+      <div class="field">
+        <label for="page-size-input">posts per page <span class="label-note">home feed</span></label>
         <input type="number" id="page-size-input" class="input-xs" min="1" max="100">
+      </div>
+      <div class="field">
+        <label for="feed-max-items">max feed items <span class="label-note">per source</span></label>
+        <input type="number" id="feed-max-items" min="1" class="input-sm">
       </div>
     </div>
 
-    <div class="settings-field mt-6 field">
-      <label>default post image <span class="label-note">— fallback thumbnail for posts with no image (full or relative url)</span></label>
-      <div class="flex gap-3 items-center">
-        <input type="url" id="site-image-input" placeholder="/uploads/default.jpg">
-      </div>
+    <div class="settings-field field">
+      <label for="site-image-input">default post image <span class="label-note">— fallback thumbnail (full or relative url)</span></label>
+      <input type="url" id="site-image-input" placeholder="/uploads/default.jpg">
     </div>
 
     <div class="settings-field mt-6 field">
@@ -155,20 +153,14 @@
     </div>
 
     <div class="settings-field mt-6 field">
-      <label>export</label>
+      <label>export / import</label>
       <div class="flex gap-3 items-center flex-wrap">
         <button class="btn btn-sm" id="btn-backup">backup</button>
-        <span class="muted" id="backup-status"></span>
-      </div>
-    </div>
-
-    <div class="settings-field mt-6">
-      <label>import</label>
-      <div class="flex gap-3 items-center flex-wrap">
         <button class="btn btn-sm" id="btn-import-json">import json</button>
         <button class="btn btn-sm" id="btn-import-md">import zip</button>
         <input type="file" id="import-json-file" accept=".json" class="hidden">
         <input type="file" id="import-md-file" accept=".zip" class="hidden">
+        <span class="muted" id="backup-status"></span>
       </div>
       <div class="muted hidden" id="import-status"></div>
     </div>
@@ -206,7 +198,7 @@
         <input type="date" id="editor-date">
       </div>
     </div>
-    <div class="field">
+    <div class="field" id="editor-description-field">
       <label for="editor-description">description <span class="muted label-note">— optional. used in rss feed and link previews</span></label>
       <input type="text" id="editor-description" placeholder="A short summary...">
     </div>

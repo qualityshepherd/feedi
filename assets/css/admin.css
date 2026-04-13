@@ -47,6 +47,7 @@ header {
 }
 header .site-brand { margin: 0; line-height: 1; }
 header .site-brand a { display: flex; align-items: center; }
+header .site-brand a .site-logo { height: 36px; width: auto; color: var(--color-text-secondary); }
 
 .nav-links { display: flex; gap: var(--s4); align-items: center; font-size: 1.1rem; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
 .nav-links::-webkit-scrollbar { display: none; }
