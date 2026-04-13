@@ -11,6 +11,8 @@ const resolveUrl = (url, base) => {
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`
 }
 
+const stripTags = (html = '') => html.replace(/<[^>]+>/g, '')
+
 const escXml = (s = '') =>
   String(s)
     .replace(/&/g, '&amp;')
@@ -31,7 +33,7 @@ const rfc822 = (dateStr) => {
   return `${DAYS[d.getUTCDay()]}, ${dd} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()} ${hh}:${mm}:${ss} GMT`
 }
 
-const channelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
+const channelOpen = (cfg, selfFullUrl) => `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">
 <channel>
   <title>${escXml(cfg.title)}</title>
@@ -39,9 +41,9 @@ const channelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
   <description>${escXml(cfg.description)}</description>
   <language>${escXml(cfg.language || 'en-us')}</language>
   <lastBuildDate>${rfc822()}</lastBuildDate>
-  <atom:link href="https://${escXml(cfg.domain)}${selfUrl}" rel="self" type="application/rss+xml"/>`
+  <atom:link href="${escXml(selfFullUrl)}" rel="self" type="application/rss+xml"/>`
 
-const podChannelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
+const podChannelOpen = (cfg, selfFullUrl) => `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
 <channel>
   <title>${escXml(cfg.title)}</title>
@@ -49,9 +51,9 @@ const podChannelOpen = (cfg, selfUrl) => `<?xml version="1.0" encoding="UTF-8"?>
   <description>${escXml(cfg.description)}</description>
   <language>${escXml(cfg.language || 'en-us')}</language>
   <lastBuildDate>${rfc822()}</lastBuildDate>
-  <atom:link href="https://${escXml(cfg.domain)}${selfUrl}" rel="self" type="application/rss+xml"/>
+  <atom:link href="${escXml(selfFullUrl)}" rel="self" type="application/rss+xml"/>
   <itunes:author>${escXml(cfg.title)}</itunes:author>
-  <itunes:summary>${escXml(cfg.description)}</itunes:summary>
+  <itunes:summary>${escXml(stripTags(cfg.description))}</itunes:summary>
   <itunes:explicit>false</itunes:explicit>
   <itunes:category text="${escXml(cfg.podcastCategory || 'Technology')}"/>${cfg.image ? `\n  <itunes:image href="${escXml(cfg.image)}"/>` : ''}`
 
@@ -60,7 +62,8 @@ const channelClose = () => '\n</channel>\n</rss>'
 const postItem = (post, baseUrl, siteImage = '') => {
   const url = `${baseUrl}/posts/${post.slug}`
   const safeHtml = (post.html || '')
-    .replace(/src="(?!https?:\/\/)/g, `src="${baseUrl}/`)
+    .replace(/<break>/gi, '')
+    .replace(/src="(?!https?:\/\/)\/?/g, `src="${baseUrl}/`)
     .replace(/]]>/g, ']]&gt;')
   const summary = post.description || safeHtml.replace(/<[^>]+>/g, '').slice(0, 280)
   const imgUrl = resolveUrl(extractFirstImg(safeHtml) || siteImage, baseUrl)
@@ -78,7 +81,8 @@ const postItem = (post, baseUrl, siteImage = '') => {
 const podItem = (post, baseUrl) => {
   const url = `${baseUrl}/posts/${post.slug}`
   const safeHtml = (post.html || '')
-    .replace(/src="(?!https?:\/\/)/g, `src="${baseUrl}/`)
+    .replace(/<break>/gi, '')
+    .replace(/src="(?!https?:\/\/)\/?/g, `src="${baseUrl}/`)
     .replace(/]]>/g, ']]&gt;')
   const audio = post.audioUrl || ''
   const audioUrl = audio.startsWith('http') ? audio : `${baseUrl}${audio.startsWith('/') ? audio : `/${audio}`}`
@@ -93,13 +97,14 @@ const podItem = (post, baseUrl) => {
     <content:encoded><![CDATA[${safeHtml}]]></content:encoded>
     <enclosure url="${escXml(audioUrl)}" length="0" type="audio/mpeg"/>
     <itunes:title>${escXml(post.title)}</itunes:title>
-    <itunes:summary>${escXml(summary)}</itunes:summary>
+    <itunes:summary>${escXml(stripTags(summary))}</itunes:summary>
     <itunes:explicit>false</itunes:explicit>
   </item>`
 }
 
 export const handleRss = async (req, env) => {
-  const path = new URL(req.url).pathname
+  const reqUrl = new URL(req.url)
+  const path = reqUrl.pathname
   const kv = env.FEEDI_KV
   const settings = await kv.get('settings', { type: 'json' }) || {}
   const cfg = {
@@ -119,7 +124,7 @@ export const handleRss = async (req, env) => {
 
   if (path === '/rss/blog') {
     const posts = allPosts.filter(p => !p.audioUrl)
-    const xml = channelOpen(cfg, '/rss/blog') +
+    const xml = channelOpen(cfg, reqUrl.href) +
       posts.map(p => postItem(p, base, siteImage)).join('') +
       channelClose()
     return rssResponse(xml)
@@ -127,14 +132,14 @@ export const handleRss = async (req, env) => {
 
   if (path === '/rss/pod') {
     const posts = allPosts.filter(p => p.audioUrl)
-    const xml = podChannelOpen(cfg, '/rss/pod') +
+    const xml = podChannelOpen(cfg, reqUrl.href) +
       posts.map(p => podItem(p, base)).join('') +
       channelClose()
     return rssResponse(xml)
   }
 
   if (path === '/rss/all') {
-    const xml = channelOpen(cfg, '/rss/all') +
+    const xml = channelOpen(cfg, reqUrl.href) +
       allPosts.map(p => postItem(p, base, siteImage)).join('') +
       channelClose()
     return rssResponse(xml)

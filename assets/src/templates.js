@@ -10,23 +10,30 @@ const subscribeLink = post => {
   return `<a class="rss-subscribe" href="${href}" title="${title}" target="_blank" rel="noopener noreferrer">◆ subscribe</a>`
 }
 
-export const postsTemplate = post => `
+const BREAK = '<break>'
+
+export const postsTemplate = post => {
+  const parts = post.html.split(BREAK)
+  const preview = parts[0]
+  const truncated = parts.length > 1
+  return `
   <div class="post">
     <a href="/posts/${post.meta.slug}" role="button" aria-label="post-title">
       <h2 class="post-title">${post.meta.title}</h2>
     </a>
     ${post.meta.page ? '' : `<div class="date">${post.meta.date}</div>`}
-    <div>${post.html}</div>
-    ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
+    <div>${preview}</div>
+    ${truncated ? `<div class="post-break"><a class="read-more" href="/posts/${post.meta.slug}">read more</a></div>` : ''}
+    ${!truncated && post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
     <div class="tags">${renderTags(post.meta.tags)} ${subscribeLink(post)}</div>
   </div>
-`
+`}
 
 export const singlePostTemplate = post => `
   <article class="post">
     <h2>${post.meta.title}</h2>
     ${post.meta.page ? '' : `<div class="date">${post.meta.date}</div>`}
-    <div class="post-content">${post.html}</div>
+    <div class="post-content">${post.html.replaceAll(BREAK, '')}</div>
     ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:1rem 0"></audio>` : ''}
     ${post.meta.page ? '' : `<div class="tags">${renderTags(post.meta.tags)} ${subscribeLink(post)}</div>`}
   </article>

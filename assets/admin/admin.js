@@ -398,6 +398,11 @@ $('editor-content').addEventListener('paste', async e => {
   e.preventDefault()
   for (const file of files) await uploadImage(file)
 })
+$('btn-insert-break').addEventListener('click', () => {
+  const ta = $('editor-content')
+  insertAtCursor(ta, '\n\n<break>\n\n')
+  ta.focus()
+})
 $('btn-attach').addEventListener('click', () => $('attach-file').click())
 $('attach-file').addEventListener('change', async e => {
   for (const file of [...e.target.files]) await uploadImage(file)
@@ -640,12 +645,12 @@ $('btn-add-feed').addEventListener('click', async () => {
   if (res.error) { showError('feeds-error', res.error); return }
   $('feed-url-input').value = ''
   $('feed-title-input').value = ''
-  $('feed-limit-input').value = '10'
+  $('feed-limit-input').value = $('feed-default-limit').value
   await renderFeeds()
 })
 
 // ── analytics ─────────────────────────────────────────────────────────────────
-let analyticsDays = 7
+let analyticsDays = 1
 let analyticsActiveIp = null
 let analyticsSessions = []
 
@@ -716,7 +721,7 @@ const analyticsGroupSessions = (hits) => {
     let session = null
     for (const h of ipHits) {
       if (!session || h.ts - session.lastTs > ANALYTICS_SESSION_GAP) {
-        session = { ts: h.ts, lastTs: h.ts, ip: h.ip, country: h.country, city: h.city, referrer: h.referrer || '', paths: [], pathTs: [] }
+        session = { ts: h.ts, lastTs: h.ts, ip: h.ip, country: h.country, region: h.region, city: h.city, referrer: h.referrer || '', paths: [], pathTs: [] }
         sessions.push(session)
       }
       session.lastTs = h.ts
@@ -738,19 +743,20 @@ const analyticsRenderSessions = () => {
   if (!sessions.length) { logsEl.innerHTML = ''; return }
   logsEl.innerHTML = sessions.flatMap(s => {
     const entries = analyticsActiveIp
-      ? s.paths.map((p, j) => ({ p, ts: s.pathTs[j], country: s.country, city: s.city, ip: s.ip, count: 1 }))
-      : [{ p: s.paths[0] || '', ts: s.ts, country: s.country, city: s.city, ip: s.ip, count: s.paths.length }]
-    return entries.map(({ p, ts, country, city, count }) => {
+      ? s.paths.map((p, j) => ({ p, ts: s.pathTs[j], country: s.country, region: s.region, city: s.city, ip: s.ip, count: 1 }))
+      : [{ p: s.paths[0] || '', ts: s.ts, country: s.country, region: s.region, city: s.city, ip: s.ip, count: s.paths.length }]
+    return entries.map(({ p, ts, country, region, city, count, ip }) => {
       const d = new Date(ts)
       const tsStr = (analyticsDays > 1 ? d.toLocaleDateString('en', { month: 'short', day: 'numeric' }) + ' · ' : '') +
         d.toLocaleTimeString('en', { hour: 'numeric', minute: '2-digit' })
       const clickable = analyticsActiveIp || count > 1
       const onclick = analyticsActiveIp ? 'analyticsFilterIp(null)' : `analyticsFilterIp('${escHtml(s.ip)}')`
+      const locTip = [city, region && region !== '?' ? region : null, country].filter(Boolean).join(', ')
+      const flagHtml = country ? `<span title="${escHtml(locTip)}">${flag(country)}</span> ` : ''
       return `<div class="a-hit">
-        <span class="a-ts">${tsStr}</span>
-        <span class="a-flag">${country ? flag(country) : ''}</span>
-        <span class="a-city${clickable ? ' multi' : ''}" onclick="${clickable ? onclick : ''}" title="${escHtml(city || '')}">${escHtml(city || '?')}${count > 1 ? ` (${count})` : ''}</span>
-        <span class="a-path">${escHtml(p)}</span>
+        <span class="a-ts" title="${escHtml(ip || '')}">${tsStr}</span>
+        <span class="a-city${clickable ? ' multi' : ''}" onclick="${clickable ? onclick : ''}" title="${escHtml(locTip)}">${flagHtml}${escHtml(city || '?')}${count > 1 ? ` (${count})` : ''}</span>
+        <span class="a-path" title="${escHtml(p)}">${escHtml(p)}</span>
       </div>`
     })
   }).join('')
