@@ -752,7 +752,7 @@ const analyticsRenderSessions = () => {
       const clickable = analyticsActiveIp || count > 1
       const onclick = analyticsActiveIp ? 'analyticsFilterIp(null)' : `analyticsFilterIp('${escHtml(s.ip)}')`
       const locTip = [city, region && region !== '?' ? region : null, country].filter(Boolean).join(', ')
-      const flagHtml = country ? `<span title="${escHtml(locTip)}">${flag(country)}</span> ` : ''
+      const flagHtml = country ? `<span class="a-flag-emoji" title="${escHtml(locTip)}">${flag(country)}</span> ` : ''
       return `<div class="a-hit">
         <span class="a-ts" title="${escHtml(ip || '')}">${tsStr}</span>
         <span class="a-city${clickable ? ' multi' : ''}" onclick="${clickable ? onclick : ''}" title="${escHtml(locTip)}">${flagHtml}${escHtml(city || '?')}${count > 1 ? ` (${count})` : ''}</span>
@@ -763,6 +763,12 @@ const analyticsRenderSessions = () => {
 }
 
 window.analyticsFilterIp = (ip) => { analyticsActiveIp = ip; analyticsRenderSessions() }
+
+document.addEventListener('click', e => {
+  const wrap = e.target.closest('.a-tip-wrap')
+  document.querySelectorAll('.a-tip-wrap.open').forEach(el => { if (el !== wrap) el.classList.remove('open') })
+  if (wrap) wrap.classList.toggle('open')
+})
 
 document.querySelectorAll('[data-days]').forEach(btn => btn.addEventListener('click', async () => {
   analyticsDays = parseInt(btn.dataset.days)
@@ -794,7 +800,11 @@ async function renderAnalytics () {
       <div class="a-stat"><div class="a-val">${fmt(s.totalHits)}</div><div class="a-lbl">hits</div></div>
       <div class="a-stat"><div class="a-val">${fmt(s.totalUniques)}</div><div class="a-lbl">unique</div></div>
       <div class="a-stat"><div class="a-val">${allData.length}</div><div class="a-lbl">days</div></div>
-      <div class="a-stat"><div class="a-val">${fmt(s.totalBots)}</div><div class="a-lbl">🤖 bots</div></div>
+      <div class="a-stat a-tip-wrap"><div class="a-val">${fmt(s.totalBots)}</div><div class="a-lbl">🤖 bots</div><div class="a-tip">${
+        Object.entries(s.byPathBots).sort((a, b) => b[1].count - a[1].count).slice(0, 10).map(([p, v]) =>
+          `<div class="a-tip-row"><span class="a-tip-path">${escHtml(p)}</span><span class="a-tip-count">${v.count}</span></div>`
+        ).join('') || '<div class="a-tip-row"><span>no bot data</span></div>'
+      }</div></div>
       <div class="a-stat"><div class="a-val">${pct(s.byDevice.mobile, totalDevice)}</div><div class="a-lbl">📱 mobile</div></div>
       ${totalSubs > 0 ? `<div class="a-stat"><div class="a-val">${fmt(totalSubs)}</div><div class="a-lbl">📡 rss</div></div>` : ''}
     </div>
