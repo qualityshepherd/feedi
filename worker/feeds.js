@@ -53,7 +53,10 @@ export const refreshFeeds = async (env) => {
     return
   }
 
-  const results = await Promise.all(feeds.map(fetchFeed))
+  const settled = await Promise.allSettled(feeds.map(fetchFeed))
+  const results = settled.map((s, i) =>
+    s.status === 'fulfilled' ? s.value : { posts: null, config: feeds[i], code: null, error: String(s.reason) }
+  )
 
   // store per-feed status only if something changed
   const now = new Date().toISOString()
@@ -63,8 +66,8 @@ export const refreshFeeds = async (env) => {
   })
   await env.FEEDI_KV.put('feeds:status', JSON.stringify(statusMap), { expirationTtl: FEED_STATUS_TTL })
 
-  const feedConfig = await env.FEEDI_KV.get('feeds:config', { type: 'json' }) || {}
-  const maxItems = feedConfig.maxItems || 100
+  const settings = await env.FEEDI_KV.get('settings', { type: 'json' }) || {}
+  const maxItems = settings.maxItems || 100
   const successful = results.filter(r => r.posts !== null)
   const aggregated = aggregateFeeds(successful.map(r => ({ posts: r.posts, config: r.config }))).slice(0, maxItems)
 
@@ -128,6 +131,9 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
     let parsed
     try { parsed = new URL(feedUrl) } catch { return json({ error: 'invalid url' }, 400) }
     if (parsed.protocol !== 'https:') return json({ error: 'url must be https' }, 400)
+    if (/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.)/.test(parsed.hostname)) {
+      return json({ error: 'invalid url' }, 400)
+    }
 
     let res
     try {
@@ -183,21 +189,33 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
     return json({ ok: true })
   }
 
-  // GET /api/feeds/config
-  if (method === 'GET' && path === '/api/feeds/config') {
-    const config = await kv.get('feeds:config', { type: 'json' }) || { defaultLimit: 10, maxItems: 100 }
-    return json(config)
-  }
-
-  // PATCH /api/feeds/config
-  if (method === 'PATCH' && path === '/api/feeds/config') {
+  // POST /api/feeds/import — bulk import with dedup
+  if (method === 'POST' && path === '/api/feeds/import') {
     let body
     try { body = await req.json() } catch { return json({ error: 'invalid json' }, 400) }
-    const config = await kv.get('feeds:config', { type: 'json' }) || {}
-    if (body.defaultLimit !== undefined) config.defaultLimit = Math.max(1, Math.min(50, parseInt(body.defaultLimit) || 10))
-    if (body.maxItems !== undefined) config.maxItems = Math.max(1, parseInt(body.maxItems) || 100)
-    await kv.put('feeds:config', JSON.stringify(config))
-    return json({ ok: true, config })
+    if (!Array.isArray(body)) return json({ error: 'expected array' }, 400)
+
+    const existing = await kv.get('feeds:list', { type: 'json' }) || []
+    const existingUrls = new Set(existing.map(f => f.url))
+    const added = []
+    for (const item of body) {
+      const feedUrl = item.url?.trim()
+      if (!feedUrl) continue
+      let parsed
+      try { parsed = new URL(feedUrl) } catch { continue }
+      if (existingUrls.has(feedUrl)) continue
+      const limit = Math.max(1, Math.min(50, parseInt(item.limit) || 10))
+      const title = item.title?.trim() || parsed.hostname
+      existing.push({ url: feedUrl, title, limit })
+      existingUrls.add(feedUrl)
+      added.push(feedUrl)
+    }
+
+    if (added.length) {
+      await kv.put('feeds:list', JSON.stringify(existing))
+      ctx.waitUntil(refreshFeeds(env))
+    }
+    return json({ ok: true, added: added.length, skipped: body.length - added.length })
   }
 
   // DELETE /api/feeds — remove a feed

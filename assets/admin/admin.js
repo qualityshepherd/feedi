@@ -5,6 +5,8 @@ let token = localStorage.getItem('feedi_token') || null
 let currentSlug = null
 let currentType = 'post'
 
+document.title = `${location.hostname} admin`
+
 // ── utils ─────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id)
 const escHtml = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -104,16 +106,34 @@ async function showPages () {
   await renderPageList()
 }
 
+const applySiteImage = (url) => {
+  const img = $('site-logo-img')
+  const svg = $('site-logo-svg')
+  if (url) {
+    img.src = url
+    img.classList.remove('hidden')
+    svg.classList.add('hidden')
+  } else {
+    img.classList.add('hidden')
+    svg.classList.remove('hidden')
+  }
+}
+
+const loadSiteImage = async () => {
+  const settings = await api('GET', '/api/settings')
+  if (settings && !settings.error) applySiteImage(settings.siteImage || '')
+}
+
 async function showSettings () {
   if (!token) return showLogin()
   showView('view-settings'); showNav()
   const stored = localStorage.getItem('feedi_page_size')
   $('page-size-input').value = stored ? parseInt(stored, 10) : 10
-  const config = await api('GET', '/api/feeds/config')
-  if (config && !config.error) $('feed-max-items').value = config.maxItems ?? 100
   const settings = await api('GET', '/api/settings')
   if (settings && !settings.error) {
+    $('feed-max-items').value = settings.maxItems ?? 100
     $('site-image-input').value = settings.siteImage || ''
+    applySiteImage(settings.siteImage || '')
   }
 }
 
@@ -165,9 +185,8 @@ async function showEdit (slug) {
 async function showFeeds () {
   if (!token) return showLogin()
   showView('view-feeds'); showNav()
-  const config = await api('GET', '/api/feeds/config')
   const lastLimit = localStorage.getItem('feedi_feed_limit')
-  $('feed-limit-input').value = lastLimit ?? config.defaultLimit ?? 5
+  $('feed-limit-input').value = lastLimit ?? 5
   await renderFeeds()
 }
 
@@ -221,7 +240,7 @@ $('btn-derive').addEventListener('click', async () => {
 $('btn-login').addEventListener('click', async () => {
   const passphrase = $('login-passphrase').value.trim()
   if (!passphrase) return
-  try { await login(passphrase); location.hash = '#list' } catch (e) { showError('login-error', e.message) }
+  try { await login(passphrase); location.hash = '#list'; loadSiteImage() } catch (e) { showError('login-error', e.message) }
 })
 
 $('btn-logout').addEventListener('click', () => {
@@ -415,12 +434,17 @@ $('page-size-input').addEventListener('change', () => {
   if (!isNaN(n) && n > 0) localStorage.setItem('feedi_page_size', String(n))
 })
 $('feed-max-items').addEventListener('change', async () => {
-  await api('PATCH', '/api/feeds/config', { maxItems: parseInt($('feed-max-items').value) || 100 })
+  await api('PATCH', '/api/settings', { maxItems: parseInt($('feed-max-items').value) || 100 })
 })
 
-$('site-image-input').addEventListener('change', async () => {
+let siteImageTimer
+$('site-image-input').addEventListener('input', () => {
   const url = $('site-image-input').value.trim()
-  await api('PATCH', '/api/settings', { siteImage: url })
+  applySiteImage(url)
+  clearTimeout(siteImageTimer)
+  siteImageTimer = setTimeout(async () => {
+    await api('PATCH', '/api/settings', { siteImage: url })
+  }, 600)
 })
 
 const validatorBase = 'https://validator.w3.org/feed/check.cgi?url='
@@ -644,6 +668,24 @@ $('btn-add-feed').addEventListener('click', async () => {
   await renderFeeds()
 })
 
+$('btn-import-feeds').addEventListener('click', () => $('import-feeds-file').click())
+$('import-feeds-file').addEventListener('change', async () => {
+  const file = $('import-feeds-file').files[0]
+  if (!file) return
+  $('import-feeds-file').value = ''
+  let data
+  try { data = JSON.parse(await file.text()) } catch { showError('feeds-error', 'invalid json file'); return }
+  if (!Array.isArray(data)) { showError('feeds-error', 'expected a json array'); return }
+  const statusEl = $('feeds-import-status')
+  statusEl.textContent = 'importing…'
+  statusEl.classList.remove('hidden')
+  $('feeds-error').classList.add('hidden')
+  const res = await api('POST', '/api/feeds/import', data)
+  if (res.error) { showError('feeds-error', res.error); statusEl.classList.add('hidden'); return }
+  statusEl.textContent = `added ${res.added}, skipped ${res.skipped} duplicates`
+  await renderFeeds()
+})
+
 // ── analytics ─────────────────────────────────────────────────────────────────
 let analyticsDays = 1
 let analyticsActiveIp = null
@@ -841,4 +883,4 @@ document.addEventListener('keydown', e => {
   if (!$('delete-all-confirm').classList.contains('hidden')) $('delete-all-confirm').classList.add('hidden')
 })
 
-token ? routeEditor() : showLogin()
+if (token) { routeEditor(); loadSiteImage() } else showLogin()

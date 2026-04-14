@@ -92,7 +92,7 @@ export default {
     }
 
     // Posts API (authed)
-    if (path === '/api/posts' || path.startsWith('/api/posts/') || path === '/api/backup' || path === '/api/cache/bust') {
+    if (path === '/api/posts' || path.startsWith('/api/posts/') || path === '/api/backup' || path === '/api/cache/bust' || path === '/api/settings') {
       return handlePosts(req, env)
     }
 

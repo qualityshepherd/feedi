@@ -27,7 +27,8 @@ export const postsTemplate = post => {
     ${!truncated && post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
     <div class="tags">${renderTags(post.meta.tags)} ${subscribeLink(post)}</div>
   </div>
-`}
+`
+}
 
 export const singlePostTemplate = post => `
   <article class="post">

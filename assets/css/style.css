@@ -536,7 +536,8 @@ a.feed-meta:hover {
 .feed-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -577,7 +578,9 @@ a.feed-meta:hover {
   white-space: nowrap;
 }
 
-.feed-modal-close {
+.feed-modal-close,
+.feed-modal-prev,
+.feed-modal-next {
   background: none;
   border: none;
   cursor: pointer;
@@ -588,8 +591,16 @@ a.feed-meta:hover {
   flex-shrink: 0;
 }
 
-.feed-modal-close:hover {
+.feed-modal-close:hover,
+.feed-modal-prev:hover,
+.feed-modal-next:hover {
   color: var(--color-text-primary);
+}
+
+.feed-modal-prev:disabled,
+.feed-modal-next:disabled {
+  opacity: 0.2;
+  cursor: default;
 }
 
 .feed-modal-body {
@@ -597,6 +608,7 @@ a.feed-meta:hover {
   overflow-y: auto;
   flex: 1;
   line-height: 1.7;
+  font-size: var(--text-md);
 }
 
 .feed-modal-body img {
