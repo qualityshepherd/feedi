@@ -606,6 +606,7 @@ a.feed-meta:hover {
 .feed-modal-body {
   padding: var(--space-4);
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   line-height: 1.7;
   font-size: var(--text-md);
