@@ -14,7 +14,7 @@ import {
   renderSinglePost,
   toggleLoadMoreButton
 } from './ui.js'
-import { loadAndRenderFeeds, getCachedFeeds, renderFeedsItems } from './feeds.js'
+import { loadAndRenderFeeds } from './feeds.js'
 
 const ROUTES = {
   HOME: '/',
@@ -76,7 +76,6 @@ const routeHandlers = {
   },
 
   [ROUTES.READER]: async () => {
-    setDisplayedPosts(100)
     await loadAndRenderFeeds()
   },
 
@@ -130,12 +129,7 @@ export function handleSearch (e) {
 export async function handleLoadMore () {
   incrementDisplayedPosts()
   const displayedCount = getDisplayedPosts()
-  if (location.pathname === ROUTES.READER) {
-    const feeds = getCachedFeeds()
-    if (feeds) renderFeedsItems(feeds)
-  } else {
-    const posts = getPosts()
-    renderPosts(posts, displayedCount)
-    toggleLoadMoreButton(displayedCount < posts.length)
-  }
+  const posts = getPosts()
+  renderPosts(posts, displayedCount)
+  toggleLoadMoreButton(displayedCount < posts.length)
 }

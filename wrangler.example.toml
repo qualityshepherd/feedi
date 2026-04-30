@@ -1,0 +1,43 @@
+name = "feedi"                        # your Cloudflare Worker name
+main = "worker/index.js"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "assets"
+not_found_handling = "single-page-application"
+binding = "ASSETS"
+run_worker_first = true
+
+[vars]
+DOMAIN_NAME = "example.com"           # your domain
+OWNER = ""                            # paste your pubkey here after deriving it at /admin
+SITE_TITLE = "feedi"                  # site title used in RSS feeds
+SITE_DESCRIPTION = ""                 # site description used in RSS feeds
+PODCAST_IMAGE = ""                    # optional: podcast cover art URL
+PODCAST_CATEGORY = "Technology"       # optional: iTunes category
+PODCAST_EMAIL = ""                    # optional: iTunes owner email
+
+[[kv_namespaces]]
+binding = "FEEDI_KV"
+id = ""                               # paste your KV namespace ID here
+
+[[durable_objects.bindings]]
+name = "ANALYTICS"
+class_name = "AnalyticsDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AnalyticsDO"]
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = ""                      # your R2 bucket name
+
+[triggers]
+crons = ["0 * * * *"]
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true

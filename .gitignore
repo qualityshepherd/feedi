@@ -5,3 +5,4 @@ node_modules/
 test/errors/
 index.json
 assets/rss/
+wrangler.toml

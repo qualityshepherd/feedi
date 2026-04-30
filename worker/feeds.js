@@ -1,6 +1,15 @@
 import { parseFeed, aggregateFeeds } from './feedParser.js'
 import { memberByToken, isOwnerPubkey } from './auth.js'
 
+const parseOpml = (xml) => {
+  const urls = []
+  for (const [, attrs] of xml.matchAll(/<outline([^>]+)/gi)) {
+    const url = attrs.match(/xmlUrl=["']([^"']+)["']/i)?.[1]
+    if (url) urls.push(url.trim())
+  }
+  return urls
+}
+
 const KV_KEY = 'feeds:aggregated'
 const KV_TTL = 60 * 60
 // Cache aggregated feeds for ~25h: hourly refresh means one missed cron still serves stale content
@@ -31,22 +40,7 @@ const fetchFeed = async (feedConfig) => {
 }
 
 export const refreshFeeds = async (env) => {
-  let feeds = await env.FEEDI_KV.get('feeds:list', { type: 'json' })
-
-  // one-time migration from static feeds.json
-  if (feeds === null) {
-    try {
-      const raw = await env.ASSETS.fetch(new Request('https://do.local/feeds.json'))
-      feeds = await raw.json()
-      if (Array.isArray(feeds) && feeds.length) {
-        await env.FEEDI_KV.put('feeds:list', JSON.stringify(feeds))
-        console.log(`[feeds] migrated ${feeds.length} feeds from static feeds.json to KV`)
-      }
-    } catch (err) {
-      console.warn(`[feeds] migration from feeds.json failed: ${err.message}`)
-    }
-    feeds = feeds || []
-  }
+  const feeds = await env.FEEDI_KV.get('feeds:list', { type: 'json' }) || []
 
   if (!feeds.length) {
     await env.FEEDI_KV.delete(KV_KEY)
@@ -67,7 +61,7 @@ export const refreshFeeds = async (env) => {
   await env.FEEDI_KV.put('feeds:status', JSON.stringify(statusMap), { expirationTtl: FEED_STATUS_TTL })
 
   const settings = await env.FEEDI_KV.get('settings', { type: 'json' }) || {}
-  const maxItems = settings.maxItems || 100
+  const maxItems = settings.maxItems || 2000
   const successful = results.filter(r => r.posts !== null)
   const aggregated = aggregateFeeds(successful.map(r => ({ posts: r.posts, config: r.config }))).slice(0, maxItems)
 
@@ -150,13 +144,12 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
     const existing = await kv.get('feeds:list', { type: 'json' }) || []
     if (existing.some(f => f.url === feedUrl)) return json({ error: 'feed already added' }, 409)
 
-    const limit = Math.max(1, Math.min(50, parseInt(body.limit) || 10))
-    const title = body.title?.trim() || parsed.hostname
-    const updated = [...existing, { url: feedUrl, title, limit }]
+    const limit = Math.max(1, Math.min(999, parseInt(body.limit) || 10))
+    const updated = [...existing, { url: feedUrl, limit }]
     await kv.put('feeds:list', JSON.stringify(updated))
 
     ctx.waitUntil(refreshFeeds(env))
-    return json({ ok: true, url: feedUrl, title, limit })
+    return json({ ok: true, url: feedUrl, limit })
   }
 
   // PATCH /api/feeds — update title, limit, or url
@@ -182,8 +175,7 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
       existing[idx].url = newUrl
     }
 
-    if (typeof body.title === 'string') existing[idx].title = body.title.trim()
-    if (body.limit !== undefined) existing[idx].limit = Math.max(1, Math.min(50, parseInt(body.limit) || 10))
+    if (body.limit !== undefined) existing[idx].limit = Math.max(1, Math.min(999, parseInt(body.limit) || 10))
 
     await kv.put('feeds:list', JSON.stringify(existing))
     return json({ ok: true })
@@ -201,12 +193,10 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
     for (const item of body) {
       const feedUrl = item.url?.trim()
       if (!feedUrl) continue
-      let parsed
-      try { parsed = new URL(feedUrl) } catch { continue }
+      if (!URL.canParse(feedUrl)) continue
       if (existingUrls.has(feedUrl)) continue
-      const limit = Math.max(1, Math.min(50, parseInt(item.limit) || 10))
-      const title = item.title?.trim() || parsed.hostname
-      existing.push({ url: feedUrl, title, limit })
+      const limit = Math.max(1, Math.min(999, parseInt(item.limit) || 10))
+      existing.push({ url: feedUrl, limit })
       existingUrls.add(feedUrl)
       added.push(feedUrl)
     }
@@ -216,6 +206,38 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
       ctx.waitUntil(refreshFeeds(env))
     }
     return json({ ok: true, added: added.length, skipped: body.length - added.length })
+  }
+
+  // POST /api/feeds/import/opml — import from OPML file
+  if (method === 'POST' && path === '/api/feeds/import/opml') {
+    const defaultLimit = Math.max(1, Math.min(999, parseInt(url.searchParams.get('limit')) || 10))
+    const xml = await req.text()
+    const items = parseOpml(xml)
+    if (!items.length) return json({ error: 'no feeds found in opml' }, 400)
+
+    const existing = await kv.get('feeds:list', { type: 'json' }) || []
+    const existingUrls = new Set(existing.map(f => f.url))
+    const added = []
+    for (const feedUrl of items) {
+      if (!URL.canParse(feedUrl)) continue
+      if (existingUrls.has(feedUrl)) continue
+      existing.push({ url: feedUrl, limit: defaultLimit })
+      existingUrls.add(feedUrl)
+      added.push(feedUrl)
+    }
+
+    if (added.length) {
+      await kv.put('feeds:list', JSON.stringify(existing))
+      ctx.waitUntil(refreshFeeds(env))
+    }
+    return json({ ok: true, added: added.length, skipped: items.length - added.length })
+  }
+
+  // DELETE /api/feeds/all — remove all feeds
+  if (method === 'DELETE' && path === '/api/feeds/all') {
+    await kv.put('feeds:list', JSON.stringify([]))
+    await kv.delete(KV_KEY)
+    return json({ ok: true })
   }
 
   // DELETE /api/feeds — remove a feed

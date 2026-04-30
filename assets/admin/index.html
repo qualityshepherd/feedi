@@ -94,19 +94,18 @@
         <label for="feed-url-input">feed url (rss/atom)</label>
         <input type="url" id="feed-url-input" placeholder="https://example.com/feed.xml">
       </div>
-      <div class="field" style="flex:2">
-        <label for="feed-title-input">title (optional)</label>
-        <input type="text" id="feed-title-input" placeholder="Site name">
-      </div>
       <div class="field" style="flex:1">
         <label for="feed-limit-input">limit</label>
-        <input type="number" id="feed-limit-input" value="10" min="1" max="50">
+        <input type="number" id="feed-limit-input" value="10" min="1" max="999">
       </div>
     </div>
     <div class="flex gap-3 items-center field flex-wrap">
       <button class="btn btn-primary" id="btn-add-feed">add feed</button>
-      <button class="btn btn-sm" id="btn-import-feeds" title="Import feeds from a JSON array — duplicates are skipped">import feeds json</button>
+      <button class="btn btn-sm" id="btn-import-feeds" title="Import feeds from a JSON array — duplicates are skipped">import json</button>
+      <button class="btn btn-sm" id="btn-import-opml" title="Import feeds from an OPML file">import opml</button>
+      <button class="btn btn-sm btn-danger" id="btn-delete-all-feeds" title="Remove all feeds">delete all</button>
       <input type="file" id="import-feeds-file" accept=".json" class="hidden">
+      <input type="file" id="import-feeds-opml" accept=".opml,.xml" class="hidden">
       <span class="muted hidden" id="feeds-import-status"></span>
     </div>
     <div class="error hidden" id="feeds-error"></div>
