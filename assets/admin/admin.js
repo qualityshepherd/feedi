@@ -60,7 +60,7 @@ async function showFeeds () {
   if (!getToken()) return showLogin()
   showView('view-feeds'); showNav()
   const lastLimit = localStorage.getItem('feedi_feed_limit')
-  $('feed-limit-input').value = lastLimit ?? 5
+  $('feed-limit-input').value = lastLimit ?? 10
   await renderFeeds()
 }
 

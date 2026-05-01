@@ -2,9 +2,7 @@
 
 **Resonance over reach. Sovereignty over scale.**
 
-Feedi is a blog, RSS reader, podcast host, and peer discovery network that runs on Cloudflare Workers' free tier, forever.
-
-Each feedi instance is a node. Nodes publish their post index publicly. The cron job fetches posts from all known instances and caches the result. No handshake, no algorithm, no follower counts. Just public JSON and HTTP GETs. The mesh emerges from people linking to people they find interesting.
+Feedi is a blog, RSS reader, and podcast host that runs on Cloudflare Workers' free tier, forever.
 
 [Demo](https://feedi.brine.dev)
 
@@ -24,7 +22,7 @@ wrangler kv namespace create FEEDI_KV
 wrangler r2 bucket create your-bucket-name
 ```
 
-Paste the KV namespace `id` and R2 bucket name into `wrangler.toml`, then:
+Copy `wrangler.example.toml` to `wrangler.toml` and fill in the KV namespace `id` and R2 bucket name, then:
 
 ```bash
 wrangler deploy
@@ -49,10 +47,6 @@ Your own feeds are available at:
 - `/rss/pod` — podcast episodes
 - `/rss/all` — everything
 
-## Discover
-
-Add feedi instances you want to follow at `/admin → discover`. Their posts appear at `/discover`, aggregated and sorted by date. When you add an instance, their known instances are surfaced as suggestions — the network meshes out organically.
-
 ## Podcast (optional)
 
 Set an audio URL on any post to make it a podcast episode. Supports relative paths (`/uploads/ep1.mp3`) or absolute URLs. The podcast RSS feed is generated automatically at `/rss/pod`.
@@ -70,8 +64,8 @@ npx wrangler dev
 ## Tests
 
 ```bash
-npm test          # full suite (e2e + unit)
-npm run test:unit # unit only
+npm test              # unit tests
+npm run test:e2e      # e2e (requires running worker: npx wrangler dev)
 ```
 
 AGPL · brine
