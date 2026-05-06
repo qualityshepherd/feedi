@@ -375,8 +375,8 @@ export async function trackHit (req, env) {
   if (path.length > 500) return
 
   // RSS feed hit — intercept before classifyHit (which skips .xml extensions)
-  if (path.startsWith('/assets/rss/') && path.endsWith('.xml')) {
-    const feed = path.split('/').pop()
+  if (path.startsWith('/rss/') || (path.startsWith('/assets/rss/') && path.endsWith('.xml'))) {
+    const feed = path.split('/').pop().replace('.xml', '')
     const parsed = parseRssSubscribers(ua)
     const ipHash = await hashIp(ip)
     try {

@@ -4,7 +4,7 @@ import { handleRss } from './rss.js'
 import { handleUpload, handleServeUpload, handleListUploads } from './upload.js'
 import { handleAuth, memberByToken, isOwnerPubkey } from './auth.js'
 import { handlePosts, handleIndex } from './posts.js'
-import { handleRobots, handleSitemap, handlePostRoute, handlePageRoute } from './seo.js'
+import { handleRobots, handleSitemap, handlePostRoute, handlePageRoute, handleHomeRoute, handleArchiveRoute, handleTagRoute } from './seo.js'
 
 export { AnalyticsDO }
 
@@ -28,13 +28,14 @@ export default {
     const url = new URL(req.url)
     const path = url.pathname
 
+    ctx.waitUntil(trackHit(req, env))
+
     // Not configured — redirect root to /admin
     if (!env.OWNER && path === '/') {
       return new Response(null, { status: 302, headers: { Location: '/admin' } })
     }
 
     if (path === '/api/hit' && req.method === 'POST') {
-      ctx.waitUntil(trackHit(req, env))
       return new Response('ok')
     }
 
@@ -98,7 +99,6 @@ export default {
 
     // Worker-generated index (replaces static index.json)
     if (path === '/index.json') {
-      ctx.waitUntil(trackHit(req, env))
       return handleIndex(env)
     }
 
@@ -110,6 +110,9 @@ export default {
     if (path.startsWith('/assets/images/')) {
       return new Response(null, { status: 301, headers: { Location: path.replace('/assets/images/', '/images/') } })
     }
+
+    // Home page SSR
+    if (path === '/') return handleHomeRoute(req, env)
 
     // Post pages — inject OG meta + fix direct URL navigation
     if (path.startsWith('/posts/')) return handlePostRoute(req, env)
@@ -124,13 +127,18 @@ export default {
       return new Response('Not found', { status: 404 })
     }
 
+    // Archive SSR
+    if (path === '/archive') return handleArchiveRoute(req, env)
+
+    // Tag filter SSR
+    if (path === '/tag') return handleTagRoute(req, env)
+
     // Page routes (type:page posts at root level, e.g. /about)
     const segments = path.split('/').filter(Boolean)
     if (segments.length === 1 && !path.includes('.')) {
       return handlePageRoute(req, env)
     }
 
-    ctx.waitUntil(trackHit(req, env))
     return env.ASSETS.fetch(req)
   },
 
