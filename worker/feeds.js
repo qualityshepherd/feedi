@@ -19,9 +19,13 @@ const json = (data, status = 200) =>
 const fetchFeed = async (url) => {
   let code = null
   try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8000)
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'feedi/1.0 (+https://brine.dev; RSS reader)' }
+      headers: { 'User-Agent': 'feedi/1.0 (+https://brine.dev; RSS reader)' },
+      signal: controller.signal
     })
+    clearTimeout(timer)
     code = res.status
     if (!res.ok) throw new Error(`${res.status} ${url}`)
     const xml = await res.text()
