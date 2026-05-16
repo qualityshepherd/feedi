@@ -15,6 +15,7 @@ const apiFetch = async (path, method, body) => {
   try {
     const res = await fetch(path, opts)
     const data = await res.json()
+    if (res.status === 401) { localStorage.removeItem('feedi_token'); location.reload(); return { error: 'unauthorized' } }
     if (!res.ok) return { error: data.error || `HTTP ${res.status}` }
     return data
   } catch (err) {
@@ -241,6 +242,7 @@ const settingsCardHtml = (s = {}) => `
       <span class="settings-title">site settings</span>
       <button class="settings-btn settings-btn-muted" data-action="cache-bust">bust cache</button>
       <button class="settings-btn settings-btn-muted" data-action="backup">backup</button>
+      <button class="settings-btn settings-btn-muted" data-action="restore">import posts</button>
       <button class="settings-btn settings-btn-danger" data-action="delete-all">delete all posts</button>
       <button class="settings-btn settings-btn-primary" data-action="save-settings">save</button>
     </div>
@@ -282,6 +284,7 @@ function closeSettingsCard () {
 
 async function downloadBackup () {
   const posts = await apiFetch('/api/posts', 'GET')
+  if (!Array.isArray(posts)) { alert(posts.error || 'backup failed'); return }
   const ts = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
   const blob = new Blob([JSON.stringify(posts, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
@@ -290,6 +293,29 @@ async function downloadBackup () {
   a.download = `feedi-backup-${ts}.json`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+async function restoreBackup (btn) {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json'
+  input.onchange = async () => {
+    const file = input.files[0]
+    if (!file) return
+    let posts
+    try { posts = JSON.parse(await file.text()) } catch { alert('Invalid JSON file'); return }
+    if (!Array.isArray(posts)) { alert('Expected an array of posts'); return }
+    btn.disabled = true
+    const orig = btn.textContent
+    btn.textContent = 'restoring…'
+    const result = await apiFetch('/api/backup', 'POST', posts)
+    btn.disabled = false
+    btn.textContent = orig
+    if (result.error) { alert(result.error); return }
+    alert(`Restored ${result.imported} posts${result.errors?.length ? `, ${result.errors.length} errors` : ''}`)
+    location.reload()
+  }
+  input.click()
 }
 
 async function deleteAllPosts (btn) {
@@ -356,6 +382,7 @@ export function initEditor () {
     }
     if (action === 'load-draft') { await autoSave(); populateEditor(btn.dataset.slug); return }
     if (action === 'backup') { downloadBackup(); return }
+    if (action === 'restore') { restoreBackup(btn); return }
     if (action === 'delete-all') { await deleteAllPosts(btn); return }
     if (action === 'cache-bust') {
       btn.disabled = true

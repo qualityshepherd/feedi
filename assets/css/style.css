@@ -1067,6 +1067,7 @@ footer {
 
 .post-meta-fields input[type="checkbox"] {
   width: auto;
+  justify-self: start;
   accent-color: var(--color-accent);
   cursor: pointer;
   color-scheme: dark;
