@@ -9,7 +9,8 @@ CREATE TABLE posts (
   date        TEXT NOT NULL,
   updated_at  TEXT NOT NULL,
   author      TEXT NOT NULL,
-  audio_url   TEXT NOT NULL DEFAULT ''
+  audio_url   TEXT NOT NULL DEFAULT '',
+  image_url   TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE post_tags (
@@ -18,12 +19,40 @@ CREATE TABLE post_tags (
   PRIMARY KEY (post_id, tag)
 );
 
-CREATE TABLE members (
-  pubkey     TEXT PRIMARY KEY,
-  token      TEXT,
-  created_at TEXT NOT NULL
-);
-
 CREATE INDEX idx_posts_slug    ON posts(slug);
 CREATE INDEX idx_posts_status  ON posts(status);
 CREATE INDEX idx_post_tags_tag ON post_tags(tag);
+
+CREATE TABLE feeds (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  url        TEXT NOT NULL UNIQUE,
+  feed_limit INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE feed_status (
+  feed_url   TEXT PRIMARY KEY,
+  code       INTEGER,
+  fetched_at TEXT,
+  error      TEXT,
+  posts      TEXT
+);
+
+CREATE TABLE sessions (
+  token      TEXT PRIMARY KEY,
+  pubkey     TEXT NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+
+CREATE TABLE rate_limits (
+  key      TEXT PRIMARY KEY,
+  count    INTEGER NOT NULL,
+  reset_at INTEGER NOT NULL
+);
+
+CREATE TABLE settings (
+  id    INTEGER PRIMARY KEY CHECK (id = 1),
+  value TEXT NOT NULL DEFAULT '{}'
+);
+
+INSERT INTO settings (id, value) VALUES (1, '{}');
