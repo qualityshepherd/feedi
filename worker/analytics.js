@@ -23,7 +23,7 @@ const BOT_PATHS = [
   '%24', '%40vite', '%7b', '${', '../', '..\\',
   '.asp', '.aspx', '.aws', '.ds_store', '.env',
   '.git', '.npmrc', '.php', '.sql', '.vscode',
-  '@vite', 'actuator', 'admin', 'backup',
+  '@vite', 'actuator', 'admin', 'alvin9999', 'backup',
   'cgi-bin', 'composer.json', 'computemetadata', 'config',
   'console/', 'credentials', 'debug.log',
   'ediscovery', 'ecp/current', 'graphql',
@@ -320,11 +320,9 @@ export class AnalyticsDO {
   }
 
   async alarm () {
-    console.log('Analytics alarm fired — backing up and resetting')
     const stored = await this.state.storage.get('today')
 
     if (!stored) {
-      console.log('No analytics data to back up')
       await this.state.storage.setAlarm(nextMidnight())
       return
     }
@@ -341,7 +339,6 @@ export class AnalyticsDO {
         await this.env.R2.put(backup.key, backup.data, {
           httpMetadata: { contentType: 'application/json' }
         })
-        console.log('Backed up to R2:', backup.key)
       } catch (err) {
         console.error('R2 backup failed — retrying next alarm:', err)
         await this.state.storage.setAlarm(nextMidnight())
@@ -352,7 +349,6 @@ export class AnalyticsDO {
     const next = resetDay(stored)
     await this.state.storage.put('today', serializeDay(next.day, next.uniques))
     await this.state.storage.setAlarm(nextMidnight())
-    console.log('Reset to:', next.day.date)
   }
 }
 

@@ -79,9 +79,9 @@ test('buildIndex: meta contains expected fields', t => {
   t.deepEqual(entry.meta.tags, ['a', 'b'])
 })
 
-test('buildIndex: html is included from post', t => {
-  const [entry] = buildIndex([makePost({ html: '<p>hello</p>' })])
-  t.is(entry.html, '<p>hello</p>')
+test('buildIndex: html is rendered from markdown', t => {
+  const [entry] = buildIndex([makePost({ markdown: '# Hello' })])
+  t.ok(entry.html.includes('<h1>'))
 })
 
 test('buildIndex: markdown is not exposed in index', t => {

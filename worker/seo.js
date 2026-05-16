@@ -1,16 +1,9 @@
-import { getAllPosts, buildIndex } from './posts.js'
+import { getAllPosts, getPostBySlug, buildIndex, renderHtml } from './posts.js'
 
-const getPost = (kv, slug) => kv.get(`post:${slug}`, { type: 'json' })
-
-const getAllPublished = async (kv) => {
-  const list = await kv.list({ prefix: 'post:' })
-  const posts = await Promise.all(
-    (list.keys || []).map(k => kv.get(k.name, { type: 'json' }))
-  )
-  return posts.filter(p => p && p.status === 'published').sort((a, b) => new Date(b.date) - new Date(a.date))
+const getAllPublished = async (db) => {
+  const posts = await getAllPosts(db)
+  return posts.filter(p => p.status === 'published').sort((a, b) => new Date(b.date) - new Date(a.date))
 }
-
-// Server-side template helpers (mirrors assets/src/templates.js)
 
 const BREAK = '<break>'
 
@@ -40,7 +33,7 @@ const toIndexEntry = (post) => ({
     audioUrl: post.audioUrl || '',
     page: post.type === 'page'
   },
-  html: post.html || ''
+  html: renderHtml(post.markdown)
 })
 
 const postCardHtml = (post) => {
@@ -83,7 +76,7 @@ export const handlePageRoute = async (req, env) => {
   if (!slug) return env.ASSETS.fetch(req)
 
   const [post, htmlRes] = await Promise.all([
-    getPost(env.FEEDI_KV, slug),
+    getPostBySlug(env.DB, slug),
     env.ASSETS.fetch(new Request(new URL('/', req.url)))
   ])
 
@@ -92,27 +85,24 @@ export const handlePageRoute = async (req, env) => {
   if (!post || post.status !== 'published' || post.type !== 'page') {
     return new Response(html, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } })
   }
+
   const base = new URL(req.url).origin
-  const url = `${base}/${post.slug}`
-  const title = post.title
-  const description = post.description || stripTags(post.html || '').slice(0, 200).trim()
+  const entry = toIndexEntry(post)
+  const description = post.description || stripTags(entry.html).slice(0, 200).trim()
 
   const meta = [
-    `<title>${escXml(title)}</title>`,
-    `<meta property="og:title" content="${escXml(title)}">`,
-    `<meta property="og:url" content="${escXml(url)}">`,
+    `<title>${escXml(post.title)}</title>`,
+    `<meta property="og:title" content="${escXml(post.title)}">`,
+    `<meta property="og:url" content="${escXml(`${base}/${post.slug}`)}">`,
     '<meta property="og:type" content="article">',
     description ? `<meta property="og:description" content="${escXml(description)}">` : '',
     description ? `<meta name="description" content="${escXml(description)}">` : ''
   ].filter(Boolean).join('\n  ')
 
-  const contentHtml = singlePostHtml(toIndexEntry(post))
-  const injected = injectContent(html
+  return new Response(injectContent(html
     .replace(/<title>[^<]*<\/title>/, '')
     .replace('<head>', `<head>\n  ${meta}`),
-  contentHtml)
-
-  return new Response(injected, {
+  singlePostHtml(entry)), {
     headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public, max-age=300' }
   })
 }
@@ -127,7 +117,7 @@ export const handleRobots = (req) => {
 
 export const handleSitemap = async (req, env) => {
   const base = new URL(req.url).origin
-  const posts = await getAllPublished(env.FEEDI_KV)
+  const posts = await getAllPublished(env.DB)
 
   const urls = [
     urlEntry(base + '/', null),
@@ -136,14 +126,10 @@ export const handleSitemap = async (req, env) => {
     ...posts.filter(p => p.type === 'page').map(p => urlEntry(`${base}/${p.slug}`, p.updatedAt || p.date))
   ]
 
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  return new Response(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.join('\n')}
-</urlset>`
-
-  return new Response(xml, {
-    headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=3600' }
-  })
+</urlset>`, { headers: { 'Content-Type': 'application/xml', 'Cache-Control': 'public, max-age=3600' } })
 }
 
 const urlEntry = (loc, lastmod) => {
@@ -151,34 +137,30 @@ const urlEntry = (loc, lastmod) => {
   return `  <url>\n    <loc>${loc}</loc>${mod}\n  </url>`
 }
 
-// Serve /posts/:slug — injects post-specific OG meta into the SPA HTML.
-// Also fixes direct-URL navigation which otherwise 404s (no static file at that path).
 export const handlePostRoute = async (req, env) => {
   const slug = new URL(req.url).pathname.replace('/posts/', '')
   if (!slug) return env.ASSETS.fetch(new Request(new URL('/', req.url)))
 
   const [post, htmlRes] = await Promise.all([
-    getPost(env.FEEDI_KV, slug),
+    getPostBySlug(env.DB, slug),
     env.ASSETS.fetch(new Request(new URL('/', req.url)))
   ])
 
   const html = await htmlRes.text()
 
   if (!post || post.status !== 'published') {
-    // Still serve the SPA — it will show its own not-found state
     return new Response(html, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } })
   }
 
   const base = new URL(req.url).origin
-  const url = `${base}/posts/${post.slug}`
-  const title = post.title
-  const description = post.description || stripTags(post.html || '').slice(0, 200).trim()
-  const image = extractFirstImage(post.html || '', base)
+  const entry = toIndexEntry(post)
+  const description = post.description || stripTags(entry.html).slice(0, 200).trim()
+  const image = extractFirstImage(entry.html, base)
 
   const meta = [
-    `<title>${escXml(title)}</title>`,
-    `<meta property="og:title" content="${escXml(title)}">`,
-    `<meta property="og:url" content="${escXml(url)}">`,
+    `<title>${escXml(post.title)}</title>`,
+    `<meta property="og:title" content="${escXml(post.title)}">`,
+    `<meta property="og:url" content="${escXml(`${base}/posts/${post.slug}`)}">`,
     '<meta property="og:type" content="article">',
     description ? `<meta property="og:description" content="${escXml(description)}">` : '',
     description ? `<meta name="description" content="${escXml(description)}">` : '',
@@ -186,27 +168,23 @@ export const handlePostRoute = async (req, env) => {
     post.date ? `<meta property="article:published_time" content="${escXml(post.date)}">` : ''
   ].filter(Boolean).join('\n  ')
 
-  const contentHtml = singlePostHtml(toIndexEntry(post))
-  const injected = injectContent(html
+  return new Response(injectContent(html
     .replace(/<title>[^<]*<\/title>/, '')
     .replace('<head>', `<head>\n  ${meta}`),
-  contentHtml)
-
-  return new Response(injected, {
+  singlePostHtml(entry)), {
     headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public, max-age=300' }
   })
 }
 
 export const handleHomeRoute = async (req, env) => {
   const [posts, htmlRes] = await Promise.all([
-    getAllPosts(env.FEEDI_KV),
+    getAllPosts(env.DB),
     env.ASSETS.fetch(new Request(new URL('/', req.url)))
   ])
 
   const html = await htmlRes.text()
   const index = buildIndex(posts)
-  const visible = index.filter(p => !p.meta.page)
-  const contentHtml = visible.map(postCardHtml).join('\n')
+  const contentHtml = index.filter(p => !p.meta.page).map(postCardHtml).join('\n')
 
   return new Response(injectContent(html, contentHtml), {
     headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public, max-age=300' }
@@ -215,14 +193,13 @@ export const handleHomeRoute = async (req, env) => {
 
 export const handleArchiveRoute = async (req, env) => {
   const [posts, htmlRes] = await Promise.all([
-    getAllPosts(env.FEEDI_KV),
+    getAllPosts(env.DB),
     env.ASSETS.fetch(new Request(new URL('/', req.url)))
   ])
 
   const html = await htmlRes.text()
   const index = buildIndex(posts)
-  const visible = index.filter(p => !p.meta.page)
-  const contentHtml = visible.map(archiveItemHtml).join('\n')
+  const contentHtml = index.filter(p => !p.meta.page).map(archiveItemHtml).join('\n')
 
   return new Response(injectContent(html, contentHtml), {
     headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public, max-age=300' }
@@ -230,15 +207,17 @@ export const handleArchiveRoute = async (req, env) => {
 }
 
 export const handleTagRoute = async (req, env) => {
-  const tag = new URL(req.url).searchParams.get('t') || ''
+  const tag = (new URL(req.url).searchParams.get('t') || '').toLowerCase()
   const [posts, htmlRes] = await Promise.all([
-    getAllPosts(env.FEEDI_KV),
+    getAllPosts(env.DB),
     env.ASSETS.fetch(new Request(new URL('/', req.url)))
   ])
 
   const html = await htmlRes.text()
   const index = buildIndex(posts)
-  const visible = index.filter(p => !p.meta.page && (p.meta.tags || []).some(t => t.toLowerCase() === tag.toLowerCase()))
+  const visible = tag
+    ? index.filter(p => !p.meta.page && (p.meta.tags || []).some(t => t.toLowerCase() === tag))
+    : []
   const contentHtml = tag
     ? `<h2 class="tag-heading">${tag}</h2>\n` + visible.map(postCardHtml).join('\n')
     : ''
@@ -257,6 +236,5 @@ const extractFirstImage = (html, base) => {
   const m = html.match(/<img[^>]+src="([^"]+)"/)
   if (!m) return ''
   const src = m[1]
-  if (src.startsWith('http')) return src
-  return base + src
+  return src.startsWith('http') ? src : base + src
 }

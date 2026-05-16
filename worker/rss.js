@@ -44,7 +44,7 @@ const channelOpen = (cfg, selfFullUrl) => `<?xml version="1.0" encoding="UTF-8"?
   <atom:link href="${escXml(selfFullUrl)}" rel="self" type="application/rss+xml"/>`
 
 const podChannelOpen = (cfg, selfFullUrl) => `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:podcast="https://podcastindex.org/namespace/1.0">
 <channel>
   <title>${escXml(cfg.title)}</title>
   <link>https://${escXml(cfg.domain)}</link>
@@ -55,12 +55,13 @@ const podChannelOpen = (cfg, selfFullUrl) => `<?xml version="1.0" encoding="UTF-
   <itunes:author>${escXml(cfg.title)}</itunes:author>
   <itunes:summary>${escXml(stripTags(cfg.description))}</itunes:summary>
   <itunes:explicit>false</itunes:explicit>
-  <itunes:category text="${escXml(cfg.podcastCategory || 'Technology')}"/>${cfg.image ? `\n  <itunes:image href="${escXml(cfg.image)}"/>` : ''}${cfg.podcastEmail
+  <itunes:category text="${escXml(cfg.podcastCategory || 'Technology')}"/>
+  <itunes:image href="${escXml(cfg.image || cfg.siteImage || '')}"/>${cfg.podcastEmail
 ? `
-    <itunes:owner>
-      <itunes:name>${escXml(cfg.title)}</itunes:name>
-      <itunes:email>${escXml(cfg.podcastEmail)}</itunes:email>
-    </itunes:owner>`
+  <itunes:owner>
+    <itunes:name>${escXml(cfg.title)}</itunes:name>
+    <itunes:email>${escXml(cfg.podcastEmail)}</itunes:email>
+  </itunes:owner>`
 : ''}`
 
 const channelClose = () => '\n</channel>\n</rss>'
@@ -80,7 +81,7 @@ const postItem = (post, baseUrl, siteImage = '') => {
     <guid isPermaLink="true">${url}</guid>
     <pubDate>${rfc822(post.date)}</pubDate>
     <description>${escXml(summary)}</description>
-    <content:encoded><![CDATA[${safeHtml}]]></content:encoded>${imgUrl ? `\n    <media:content url="${escXml(imgUrl)}" medium="image"/>` : ''}
+    <content:encoded><![CDATA[${safeHtml}]]></content:encoded>${imgUrl ? `\n    <media:content url="${escXml(imgUrl)}" medium="image"/>` : ''}${(post.tags || []).map(t => `\n    <category>${escXml(t)}</category>`).join('')}
   </item>`
 }
 
@@ -118,14 +119,15 @@ export const handleRss = async (req, env) => {
     description: env.SITE_DESCRIPTION || '',
     domain: env.DOMAIN_NAME || '',
     language: 'en-us',
-    image: env.PODCAST_IMAGE || '',
-    podcastCategory: env.PODCAST_CATEGORY || '',
-    podcastEmail: env.PODCAST_EMAIL || ''
+    image: settings.podcastImage || env.PODCAST_IMAGE || '',
+    siteImage: settings.siteImage || '',
+    podcastCategory: settings.podcastCategory || env.PODCAST_CATEGORY || '',
+    podcastEmail: settings.podcastEmail || env.PODCAST_EMAIL || ''
   }
   const base = `https://${cfg.domain}`
-  const siteImage = settings.siteImage || ''
+  const siteImage = cfg.siteImage
 
-  const allPosts = (await getAllPosts(kv))
+  const allPosts = (await getAllPosts(env.DB))
     .filter(p => p.status === 'published' && p.type !== 'page')
     .sort((a, b) => new Date(b.date) - new Date(a.date))
 

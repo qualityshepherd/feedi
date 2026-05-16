@@ -45,12 +45,39 @@ export const handleServeUpload = async (req, env) => {
   const key = new URL(req.url).pathname.replace('/uploads/', '')
   if (!key) return new Response('Not found', { status: 404 })
 
+  const rangeHeader = req.headers.get('Range')
+
+  if (rangeHeader) {
+    const [head, ranged] = await Promise.all([
+      env.R2.head(key),
+      env.R2.get(key, { range: req.headers })
+    ])
+    if (!head || !ranged) return new Response('Not found', { status: 404 })
+
+    const total = head.size
+    const { offset = 0, length = total - offset } = ranged.range || {}
+    const end = offset + length - 1
+
+    return new Response(ranged.body, {
+      status: 206,
+      headers: {
+        'Content-Type': head.httpMetadata?.contentType || 'application/octet-stream',
+        'Content-Range': `bytes ${offset}-${end}/${total}`,
+        'Content-Length': String(length),
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=31536000, immutable'
+      }
+    })
+  }
+
   const object = await env.R2.get(key)
   if (!object) return new Response('Not found', { status: 404 })
 
   return new Response(object.body, {
     headers: {
       'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+      'Content-Length': String(object.size),
+      'Accept-Ranges': 'bytes',
       'Cache-Control': 'public, max-age=31536000, immutable'
     }
   })

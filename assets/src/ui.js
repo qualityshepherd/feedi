@@ -1,4 +1,4 @@
-import { getPosts, getDisplayedPosts, getSearchTerm } from './state.js'
+import { getPosts, getSearchTerm } from './state.js'
 import { elements } from './dom.js'
 import {
   postsTemplate,
@@ -9,8 +9,6 @@ import {
 
 export const isSpecialPost = post => post.meta.page === true
 export const isPod = post => !!post.meta.audioUrl
-
-export const getLimitedPosts = (posts, limit) => posts.slice(0, Math.max(0, limit))
 
 export const postMatchesSearch = (post, searchTerm) => {
   if (!searchTerm) return true
@@ -37,24 +35,48 @@ export const renderTags = (tags, path = '/tag') =>
 // test render functions via e2e tests...
 //
 
-export function toggleLoadMoreButton (shouldShow = false) {
-  if (!elements.loadMore) return
-  elements.loadMore.classList.toggle('show', shouldShow)
-}
+const PAGE = 10
+let postsObserver = null
 
-export function renderPosts (posts, limit = null) {
+export function renderPosts (posts) {
   const filtered = posts.filter(p => !isSpecialPost(p))
-  const displayLimit = limit ?? getDisplayedPosts()
-  const limited = getLimitedPosts(filtered, displayLimit)
-  elements.main.innerHTML = limited.map(postsTemplate).join('')
-  toggleLoadMoreButton(displayLimit < filtered.length)
+
+  if (postsObserver) { postsObserver.disconnect(); postsObserver = null }
+  elements.main.innerHTML = ''
+
+  if (!filtered.length) return
+
+  let rendered = 0
+  const sentinel = document.createElement('div')
+  elements.main.appendChild(sentinel)
+
+  const renderMore = () => {
+    const batch = filtered.slice(rendered, rendered + PAGE)
+    if (!batch.length) return
+    const frag = document.createElement('div')
+    frag.innerHTML = batch.map(postsTemplate).join('')
+    elements.main.insertBefore(frag, sentinel)
+    rendered += batch.length
+  }
+
+  renderMore()
+
+  if (rendered >= filtered.length) { sentinel.remove(); return }
+
+  postsObserver = new IntersectionObserver(entries => {
+    if (!entries[0].isIntersecting) return
+    renderMore()
+    if (rendered >= filtered.length) {
+      postsObserver.disconnect(); postsObserver = null; sentinel.remove()
+    }
+  }, { rootMargin: '200px' })
+  postsObserver.observe(sentinel)
 }
 
 export function renderSinglePost (slug) {
   const posts = getPosts()
   const post = posts.find(p => p.meta.slug === slug)
   elements.main.innerHTML = post ? singlePostTemplate(post) : notFoundTemplate()
-  toggleLoadMoreButton(false)
 }
 
 export function renderArchive (posts, filter = 'all', onFilter) {
@@ -76,8 +98,8 @@ export function renderArchive (posts, filter = 'all', onFilter) {
     </div>`
     : ''
 
-  elements.main.innerHTML = filterBar + visible.map(archiveTemplate).join('')
-  toggleLoadMoreButton(false)
+  const isOwner = !!localStorage.getItem('feedi_token')
+  elements.main.innerHTML = filterBar + visible.map(p => archiveTemplate(p, isOwner)).join('')
 
   if (onFilter) {
     elements.main.querySelectorAll('.archive-filter').forEach(btn => {
@@ -88,7 +110,6 @@ export function renderArchive (posts, filter = 'all', onFilter) {
 
 export function renderNotFoundPage () {
   elements.main.innerHTML = notFoundTemplate()
-  toggleLoadMoreButton(false)
 }
 
 export function renderFilteredPosts () {
@@ -99,8 +120,7 @@ export function renderFilteredPosts () {
   )
   if (filtered.length === 0) {
     elements.main.innerHTML = notFoundTemplate('No results found for your search.')
-    toggleLoadMoreButton(false)
   } else {
-    renderPosts(filtered, filtered.length)
+    renderPosts(filtered)
   }
 }

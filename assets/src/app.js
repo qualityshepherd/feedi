@@ -1,10 +1,10 @@
-import { readSiteIndex, setPosts, setDisplayedPosts, getPageSize } from './state.js'
+import { readSiteIndex, setPosts } from './state.js'
 import { elements } from './dom.js'
-import { handleLoadMore, handleRouting, handleSearch } from './handlers.js'
+import { handleRouting, handleSearch } from './handlers.js'
+import { initEditor } from './editor.js'
 
 function setEventListeners () {
   elements.searchInput?.addEventListener('input', handleSearch)
-  elements.loadMore?.addEventListener('click', handleLoadMore)
 
   window.addEventListener('popstate', handleRouting)
 
@@ -57,23 +57,23 @@ function setEventListeners () {
     }
   })
 
-  // ── rss dropdown ───────────────────────────────────────────────────────────
-  const btnRss = document.getElementById('btn-rss')
-  const rssDropdown = document.getElementById('rss-dropdown')
+  // ── kebab menu ─────────────────────────────────────────────────────────────
+  const btnKebab = document.getElementById('btn-kebab')
+  const kebabDropdown = document.getElementById('kebab-dropdown')
 
-  btnRss?.addEventListener('click', (e) => {
+  btnKebab?.addEventListener('click', (e) => {
     e.stopPropagation()
-    rssDropdown.hidden = !rssDropdown.hidden
+    kebabDropdown.hidden = !kebabDropdown.hidden
   })
 
   document.addEventListener('click', (e) => {
-    if (!rssDropdown.hidden && !e.target.closest('.nav-rss-wrap')) {
-      rssDropdown.hidden = true
+    if (!kebabDropdown.hidden && !e.target.closest('.nav-kebab-wrap')) {
+      kebabDropdown.hidden = true
     }
   })
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && !rssDropdown.hidden) rssDropdown.hidden = true
+    if (e.key === 'Escape' && !kebabDropdown.hidden) kebabDropdown.hidden = true
   })
 
   document.querySelectorAll('.nav-dropdown-copy').forEach(btn => {
@@ -92,14 +92,22 @@ const show = id => { const el = document.getElementById(id); if (el) el.hidden =
 ;(async () => {
   const index = await readSiteIndex('/index.json')
   setPosts(index)
-  setDisplayedPosts(getPageSize())
   setEventListeners()
   handleRouting()
 
-  if (index.some(p => p.meta.audioUrl)) show('rss-pod-row')
-  if (localStorage.getItem('feedi_token')) show('nav-admin')
-
-  fetch('/feeds/aggregated').then(r => r.json()).catch(() => []).then(feeds => {
-    if (feeds.length) show('feeds-nav-link')
+  fetch('/api/settings').then(r => r.json()).catch(() => ({})).then(settings => {
+    const nav = document.querySelector('nav')
+    const searchWrap = document.querySelector('.nav-search-wrap')
+    nav.querySelectorAll('a').forEach(a => a.remove())
+    const md = settings.nav || '[Home](/) [Archive](/archive)'
+    for (const [, text, url] of md.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)) {
+      const a = document.createElement('a')
+      a.href = url
+      a.textContent = text
+      nav.insertBefore(a, searchWrap)
+    }
   })
+
+  if (index.some(p => p.meta.audioUrl)) show('rss-pod-row')
+  if (localStorage.getItem('feedi_token')) initEditor()
 })()

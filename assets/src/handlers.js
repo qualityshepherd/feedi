@@ -1,20 +1,18 @@
 import { elements } from './dom.js'
 import {
   getPosts,
-  getDisplayedPosts,
-  setDisplayedPosts,
-  setSearchTerm,
-  incrementDisplayedPosts
+  setSearchTerm
 } from './state.js'
 import {
   renderArchive,
   renderFilteredPosts,
   renderNotFoundPage,
   renderPosts,
-  renderSinglePost,
-  toggleLoadMoreButton
+  renderSinglePost
 } from './ui.js'
 import { loadAndRenderFeeds } from './feeds.js'
+import { initFeedsAdmin } from './feedsAdmin.js'
+import { initBlogCog } from './editor.js'
 
 const ROUTES = {
   HOME: '/',
@@ -38,11 +36,8 @@ const filterPostsByTag = (posts, tag) =>
 
 const routeHandlers = {
   [ROUTES.HOME]: () => {
-    if (getDisplayedPosts() === 0) setDisplayedPosts(10)
-    const posts = getPosts()
-    const displayedCount = getDisplayedPosts()
-    renderPosts(posts, displayedCount)
-    toggleLoadMoreButton(displayedCount < posts.length)
+    renderPosts(getPosts())
+    if (localStorage.getItem('feedi_token')) initBlogCog()
   },
 
   [ROUTES.POST]: () => {
@@ -52,10 +47,7 @@ const routeHandlers = {
 
   [ROUTES.TAG]: ({ params }) => {
     const tag = params.get('t')
-    if (tag) {
-      const filtered = filterPostsByTag(getPosts(), tag)
-      renderPosts(filtered, filtered.length)
-    }
+    if (tag) renderPosts(filterPostsByTag(getPosts(), tag))
   },
 
   [ROUTES.ARCHIVE]: () => {
@@ -71,12 +63,13 @@ const routeHandlers = {
       renderFilteredPosts()
     } else {
       setSearchTerm('')
-      renderPosts(getPosts(), getPosts().length)
+      renderPosts(getPosts())
     }
   },
 
   [ROUTES.READER]: async () => {
     await loadAndRenderFeeds()
+    if (localStorage.getItem('feedi_token')) initFeedsAdmin()
   },
 
   default: () => {
@@ -124,12 +117,4 @@ export function handleSearch (e) {
   }
 
   renderFilteredPosts()
-}
-
-export async function handleLoadMore () {
-  incrementDisplayedPosts()
-  const displayedCount = getDisplayedPosts()
-  const posts = getPosts()
-  renderPosts(posts, displayedCount)
-  toggleLoadMoreButton(displayedCount < posts.length)
 }

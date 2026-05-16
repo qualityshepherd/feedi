@@ -9,6 +9,9 @@
   "standard": {
     "env": [
       "browser"
+    ],
+    "ignore": [
+      "assets/lib/**"
     ]
   },
   "scripts": {

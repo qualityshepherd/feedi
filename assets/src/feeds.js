@@ -12,7 +12,7 @@ let modalReady = false
 let feedObserver = null
 
 const readAggregated = async (path) => {
-  const res = await fetch(path)
+  const res = await fetch(path, { cache: 'no-store' })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
@@ -125,11 +125,11 @@ const initModal = () => {
 
 // ── render ────────────────────────────────────────────────────────────────────
 
-export const renderFeedsItems = (items) => {
+const renderFeedsItems = (items) => {
   if (feedObserver) { feedObserver.disconnect(); feedObserver = null }
 
   if (!items.length) {
-    elements.main.innerHTML = notFoundTemplate('No feed posts found. Add feeds to feeds.json.')
+    elements.main.innerHTML = notFoundTemplate('No feed posts yet...')
     return
   }
 
@@ -164,6 +164,8 @@ export const renderFeedsItems = (items) => {
 }
 
 export const getCachedFeeds = () => cachedFeeds
+export const resetFeedsCache = () => { cachedFeeds = null }
+export const setCachedFeeds = (posts) => { cachedFeeds = posts }
 
 export const loadAndRenderFeeds = async () => {
   try {
