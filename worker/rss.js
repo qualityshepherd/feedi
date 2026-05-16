@@ -1,4 +1,4 @@
-import { getAllPosts } from './posts.js'
+import { getAllPosts, getSettings } from './posts.js'
 
 const extractFirstImg = (html = '') => {
   const m = html.match(/<img[^>]+src="([^"]+)"/)
@@ -112,8 +112,7 @@ const podItem = (post, baseUrl) => {
 export const handleRss = async (req, env) => {
   const reqUrl = new URL(req.url)
   const path = reqUrl.pathname
-  const kv = env.FEEDI_KV
-  const settings = await kv.get('settings', { type: 'json' }) || {}
+  const settings = await getSettings(env.DB)
   const cfg = {
     title: env.SITE_TITLE || 'feedi',
     description: env.SITE_DESCRIPTION || '',

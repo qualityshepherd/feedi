@@ -17,9 +17,10 @@ PODCAST_IMAGE = ""                    # optional: podcast cover art URL
 PODCAST_CATEGORY = "Technology"       # optional: iTunes category
 PODCAST_EMAIL = ""                    # optional: iTunes owner email
 
-[[kv_namespaces]]
-binding = "FEEDI_KV"
-id = ""                               # paste your KV namespace ID here
+[[d1_databases]]
+binding = "DB"
+database_name = ""                    # your D1 database name
+database_id = ""                      # your D1 database ID
 
 [[durable_objects.bindings]]
 name = "ANALYTICS"

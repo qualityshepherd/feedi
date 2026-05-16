@@ -2,7 +2,7 @@
 
 **Resonance over reach. Sovereignty over scale.**
 
-Feedi is a blog, RSS reader, and podcast host that runs on Cloudflare Workers' free tier, forever.
+Feedi is a blog, RSS feed, feed reader, and podcast host that has fantastic analytics, and runs on Cloudflare Workers' free tier, forever.
 
 [Demo](https://feedi.brine.dev)
 
@@ -13,22 +13,31 @@ Feedi is a blog, RSS reader, and podcast host that runs on Cloudflare Workers' f
 
 ## Setup
 
+Assumes [git](https://git-scm.com/), [node](https://nodejs.org/) and [Cloudflare](https://cloudflare.com/) account (free tier). 
+
 ```bash
 git clone https://github.com/qualityshepherd/feedi
 cd feedi
 npm install
 wrangler login
-wrangler kv namespace create FEEDI_KV
 wrangler r2 bucket create your-bucket-name
+wrangler d1 create feedi          # prints a database_id — you'll need it next
 ```
 
-Copy `wrangler.example.toml` to `wrangler.toml` and fill in the KV namespace `id` and R2 bucket name, then:
+Copy `wrangler.example.toml` to `wrangler.toml`. Fill in:
+- `database_id` from the output above
+- `bucket_name` for your R2 bucket
+- `DOMAIN_NAME` — your domain (used in RSS feed URLs)
+- `SITE_TITLE` / `SITE_DESCRIPTION` — used in RSS feeds
+
+Then deploy:
 
 ```bash
+wrangler d1 migrations apply feedi --remote
 wrangler deploy
 ```
 
-Go to `/admin`, enter a passphrase, copy your pubkey, paste it into `wrangler.toml` as `OWNER`, redeploy. Done.
+**First-time owner setup:** go to `/admin`, enter a passphrase (this derives your keypair — nothing is stored server-side), copy the pubkey, paste it into `wrangler.toml` as `OWNER`, and redeploy. After that, logging in signs a challenge with your private key; the passphrase never leaves your browser.
 
 Add your custom domain in the Cloudflare dashboard and wait for propagation.
 
@@ -36,11 +45,11 @@ Add your custom domain in the Cloudflare dashboard and wait for propagation.
 
 Go to `/admin` — create, edit, publish from the browser. Markdown with live preview. Drag, drop, or paste images to upload.
 
-Export your posts anytime as JSON or a zip of `.md` files. You're never locked in.
+Export your posts anytime as JSON from the settings panel. You're never locked in.
 
 ## RSS feeds
 
-Add external RSS/Atom feeds from `/admin → feeds`. The worker fetches and caches them hourly. Each feed has a configurable post limit.
+Add external RSS/Atom feeds from the feeds panel. The worker fetches them hourly.
 
 Your own feeds are available at:
 - `/rss/blog` — posts

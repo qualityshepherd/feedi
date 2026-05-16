@@ -85,11 +85,10 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
   const url = new URL(req.url)
   const path = url.pathname
   const method = req.method
-  const kv = env.FEEDI_KV
   const db = env.DB
 
   const token = req.headers?.get('authorization')?.replace('Bearer ', '')
-  const pubkey = await memberByToken(token, kv)
+  const pubkey = await memberByToken(token, db)
   if (!pubkey || !isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
 
   // GET /api/feeds — list with status

@@ -35,7 +35,17 @@ const json = (data, status = 200) =>
     headers: { 'Content-Type': 'application/json' }
   })
 
-const invalidateIndex = (kv) => kv.delete('index:cache')
+export const getSettings = async (db) => {
+  const row = await db.prepare('SELECT value FROM settings WHERE id = 1').first()
+  return row ? JSON.parse(row.value) : {}
+}
+
+const saveSettings = async (db, body) => {
+  const current = await getSettings(db)
+  const updated = { ...current, ...body }
+  await db.prepare('UPDATE settings SET value = ? WHERE id = 1').bind(JSON.stringify(updated)).run()
+  return updated
+}
 
 const savePostTags = async (db, postId, markdown) => {
   const tags = extractHashtags(markdown)
@@ -99,16 +109,8 @@ export const buildIndex = (posts) =>
     }))
 
 export const handleIndex = async (env) => {
-  const cached = await env.FEEDI_KV.get('index:cache')
-  if (cached) {
-    return new Response(cached, {
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-    })
-  }
   const posts = await getAllPosts(env.DB)
-  const body = JSON.stringify(buildIndex(posts))
-  await env.FEEDI_KV.put('index:cache', body, { expirationTtl: 3600 })
-  return new Response(body, {
+  return new Response(JSON.stringify(buildIndex(posts)), {
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
   })
 }
@@ -118,10 +120,9 @@ export const handlePosts = async (req, env) => {
   const path = url.pathname
   const method = req.method
   const db = env.DB
-  const kv = env.FEEDI_KV
 
   const token = req.headers?.get('authorization')?.replace('Bearer ', '')
-  const pubkey = await memberByToken(token, kv)
+  const pubkey = await memberByToken(token, db)
   if (!pubkey) return json({ error: 'unauthorized' }, 401)
 
   const isOwner = isOwnerPubkey(pubkey, env)
@@ -190,7 +191,6 @@ export const handlePosts = async (req, env) => {
     }
 
     await savePostTags(db, postId, markdown)
-    await invalidateIndex(kv)
     return json(await getPostBySlug(db, slug), 201)
   }
 
@@ -230,7 +230,6 @@ export const handlePosts = async (req, env) => {
     ).run()
 
     await savePostTags(db, post.id, markdown)
-    await invalidateIndex(kv)
     return json(await getPostBySlug(db, slug))
   }
 
@@ -240,7 +239,6 @@ export const handlePosts = async (req, env) => {
     if (!post) return json({ error: 'not found' }, 404)
     if (post.author !== pubkey && !isOwner) return json({ error: 'forbidden' }, 403)
     await db.prepare('DELETE FROM posts WHERE id = ?').bind(post.id).run()
-    await invalidateIndex(kv)
     return json({ ok: true })
   }
 
@@ -248,7 +246,6 @@ export const handlePosts = async (req, env) => {
   if (method === 'DELETE' && path === '/api/posts') {
     if (!isOwner) return json({ error: 'forbidden' }, 403)
     const { meta } = await db.prepare('DELETE FROM posts').run()
-    await invalidateIndex(kv)
     return json({ deleted: meta.changes })
   }
 
@@ -302,14 +299,13 @@ export const handlePosts = async (req, env) => {
       }
     }
 
-    await invalidateIndex(kv)
     return json({ imported, errors })
   }
 
   // GET /api/settings
   if (method === 'GET' && path === '/api/settings') {
     if (!isOwner) return json({ error: 'forbidden' }, 403)
-    return json(await kv.get('settings', { type: 'json' }) || {})
+    return json(await getSettings(db))
   }
 
   // PATCH /api/settings
@@ -317,15 +313,12 @@ export const handlePosts = async (req, env) => {
     if (!isOwner) return json({ error: 'forbidden' }, 403)
     let body
     try { body = await req.json() } catch { return json({ error: 'invalid json' }, 400) }
-    const updated = { ...((await kv.get('settings', { type: 'json' })) || {}), ...body }
-    await kv.put('settings', JSON.stringify(updated))
-    return json(updated)
+    return json(await saveSettings(db, body))
   }
 
   // POST /api/cache/bust
   if (method === 'POST' && path === '/api/cache/bust') {
     if (!isOwner) return json({ error: 'forbidden' }, 403)
-    await invalidateIndex(kv)
     return json({ ok: true })
   }
 

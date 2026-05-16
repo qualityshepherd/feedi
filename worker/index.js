@@ -3,7 +3,7 @@ import { handleFeeds, refreshFeeds, handleFeedsAdmin } from './feeds.js'
 import { handleRss } from './rss.js'
 import { handleUpload, handleServeUpload, handleListUploads } from './upload.js'
 import { handleAuth, memberByToken, isOwnerPubkey } from './auth.js'
-import { handlePosts, handleIndex } from './posts.js'
+import { handlePosts, handleIndex, getSettings } from './posts.js'
 import { handleRobots, handleSitemap, handlePostRoute, handlePageRoute, handleHomeRoute, handleArchiveRoute, handleTagRoute } from './seo.js'
 
 export { AnalyticsDO }
@@ -37,7 +37,12 @@ export default {
   },
 
   async scheduled (event, env, ctx) {
-    ctx.waitUntil(refreshFeeds(env).catch(err => console.error('Feed refresh failed:', err)))
+    const now = Date.now()
+    ctx.waitUntil(Promise.all([
+      refreshFeeds(env).catch(err => console.error('Feed refresh failed:', err)),
+      env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now).run().catch(() => {}),
+      env.DB.prepare('DELETE FROM rate_limits WHERE reset_at < ?').bind(now).run().catch(() => {})
+    ]))
   }
 }
 
@@ -58,20 +63,20 @@ async function handleRequest (req, env, ctx) {
 
   // Public settings read (nav, site image, etc. — no secrets)
   if (path === '/api/settings' && req.method === 'GET') {
-    return json(await env.FEEDI_KV.get('settings', { type: 'json' }) || {})
+    return json(await getSettings(env.DB))
   }
 
   // Auth gate — all /api/* routes not in PUBLIC_API require a valid token
   if (path.startsWith('/api/') && !PUBLIC_API.has(path)) {
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
-    const pubkey = token ? await memberByToken(token, env.FEEDI_KV) : null
+    const pubkey = token ? await memberByToken(token, env.DB) : null
     if (!pubkey) return json({ error: 'unauthorized' }, 401)
   }
 
   // Analytics (owner-only)
   if (path === '/api/analytics') {
     const token = req.headers.get('authorization')?.replace('Bearer ', '')
-    const pubkey = token ? await memberByToken(token, env.FEEDI_KV) : null
+    const pubkey = token ? await memberByToken(token, env.DB) : null
     if (!isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
     return handleAnalytics(req, env, url.hostname)
   }

@@ -10,7 +10,7 @@ const json = (data, status = 200) =>
 
 export const handleUpload = async (req, env) => {
   const token = req.headers?.get('authorization')?.replace('Bearer ', '')
-  const pubkey = await memberByToken(token, env.FEEDI_KV)
+  const pubkey = await memberByToken(token, env.DB)
   if (!pubkey || !isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
 
   let formData
@@ -34,7 +34,7 @@ export const handleUpload = async (req, env) => {
 
 export const handleListUploads = async (req, env) => {
   const token = req.headers?.get('authorization')?.replace('Bearer ', '')
-  const pubkey = await memberByToken(token, env.FEEDI_KV)
+  const pubkey = await memberByToken(token, env.DB)
   if (!pubkey || !isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
 
   const list = await env.R2.list()
