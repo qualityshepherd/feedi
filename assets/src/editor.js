@@ -1,7 +1,7 @@
 import { renderPosts } from './ui.js'
 import { getPosts } from './state.js'
 import { elements } from './dom.js'
-import { marked } from '../lib/marked.esm.js'
+import { marked } from 'marked'
 
 const getToken = () => localStorage.getItem('feedi_token')
 

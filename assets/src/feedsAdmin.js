@@ -45,7 +45,7 @@ export const buildOpml = feeds => {
 
 const COG_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 
-// ── row templates ─────────────────────────────────────────────────────────────
+// row templates
 
 const ICON_EXTERNAL = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>'
 
@@ -84,12 +84,12 @@ const managePanelHtml = feeds => `
     </div>
   </div>`
 
-// ── state ─────────────────────────────────────────────────────────────────────
+// state
 
 let feedsList = []
 let initialized = false
 
-// ── handlers for utility buttons ─────────────────────────────────────────────
+// handlers for utility buttons
 
 const renderFeedsList = () => {
   const list = document.getElementById('feeds-list')
@@ -182,7 +182,7 @@ const handleExportOpml = () => {
   URL.revokeObjectURL(blobUrl)
 }
 
-// ── cog bar ───────────────────────────────────────────────────────────────────
+// cog bar
 
 const openManage = async () => {
   const data = await apiFetch('/api/feeds', 'GET')
@@ -214,7 +214,7 @@ const addCog = (managing = false) => {
   elements.main.prepend(bar)
 }
 
-// ── manage panel ──────────────────────────────────────────────────────────────
+// manage panel
 
 const bindUrlBtns = () => {
   document.querySelectorAll('.feed-url-btn').forEach(btn => {
@@ -315,7 +315,7 @@ const bindManagePanel = () => {
   bindUrlBtns()
 }
 
-// ── init ──────────────────────────────────────────────────────────────────────
+// init
 
 export function initFeedsAdmin () {
   addCog(false)

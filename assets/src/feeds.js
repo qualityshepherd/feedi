@@ -17,7 +17,7 @@ const readAggregated = async (path) => {
   return res.json()
 }
 
-// ── modal ─────────────────────────────────────────────────────────────────────
+// modal
 
 const closeModal = () => {
   const modal = document.getElementById('feed-modal')
@@ -123,7 +123,7 @@ const initModal = () => {
   })
 }
 
-// ── render ────────────────────────────────────────────────────────────────────
+// render
 
 const renderFeedsItems = (items) => {
   if (feedObserver) { feedObserver.disconnect(); feedObserver = null }

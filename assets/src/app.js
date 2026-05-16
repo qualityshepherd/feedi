@@ -30,7 +30,7 @@ function setEventListeners () {
     e.preventDefault()
   })
 
-  // ── search expand/collapse ─────────────────────────────────────────────────
+  // search expand/collapse
   const btnSearch = document.getElementById('btn-search')
   const searchForm = document.getElementById('search-form')
   const searchInput = document.getElementById('search')
@@ -57,7 +57,7 @@ function setEventListeners () {
     }
   })
 
-  // ── kebab menu ─────────────────────────────────────────────────────────────
+  // kebab menu
   const btnKebab = document.getElementById('btn-kebab')
   const kebabDropdown = document.getElementById('kebab-dropdown')
 
