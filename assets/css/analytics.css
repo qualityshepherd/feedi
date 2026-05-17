@@ -49,6 +49,7 @@ h2{margin:3rem 0 .75rem;font-size:0.8rem;color:var(--alt1);letter-spacing:.15em;
 .tip-row strong{color:var(--alt3)}
 @media(max-width:520px){
   .charts-grid{grid-template-columns:1fr}
-  .session-header{grid-template-columns:auto 1fr}
+  .session-header{grid-template-columns:6rem 1fr}
+  .log-path{display:none}
   .maps{grid-template-columns:1fr}
 }
