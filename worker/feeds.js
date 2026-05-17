@@ -1,5 +1,6 @@
 import { parseFeed } from './feedParser.js'
-import { memberByToken, isOwnerPubkey } from './auth.js'
+import { requireOwner } from './auth.js'
+import { json } from './utils.js'
 
 const parseOpml = (xml) => {
   const urls = []
@@ -9,12 +10,6 @@ const parseOpml = (xml) => {
   }
   return urls
 }
-
-const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
 
 const fetchFeed = async (url) => {
   let code = null
@@ -87,9 +82,7 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
   const method = req.method
   const db = env.DB
 
-  const token = req.headers?.get('authorization')?.replace('Bearer ', '')
-  const pubkey = await memberByToken(token, db)
-  if (!pubkey || !isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
+  if (!await requireOwner(req, env)) return json({ error: 'unauthorized' }, 401)
 
   // GET /api/feeds — list with status
   if (method === 'GET' && path === '/api/feeds') {
@@ -131,7 +124,7 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
     const existing = await db.prepare('SELECT url FROM feeds WHERE url = ?').bind(feedUrl).first()
     if (existing) return json({ error: 'feed already added' }, 409)
 
-    await db.prepare('INSERT INTO feeds (url, feed_limit, created_at) VALUES (?, 0, ?)')
+    await db.prepare('INSERT INTO feeds (url, created_at) VALUES (?, ?)')
       .bind(feedUrl, new Date().toISOString()).run()
 
     ctx.waitUntil(refreshFeeds(env))
@@ -181,7 +174,7 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
     if (toAdd.length) {
       const now = new Date().toISOString()
       await db.batch(toAdd.map(u =>
-        db.prepare('INSERT OR IGNORE INTO feeds (url, feed_limit, created_at) VALUES (?, 0, ?)').bind(u, now)
+        db.prepare('INSERT OR IGNORE INTO feeds (url, created_at) VALUES (?, ?)').bind(u, now)
       ))
       ctx.waitUntil(refreshFeeds(env))
     }
@@ -205,7 +198,7 @@ export const handleFeedsAdmin = async (req, env, ctx) => {
     if (toAdd.length) {
       const now = new Date().toISOString()
       await db.batch(toAdd.map(u =>
-        db.prepare('INSERT OR IGNORE INTO feeds (url, feed_limit, created_at) VALUES (?, 0, ?)').bind(u, now)
+        db.prepare('INSERT OR IGNORE INTO feeds (url, created_at) VALUES (?, ?)').bind(u, now)
       ))
       ctx.waitUntil(refreshFeeds(env))
     }

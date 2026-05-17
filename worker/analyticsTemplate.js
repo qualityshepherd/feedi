@@ -1,30 +1,18 @@
-export default `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>analytics</title>
-<link rel="icon" href="/favicon.png" />
-<link rel="stylesheet" href="/css/analytics.css" />
-</head>
-<body>
-<div class="wrap">
-  <a class="back-home" href="/">← home</a>
-  <p class="title">analytics</p>
-  <p class="subtitle" id="hostname"></p>
-  <nav class="days-nav" id="nav"></nav>
-  <div class="summary" id="summary"></div>
-  <div class="maps" id="maps"></div>
-  <div id="charts"></div>
-  <div id="filter-bar" class="filter-bar"></div>
-  <div id="logs"></div>
-</div>
+export default `
+<h2>analytics</h2>
+<p class="muted" id="hostname" style="font-size:var(--text-sm);margin:-.5rem 0 1.5rem"></p>
+<nav class="days-nav" id="nav"></nav>
+<div class="summary" id="summary"></div>
+<div class="maps" id="maps"></div>
+<div id="charts"></div>
+<div id="filter-bar" class="filter-bar"></div>
+<div id="logs"></div>
 <script>
 const params = new URLSearchParams(location.search)
 const days = parseInt(params.get('days') || '1')
 const token = localStorage.getItem('feedi_token') || ''
 const DOW = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-const SESSION_GAP = 30 * 60 * 1000 // 30 minutes
+const SESSION_GAP = 30 * 60 * 1000
 
 const COUNTRY_NAMES = {
   AF:'Afghanistan',AL:'Albania',DZ:'Algeria',AO:'Angola',AR:'Argentina',AM:'Armenia',AU:'Australia',AT:'Austria',
@@ -99,8 +87,8 @@ const bars = (items, isCountry = false, pathBots = {}) => items.map(([name, coun
   const botTags = botInfo && botInfo.asns && botInfo.asns.length
     ? botInfo.asns.map(asnTag).join('')
     : botInfo ? \`<span title="AS?" style="cursor:default">🤖</span>\` : ''
-  return \`<div class="bar-wrap" title="\${title}">\` +
-    \`<span class="label">\${label}\${botTags ? \` \${botTags}\` : ''}</span>\` +
+  return \`<div class="bar-wrap">\` +
+    \`<span class="label" title="\${title}">\${label}\${botTags ? \` \${botTags}\` : ''}</span>\` +
     \`<div class="bar" style="width:\${Math.round(count / (items[0]?.[1] || 1) * 120)}px"></div>\` +
     \`<span class="count">\${count}</span></div>\`
 }).join('')
@@ -201,7 +189,7 @@ const renderLogs = () => {
         \`</div>\`
       })
     ).join('')
-    document.getElementById('logs').innerHTML = html ? \`<h2>recent hits</h2>\${html}\` : ''
+    document.getElementById('logs').innerHTML = html ? \`<p class="analytics-label">recent hits</p>\${html}\` : ''
     return
   }
 
@@ -218,7 +206,7 @@ const renderLogs = () => {
       \`<span class="log-ref">\${firstRef}</span>\` +
       \`</div>\`
   }).join('')
-  document.getElementById('logs').innerHTML = html ? \`<h2>recent hits</h2>\${html}\` : ''
+  document.getElementById('logs').innerHTML = html ? \`<p class="analytics-label">recent hits</p>\${html}\` : ''
 }
 
 window.filterIp = (ip) => { activeIp = ip; renderLogs() }
@@ -229,7 +217,6 @@ const render = (allData) => {
   allSessions = groupSessions(s.recentHits)
   const topPaths = Object.entries(s.byPath).sort((a, b) => b[1] - a[1]).slice(0, 10)
   const topCountries = Object.entries(s.byCountry).sort((a, b) => b[1] - a[1]).slice(0, 10)
-  const topRefs = Object.entries(s.byReferrer).sort((a, b) => b[1] - a[1]).slice(0, 10)
 
   const hourLabels = Array.from({length: 24}, (_, i) => i === 0 ? '12a' : i < 12 ? \`\${i}a\` : i === 12 ? '12p' : \`\${i-12}p\`)
 
@@ -268,8 +255,8 @@ const render = (allData) => {
 
   document.getElementById('charts').innerHTML =
     \`<div class="charts-grid">\` +
-      \`<div><h2>top paths</h2>\${bars(topPaths, false, s.byPathBots)}</div>\` +
-      \`<div><h2>top countries</h2>\${bars(topCountries, true)}</div>\` +
+      \`<div><p class="analytics-label">top paths</p>\${bars(topPaths, false, s.byPathBots)}</div>\` +
+      \`<div><p class="analytics-label">top countries</p>\${bars(topCountries, true)}</div>\` +
     \`</div>\`
 
   renderLogs()
@@ -284,6 +271,4 @@ fetch(\`/api/analytics?days=\${days}\`, { headers: token ? { Authorization: \`Be
   .then(render)
   .catch(err => { document.getElementById('summary').textContent = err.message === 'unauthorized' ? '🔒 not logged in' : 'failed to load' })
 </script>
-</body>
-</html>
 `

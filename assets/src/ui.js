@@ -99,7 +99,7 @@ export function renderArchive (posts, filter = 'all', onFilter) {
     : ''
 
   const isOwner = !!localStorage.getItem('feedi_token')
-  elements.main.innerHTML = filterBar + visible.map(p => archiveTemplate(p, isOwner)).join('')
+  elements.main.innerHTML = '<h2>archive</h2>' + filterBar + visible.map(p => archiveTemplate(p, isOwner)).join('')
 
   if (onFilter) {
     elements.main.querySelectorAll('.archive-filter').forEach(btn => {

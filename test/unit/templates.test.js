@@ -1,8 +1,9 @@
 import { unit as test } from '../testpup.js'
-import { archiveTemplate } from '../../assets/src/templates.js'
+import { archiveTemplate, postsTemplate, singlePostTemplate } from '../../assets/src/templates.js'
 
 const makePost = (overrides = {}) => ({
-  meta: { slug: 'test-post', title: 'Test Post', date: '2026-01-01', tags: [], ...overrides }
+  meta: { slug: 'test-post', title: 'Test Post', date: '2026-01-01', tags: ['foo', 'bar'], audioUrl: '', page: false, ...overrides },
+  html: overrides.html || ''
 })
 
 // archiveTemplate isOwner
@@ -39,4 +40,26 @@ test('archiveTemplate: podcast post has archive-pod class', t => {
 test('archiveTemplate: regular post has no archive-pod class', t => {
   const html = archiveTemplate(makePost())
   t.ok(!html.includes('archive-pod'))
+})
+
+// no tag footer — tags are inline via linkifyTags in renderHtml
+
+test('postsTemplate: does not render a tags footer div', t => {
+  const html = postsTemplate(makePost())
+  t.ok(!html.includes('class="tags"'))
+})
+
+test('postsTemplate: does not render tag links from meta.tags', t => {
+  const html = postsTemplate(makePost())
+  t.ok(!html.includes('/tag?t=foo'))
+})
+
+test('singlePostTemplate: does not render a tags footer div', t => {
+  const html = singlePostTemplate(makePost())
+  t.ok(!html.includes('class="tags"'))
+})
+
+test('singlePostTemplate: does not render tag links from meta.tags', t => {
+  const html = singlePostTemplate(makePost())
+  t.ok(!html.includes('/tag?t=foo'))
 })

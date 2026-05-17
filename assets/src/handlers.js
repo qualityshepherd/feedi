@@ -48,6 +48,7 @@ const routeHandlers = {
   [ROUTES.TAG]: ({ params }) => {
     const tag = params.get('t')
     renderPosts(tag ? filterPostsByTag(getPosts(), tag) : [])
+    if (localStorage.getItem('feedi_token')) initBlogCog()
   },
 
   [ROUTES.ARCHIVE]: () => {
@@ -81,6 +82,7 @@ let isInitialLoad = true
 
 export function handleRouting () {
   const { route, params } = getRouteParams()
+  if (route === '/analytics') return
   if (route.length > 200 || /\/([^/]+)\/(?:[^/]+\/)*\1(?:\/|$)/.test(route)) return
   setSearchTerm('')
   window.scrollTo(0, 0)

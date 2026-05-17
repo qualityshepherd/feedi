@@ -1,5 +1,6 @@
 import { marked } from 'marked'
 import { memberByToken, isOwnerPubkey } from './auth.js'
+import { json } from './utils.js'
 
 export const slugify = (title) =>
   title
@@ -28,12 +29,6 @@ export const renderHtml = (markdown) => linkifyTags(marked(markdown || ''))
 
 export const postToMd = ({ title, date, author, tags, markdown }) =>
   `---\ntitle: ${title}\ndate: ${date}\nauthor: ${author}\ntags: [${(tags || []).join(', ')}]\n---\n${markdown}`
-
-const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  })
 
 export const getSettings = async (db) => {
   const row = await db.prepare('SELECT value FROM settings WHERE id = 1').first()
@@ -155,40 +150,19 @@ export const handlePosts = async (req, env) => {
     const isPublished = status === 'published'
     const postDate = bodyDate ? new Date(bodyDate + 'T00:00:00Z').toISOString() : now
 
-    let postId
-    try {
-      const result = await db.prepare(`
-        INSERT INTO posts (slug, title, markdown, description, image_url, status, type, date, updated_at, author, audio_url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        slug, title, markdown,
-        (description || '').trim(),
-        (imageUrl || '').trim(),
-        isPublished ? 'published' : 'draft',
-        type === 'page' ? 'page' : 'post',
-        postDate, now, pubkey,
-        extractAudioUrl(markdown)
-      ).run()
-      postId = result.meta.last_row_id
-    } catch (err) {
-      if (!err.message?.includes('UNIQUE constraint failed: posts.slug')) throw err
-      const existing = await getPostBySlug(db, slug)
-      if (!existing) throw err
-      await db.prepare(`
-        UPDATE posts SET title=?, markdown=?, description=?, image_url=?, status=?, type=?, date=?, updated_at=?, audio_url=?
-        WHERE id=?
-      `).bind(
-        title, markdown,
-        (description || '').trim(),
-        (imageUrl || '').trim(),
-        isPublished ? 'published' : 'draft',
-        type === 'page' ? 'page' : 'post',
-        postDate ?? existing.date, now,
-        extractAudioUrl(markdown),
-        existing.id
-      ).run()
-      postId = existing.id
-    }
+    const result = await db.prepare(`
+      INSERT OR REPLACE INTO posts (slug, title, markdown, description, image_url, status, type, date, updated_at, author, audio_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      slug, title, markdown,
+      (description || '').trim(),
+      (imageUrl || '').trim(),
+      isPublished ? 'published' : 'draft',
+      type === 'page' ? 'page' : 'post',
+      postDate, now, pubkey,
+      extractAudioUrl(markdown)
+    ).run()
+    const postId = result.meta.last_row_id
 
     await savePostTags(db, postId, markdown)
     return json(await getPostBySlug(db, slug), 201)
@@ -314,12 +288,6 @@ export const handlePosts = async (req, env) => {
     let body
     try { body = await req.json() } catch { return json({ error: 'invalid json' }, 400) }
     return json(await saveSettings(db, body))
-  }
-
-  // POST /api/cache/bust
-  if (method === 'POST' && path === '/api/cache/bust') {
-    if (!isOwner) return json({ error: 'forbidden' }, 403)
-    return json({ ok: true })
   }
 
   return null

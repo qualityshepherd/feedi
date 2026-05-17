@@ -298,3 +298,31 @@ test('FeedParser: aggregateFeeds deduplicates posts by url', t => {
   ]
   t.is(aggregateFeeds(feeds).length, 1)
 })
+
+// decodeEntities — tested via parseFeedTitle which calls it internally
+
+test('FeedParser: decodeEntities handles decimal numeric entities', t => {
+  t.is(parseFeedTitle('<rss><channel><title>Caf&#233;</title></channel></rss>'), 'Café')
+})
+
+test('FeedParser: decodeEntities handles hex numeric entities', t => {
+  t.is(parseFeedTitle('<rss><channel><title>Caf&#xE9;</title></channel></rss>'), 'Café')
+})
+
+test('FeedParser: decodeEntities handles uppercase hex entities', t => {
+  t.is(parseFeedTitle('<rss><channel><title>&#XE9;</title></channel></rss>'), 'é')
+})
+
+test('FeedParser: decodeEntities handles high codepoint decimal entity (emoji)', t => {
+  // U+1F600 = 😀 — would produce garbage with String.fromCharCode(128512)
+  t.is(parseFeedTitle('<rss><channel><title>Hi &#128512;</title></channel></rss>'), 'Hi 😀')
+})
+
+test('FeedParser: decodeEntities handles high codepoint hex entity', t => {
+  t.is(parseFeedTitle('<rss><channel><title>&#x1F600;</title></channel></rss>'), '😀')
+})
+
+test('FeedParser: decodeEntities handles named entities', t => {
+  t.is(parseFeedTitle('<rss><channel><title>a &amp; b</title></channel></rss>'), 'a & b')
+  t.is(parseFeedTitle('<rss><channel><title>&lt;tag&gt;</title></channel></rss>'), '<tag>')
+})

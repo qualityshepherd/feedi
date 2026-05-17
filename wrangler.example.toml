@@ -22,20 +22,12 @@ binding = "DB"
 database_name = ""                    # your D1 database name
 database_id = ""                      # your D1 database ID
 
-[[durable_objects.bindings]]
-name = "ANALYTICS"
-class_name = "AnalyticsDO"
-
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["AnalyticsDO"]
-
 [[r2_buckets]]
 binding = "R2"
 bucket_name = ""                      # your R2 bucket name
 
 [triggers]
-crons = ["0 * * * *"]
+crons = ["*/42 * * * *"]
 
 [observability]
 enabled = true

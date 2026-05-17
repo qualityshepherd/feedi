@@ -2,7 +2,7 @@
 
 **Resonance over reach. Sovereignty over scale.**
 
-Feedi is a blog, RSS feed, feed reader, and podcast host that has fantastic analytics, and runs on Cloudflare Workers' free tier, forever.
+Feedi is a blog, RSS feed aggregator, feed reader, and podcast host with privacy-friendly analytics — runs on Cloudflare Workers' free tier, forever.
 
 [Demo](https://feedi.brine.dev)
 
@@ -13,7 +13,7 @@ Feedi is a blog, RSS feed, feed reader, and podcast host that has fantastic anal
 
 ## Setup
 
-Assumes [git](https://git-scm.com/), [node](https://nodejs.org/) and [Cloudflare](https://cloudflare.com/) account (free tier). 
+Assumes [git](https://git-scm.com/), [node](https://nodejs.org/) and a [Cloudflare](https://cloudflare.com/) account (free tier).
 
 ```bash
 git clone https://github.com/qualityshepherd/feedi
@@ -43,13 +43,15 @@ Add your custom domain in the Cloudflare dashboard and wait for propagation.
 
 ## Writing posts
 
-Go to `/admin` — create, edit, publish from the browser. Markdown with live preview. Drag, drop, or paste images to upload.
+Go to `/admin` — create, edit, publish from the browser. Markdown with live preview.
 
-Export your posts anytime as JSON from the settings panel. You're never locked in.
+Upload images via the toolbar button or drag-and-drop onto the editor. Images are content-hashed so re-uploading the same file is a no-op.
+
+Download a full backup (posts, feeds, uploads) as a ZIP from the settings panel.
 
 ## RSS feeds
 
-Add external RSS/Atom feeds from the feeds panel. The worker fetches them hourly.
+Add external RSS/Atom feeds from the feeds panel. The worker fetches them on a schedule.
 
 Your own feeds are available at:
 - `/rss/blog` — posts
@@ -62,7 +64,7 @@ Set an audio URL on any post to make it a podcast episode. Supports relative pat
 
 ## Analytics
 
-Privacy-friendly, no third parties. Visible in `/admin → analytics`. Tracks hits, uniques, top paths, countries, and RSS subscribers. No cookies, IPs are hashed.
+Privacy-friendly, no third parties. Visible at `/analytics` (owner only). Tracks hits, uniques, top paths, countries, referrers, devices, and RSS subscribers. No cookies; IPs are hashed and never stored.
 
 ## Local dev
 

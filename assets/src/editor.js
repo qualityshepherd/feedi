@@ -48,6 +48,7 @@ const buildEditorView = (drafts = []) => `
       <button class="editor-btn" data-action="new-post">new</button>
       <button class="editor-btn" data-action="blog-draft">save draft</button>
       <button class="editor-btn" data-action="blog-preview">preview</button>
+      <button class="editor-btn" data-action="upload-post-image" title="upload image">image</button>
       <button class="editor-btn editor-btn-danger" data-action="delete-post" hidden>delete</button>
       <button class="editor-btn editor-btn-publish editor-btn-right" data-action="blog-publish">publish</button>
     </div>
@@ -174,11 +175,51 @@ const refreshDraftItems = () => {
   container.innerHTML = draftRowsHtml(drafts)
 }
 
+const uploadImage = async (file) => {
+  const form = new FormData()
+  form.append('file', file)
+  const res = await fetch('/api/upload', { method: 'POST', headers: { Authorization: `Bearer ${getToken()}` }, body: form })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || `upload failed ${res.status}`)
+  return data.url
+}
+
+const insertAtCursor = (ta, text) => {
+  const s = ta.selectionStart
+  ta.value = ta.value.slice(0, s) + text + ta.value.slice(ta.selectionEnd)
+  ta.selectionStart = ta.selectionEnd = s + text.length
+  ta.dispatchEvent(new Event('input'))
+}
+
+const attachEditorDropZone = () => {
+  const ta = document.getElementById('blog-editor')
+  if (!ta) return
+  ta.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; ta.classList.add('drag-over') })
+  ta.addEventListener('dragleave', () => ta.classList.remove('drag-over'))
+  ta.addEventListener('drop', async e => {
+    e.preventDefault()
+    ta.classList.remove('drag-over')
+    const file = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'))
+    if (!file) return
+    ta.disabled = true
+    try {
+      const url = await uploadImage(file)
+      insertAtCursor(ta, `![](${url})`)
+    } catch (err) {
+      alert(`upload failed: ${err.message}`)
+    } finally {
+      ta.disabled = false
+      ta.focus()
+    }
+  })
+}
+
 const renderEditorView = (slug) => {
   const drafts = editorState.list.filter(p => p.status === 'draft').reverse()
   elements.main.innerHTML = buildEditorView(drafts)
   addBlogCog(true)
   document.getElementById('blog-page-check')?.addEventListener('change', syncActions)
+  attachEditorDropZone()
   if (slug) populateEditor(slug)
   else { resetNewPost(); document.getElementById('blog-editor')?.focus() }
 }
@@ -254,7 +295,7 @@ const settingsCardHtml = (s = {}) => `
     </div>
     <div class="settings-utils">
       <button class="settings-btn settings-btn-muted" data-action="cache-bust">bust cache</button>
-      <button class="settings-btn settings-btn-muted" data-action="backup">backup</button>
+      <button class="settings-btn settings-btn-muted" data-action="backup">full backup</button>
       <button class="settings-btn settings-btn-muted" data-action="restore">import posts</button>
       <button class="settings-btn settings-btn-danger" data-action="delete-all">delete all posts</button>
     </div>
@@ -295,17 +336,24 @@ function closeSettingsCard () {
 
 // backup / delete
 
-async function downloadBackup () {
-  const posts = await apiFetch('/api/posts', 'GET')
-  if (!Array.isArray(posts)) { alert(posts.error || 'backup failed'); return }
-  const ts = new Date().toISOString().slice(0, 19).replace(/:/g, '-')
-  const blob = new Blob([JSON.stringify(posts, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `feedi-backup-${ts}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+async function downloadBackup (btn) {
+  const orig = btn.textContent
+  btn.disabled = true
+  btn.textContent = 'backing up…'
+  try {
+    const token = getToken()
+    const res = await fetch('/api/backup/full', { headers: { Authorization: `Bearer ${token}` } })
+    if (res.status === 401) { localStorage.removeItem('feedi_token'); location.reload(); return }
+    if (!res.ok) throw new Error(`server error ${res.status}`)
+    const blob = await res.blob()
+    const ts = new Date().toISOString().slice(0, 10)
+    Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `feedi-backup-${ts}.zip` }).click()
+  } catch (err) {
+    alert(`backup failed: ${err.message}`)
+  } finally {
+    btn.disabled = false
+    btn.textContent = orig
+  }
 }
 
 async function restoreBackup (btn) {
@@ -523,7 +571,31 @@ export function initEditor () {
       return
     }
     if (action === 'load-draft') { await autoSave(); populateEditor(btn.dataset.slug); return }
-    if (action === 'backup') { downloadBackup(); return }
+    if (action === 'backup') { downloadBackup(btn); return }
+    if (action === 'upload-post-image') {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = async () => {
+        const file = input.files[0]
+        if (!file) return
+        const orig = btn.textContent
+        btn.disabled = true
+        btn.textContent = '…'
+        try {
+          const url = await uploadImage(file)
+          const ta = document.getElementById('blog-editor')
+          if (ta) insertAtCursor(ta, `![](${url})`)
+        } catch (err) {
+          alert(`upload failed: ${err.message}`)
+        } finally {
+          btn.disabled = false
+          btn.textContent = orig
+        }
+      }
+      input.click()
+      return
+    }
     if (action === 'restore') { restoreBackup(btn); return }
     if (action === 'delete-all') { await deleteAllPosts(btn); return }
     if (action === 'cache-bust') {

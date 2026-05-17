@@ -1,12 +1,11 @@
-import { trackHit, handleAnalytics, AnalyticsDO } from './analytics.js'
+import { trackHit, handleAnalytics, handleAnalyticsMigrate } from './analytics.js'
 import { handleFeeds, refreshFeeds, handleFeedsAdmin } from './feeds.js'
 import { handleRss } from './rss.js'
-import { handleUpload, handleServeUpload, handleListUploads } from './upload.js'
+import { handleUpload, handleServeUpload } from './upload.js'
 import { handleAuth, memberByToken, isOwnerPubkey, timingSafeEqual } from './auth.js'
 import { handlePosts, handleIndex, getSettings } from './posts.js'
+import { handleFullBackup } from './backup.js'
 import { handleRobots, handleSitemap, handlePostRoute, handlePageRoute, handleHomeRoute, handleArchiveRoute, handleTagRoute } from './seo.js'
-
-export { AnalyticsDO }
 
 export const isAuthorized = (secret, adminSecret) =>
   !!secret && !!adminSecret && timingSafeEqual(secret, adminSecret)
@@ -15,7 +14,7 @@ const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
 
 // These /api/* paths are intentionally public (no token required)
-const PUBLIC_API = new Set(['/api/challenge', '/api/login', '/api/me', '/api/hit'])
+const PUBLIC_API = new Set(['/api/challenge', '/api/login', '/api/me', '/api/hit', '/api/analytics/migrate'])
 
 const PRIVATE = [
   '/worker/', '/test/', '/node_modules/',
@@ -41,7 +40,8 @@ export default {
     ctx.waitUntil(Promise.all([
       refreshFeeds(env).catch(err => console.error('Feed refresh failed:', err)),
       env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now).run().catch(() => {}),
-      env.DB.prepare('DELETE FROM rate_limits WHERE reset_at < ?').bind(now).run().catch(() => {})
+      env.DB.prepare('DELETE FROM rate_limits WHERE reset_at < ?').bind(now).run().catch(() => {}),
+      env.DB.prepare('DELETE FROM hits WHERE ts < ?').bind(now - 365 * 86400000).run().catch(() => {})
     ]))
   }
 }
@@ -76,6 +76,14 @@ async function handleRequest (req, env, ctx) {
   }
 
   // Analytics (owner-only)
+  if (path === '/api/analytics/migrate' && req.method === 'POST') {
+    const secret = url.searchParams.get('secret')
+    if (!isAuthorized(secret, env.ADMIN_SECRET) && !isOwnerPubkey(await getAuth(), env)) {
+      return json({ error: 'unauthorized' }, 401)
+    }
+    return handleAnalyticsMigrate(req, env)
+  }
+
   if (path === '/api/analytics') {
     if (!isOwnerPubkey(await getAuth(), env)) return json({ error: 'unauthorized' }, 401)
     return handleAnalytics(req, env, url.hostname)
@@ -92,10 +100,6 @@ async function handleRequest (req, env, ctx) {
 
   if (path === '/api/upload' && req.method === 'POST') {
     return handleUpload(req, env)
-  }
-
-  if (path === '/api/uploads' && req.method === 'GET') {
-    return handleListUploads(req, env)
   }
 
   if (path.startsWith('/uploads/')) {
@@ -119,8 +123,13 @@ async function handleRequest (req, env, ctx) {
     return handleFeedsAdmin(req, env, ctx)
   }
 
+  // Full backup (owner-only streaming ZIP)
+  if (path === '/api/backup/full' && req.method === 'GET') {
+    return handleFullBackup(req, env)
+  }
+
   // Posts API (authed)
-  if (path === '/api/posts' || path.startsWith('/api/posts/') || path === '/api/backup' || path === '/api/cache/bust' || path === '/api/settings') {
+  if (path === '/api/posts' || path.startsWith('/api/posts/') || path === '/api/backup' || path === '/api/settings') {
     return handlePosts(req, env)
   }
 

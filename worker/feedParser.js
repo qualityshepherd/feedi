@@ -4,7 +4,8 @@ const decodeEntities = str => str
   .replace(/&gt;/g, '>')
   .replace(/&quot;/g, '"')
   .replace(/&apos;/g, "'")
-  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+  .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+  .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
 
 export const extractTag = (xml, tag) => {
   const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))

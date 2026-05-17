@@ -24,6 +24,12 @@ export const timingSafeEqual = (a, b) => {
 export const isOwnerPubkey = (pubkey, env) =>
   !!(pubkey && env.OWNER && pubkey === env.OWNER.trim())
 
+export const requireOwner = async (req, env) => {
+  const token = req.headers?.get('authorization')?.replace('Bearer ', '')
+  const pubkey = token ? await memberByToken(token, env.DB) : null
+  return (pubkey && isOwnerPubkey(pubkey, env)) ? pubkey : null
+}
+
 export const isRateLimited = (record, now, maxAttempts) =>
   !!record && now < record.resetAt && record.count >= maxAttempts
 

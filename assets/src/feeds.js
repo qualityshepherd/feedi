@@ -146,7 +146,7 @@ const renderFeedsItems = (items) => {
   feedList = items
   feedItems = new Map(items.map(i => [i.url, i]))
 
-  elements.main.innerHTML = ''
+  elements.main.innerHTML = '<h2>feeds</h2>'
   let rendered = 0
 
   // sentinel sits at the bottom; items are inserted before it so it stays at

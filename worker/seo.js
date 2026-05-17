@@ -8,14 +8,6 @@ const getAllPublished = async (db) => {
 
 const BREAK = '<break>'
 
-const renderTagsServer = (tags) =>
-  Array.isArray(tags)
-    ? tags.map(tag => {
-      const safe = encodeURIComponent(tag.toLowerCase())
-      return `<a href="/tag?t=${safe}" class="tag" role="button" aria-label="Filter by tag: ${tag}">${tag}</a>`
-    }).join(' ')
-    : ''
-
 const subscribeLink = (post) => {
   if (post.meta.page) return ''
   const href = post.meta.audioUrl ? '/rss/pod' : '/rss/blog'
@@ -50,7 +42,7 @@ const postCardHtml = (post) => {
     <div>${preview}</div>
     ${truncated ? `<div class="post-break"><a class="read-more" href="/posts/${post.meta.slug}">read more</a></div>` : ''}
     ${!truncated && post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
-    <div class="tags">${renderTagsServer(post.meta.tags)} ${subscribeLink(post)}</div>
+    ${subscribeLink(post)}
   </div>`
 }
 
@@ -60,7 +52,7 @@ const singlePostHtml = (post) => `
     ${post.meta.page ? '' : `<div class="date">${post.meta.date}</div>`}
     <div class="post-content">${post.html.replaceAll(BREAK, '')}</div>
     ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:1rem 0"></audio>` : ''}
-    ${post.meta.page ? '' : `<div class="tags">${renderTagsServer(post.meta.tags)} ${subscribeLink(post)}</div>`}
+    ${post.meta.page ? '' : subscribeLink(post)}
   </article>`
 
 const archiveItemHtml = (post) => `
@@ -200,7 +192,7 @@ export const handleArchiveRoute = async (req, env) => {
 
   const html = await htmlRes.text()
   const index = buildIndex(posts)
-  const contentHtml = index.filter(p => !p.meta.page).map(archiveItemHtml).join('\n')
+  const contentHtml = '<h2>archive</h2>\n' + index.filter(p => !p.meta.page).map(archiveItemHtml).join('\n')
 
   return new Response(injectContent(html, contentHtml), {
     headers: { 'Content-Type': 'text/html;charset=UTF-8', 'Cache-Control': 'public, max-age=300' }

@@ -4,14 +4,6 @@ const fmtDate = str => str ? str.slice(0, 10) : ''
 
 const BREAK = '<break>'
 
-const tagsHtml = (tags) => {
-  if (!tags?.length) return ''
-  const tagLinks = tags.map(t =>
-    `<a href="/tag?t=${encodeURIComponent(t)}" class="tag">#${t}</a>`
-  ).join(' ')
-  return `<div class="tags">${tagLinks}</div>`
-}
-
 export const postsTemplate = post => {
   const parts = post.html.split(BREAK)
   const preview = parts[0]
@@ -26,7 +18,6 @@ export const postsTemplate = post => {
     <div>${preview}</div>
     ${truncated ? `<div class="post-break"><a class="read-more" href="/posts/${post.meta.slug}">read more</a></div>` : ''}
     ${!truncated && post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
-    ${post.meta.page ? '' : tagsHtml(post.meta.tags)}
   </div>
 `
 }
@@ -37,7 +28,6 @@ export const singlePostTemplate = post => `
     ${post.meta.page ? '' : `<div class="date">${fmtDate(post.meta.date)}</div>`}
     <div class="post-content">${post.html.replaceAll(BREAK, '')}</div>
     ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:1rem 0"></audio>` : ''}
-    ${post.meta.page ? '' : tagsHtml(post.meta.tags)}
   </article>
 `
 

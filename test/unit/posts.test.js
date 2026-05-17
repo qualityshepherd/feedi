@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { slugify, buildIndex, postToMd } from '../../worker/posts.js'
+import { slugify, buildIndex, postToMd, renderHtml } from '../../worker/posts.js'
 
 // slugify
 test('slugify: lowercases title', t => {
@@ -139,4 +139,29 @@ test('postToMd: includes author in frontmatter', t => {
 test('postToMd: empty tags renders empty brackets', t => {
   const md = postToMd(makePost({ tags: [] }))
   t.ok(md.includes('tags: []'))
+})
+
+// renderHtml — inline hashtag linking
+
+test('renderHtml: linkifies hashtag to tag filter link', t => {
+  const html = renderHtml('hello #world')
+  t.ok(html.includes('href="/tag?t=world"'))
+  t.ok(html.includes('class="tag"'))
+  t.ok(html.includes('#world'))
+})
+
+test('renderHtml: linkifies multiple hashtags', t => {
+  const html = renderHtml('#test #panic')
+  t.ok(html.includes('href="/tag?t=test"'))
+  t.ok(html.includes('href="/tag?t=panic"'))
+})
+
+test('renderHtml: does not linkify hashtag inside html attribute', t => {
+  const html = renderHtml('[link](#anchor)')
+  t.ok(!html.includes('href="/tag?t=anchor"'))
+})
+
+test('renderHtml: lowercases tag in link href', t => {
+  const html = renderHtml('#MyTag')
+  t.ok(html.includes('href="/tag?t=mytag"'))
 })
