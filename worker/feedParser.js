@@ -13,6 +13,14 @@ export const extractAttr = (xml, tag, attr) => {
   return match ? match[1] : ''
 }
 
+export const extractAtomLink = (xml) => {
+  const alternate = xml.match(/<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']*)["'][^>]*>/i)
+    || xml.match(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']alternate["'][^>]*>/i)
+  if (alternate) return alternate[1]
+  const first = xml.match(/<link[^>]*href=["']([^"']*)["'][^>]*>/i)
+  return first ? first[1] : ''
+}
+
 export const isAtom = (xml) =>
   xml.includes('xmlns="http://www.w3.org/2005/Atom"') ||
   xml.trimStart().startsWith('<feed')
@@ -82,7 +90,7 @@ const parseAtomEntry = (entryXml, feedMeta) => {
   const content = extractCdata(extractTag(entryXml, 'content') || extractTag(entryXml, 'summary'))
   return {
     title: extractCdata(extractTag(entryXml, 'title')),
-    url: extractAttr(entryXml, 'link', 'href') || extractCdata(extractTag(entryXml, 'link')),
+    url: extractAtomLink(entryXml) || extractCdata(extractTag(entryXml, 'link')),
     date: extractTag(entryXml, 'published') || extractTag(entryXml, 'updated') || '',
     content: thumbnail + content,
     author: extractCdata(extractTag(extractTag(entryXml, 'author'), 'name')),

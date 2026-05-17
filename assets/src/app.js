@@ -20,6 +20,8 @@ function setEventListeners () {
       return
     }
 
+    if (url.pathname === '/analytics') return
+
     e.preventDefault()
     history.pushState(null, '', url.pathname + url.search)
     handleRouting()

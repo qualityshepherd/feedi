@@ -2,14 +2,14 @@ import { trackHit, handleAnalytics, AnalyticsDO } from './analytics.js'
 import { handleFeeds, refreshFeeds, handleFeedsAdmin } from './feeds.js'
 import { handleRss } from './rss.js'
 import { handleUpload, handleServeUpload, handleListUploads } from './upload.js'
-import { handleAuth, memberByToken, isOwnerPubkey } from './auth.js'
+import { handleAuth, memberByToken, isOwnerPubkey, timingSafeEqual } from './auth.js'
 import { handlePosts, handleIndex, getSettings } from './posts.js'
 import { handleRobots, handleSitemap, handlePostRoute, handlePageRoute, handleHomeRoute, handleArchiveRoute, handleTagRoute } from './seo.js'
 
 export { AnalyticsDO }
 
 export const isAuthorized = (secret, adminSecret) =>
-  !!secret && !!adminSecret && secret === adminSecret
+  !!secret && !!adminSecret && timingSafeEqual(secret, adminSecret)
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } })
@@ -61,18 +61,23 @@ async function handleRequest (req, env, ctx) {
     return json(await getSettings(env.DB))
   }
 
+  let _pubkey
+  const getAuth = async () => {
+    if (_pubkey === undefined) {
+      const token = req.headers.get('authorization')?.replace('Bearer ', '')
+      _pubkey = token ? await memberByToken(token, env.DB) : null
+    }
+    return _pubkey
+  }
+
   // Auth gate — all /api/* routes not in PUBLIC_API require a valid token
   if (path.startsWith('/api/') && !PUBLIC_API.has(path)) {
-    const token = req.headers.get('authorization')?.replace('Bearer ', '')
-    const pubkey = token ? await memberByToken(token, env.DB) : null
-    if (!pubkey) return json({ error: 'unauthorized' }, 401)
+    if (!await getAuth()) return json({ error: 'unauthorized' }, 401)
   }
 
   // Analytics (owner-only)
   if (path === '/api/analytics') {
-    const token = req.headers.get('authorization')?.replace('Bearer ', '')
-    const pubkey = token ? await memberByToken(token, env.DB) : null
-    if (!isOwnerPubkey(pubkey, env)) return json({ error: 'unauthorized' }, 401)
+    if (!isOwnerPubkey(await getAuth(), env)) return json({ error: 'unauthorized' }, 401)
     return handleAnalytics(req, env, url.hostname)
   }
 

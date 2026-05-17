@@ -70,7 +70,7 @@ export const handleFeeds = async (env) => {
     const { results } = await env.DB.prepare(
       'SELECT posts FROM feed_status WHERE posts IS NOT NULL'
     ).all()
-    const allPosts = results.flatMap(row => JSON.parse(row.posts))
+    const allPosts = results.flatMap(row => { try { return JSON.parse(row.posts) } catch { return [] } })
     allPosts.sort((a, b) => new Date(b.date) - new Date(a.date))
     return new Response(JSON.stringify(allPosts), {
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
