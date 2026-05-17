@@ -1,4 +1,5 @@
 import { getAllPosts, getSettings } from './posts.js'
+import { escXml, stripTags } from './utils.js'
 
 const extractFirstImg = (html = '') => {
   const m = html.match(/<img[^>]+src="([^"]+)"/)
@@ -11,14 +12,6 @@ const resolveUrl = (url, base) => {
   return `${base}${url.startsWith('/') ? '' : '/'}${url}`
 }
 
-const stripTags = (html = '') => html.replace(/<[^>]+>/g, '')
-
-const escXml = (s = '') =>
-  String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

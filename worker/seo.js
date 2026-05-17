@@ -1,4 +1,5 @@
 import { getAllPosts, getPostBySlug, buildIndex, renderHtml } from './posts.js'
+import { escXml, stripTags } from './utils.js'
 
 const getAllPublished = async (db) => {
   const posts = await getAllPosts(db)
@@ -227,10 +228,6 @@ export const handleTagRoute = async (req, env) => {
   })
 }
 
-const escXml = s => String(s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-
-const stripTags = s => s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 
 const extractFirstImage = (html, base) => {
   const m = html.match(/<img[^>]+src="([^"]+)"/)

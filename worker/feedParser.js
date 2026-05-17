@@ -1,3 +1,11 @@
+const decodeEntities = str => str
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&apos;/g, "'")
+  .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(n))
+
 export const extractTag = (xml, tag) => {
   const match = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))
   return match ? match[1].trim() : ''
@@ -26,7 +34,7 @@ export const isAtom = (xml) =>
   xml.trimStart().startsWith('<feed')
 
 export const parseFeedTitle = (xml, url = '') => {
-  const title = extractCdata(extractTag(xml, 'title'))
+  const title = decodeEntities(extractCdata(extractTag(xml, 'title')))
   if (title) return title
   const tagMatch = url.match(/\/tags\/([^./]+)/)
   return tagMatch ? `#${tagMatch[1]}` : ''
@@ -60,7 +68,7 @@ const parseRssItem = (itemXml, feedMeta, isPodcast = false) => {
   const audioTag = enclosureUrl && isPodcast && isAudioEnclosure && !content.includes('<audio')
     ? `<audio controls src="${enclosureUrl}" style="width:100%;margin-top:1em;"></audio>`
     : ''
-  const rawTitle = extractCdata(extractTag(itemXml, 'title'))
+  const rawTitle = decodeEntities(extractCdata(extractTag(itemXml, 'title')))
   const title = rawTitle || feedMeta.title || ''
   return {
     title,
@@ -89,7 +97,7 @@ const parseAtomEntry = (entryXml, feedMeta) => {
     : ''
   const content = extractCdata(extractTag(entryXml, 'content') || extractTag(entryXml, 'summary'))
   return {
-    title: extractCdata(extractTag(entryXml, 'title')),
+    title: decodeEntities(extractCdata(extractTag(entryXml, 'title'))),
     url: extractAtomLink(entryXml) || extractCdata(extractTag(entryXml, 'link')),
     date: extractTag(entryXml, 'published') || extractTag(entryXml, 'updated') || '',
     content: thumbnail + content,
