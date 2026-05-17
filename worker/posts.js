@@ -263,7 +263,7 @@ export const handlePosts = async (req, env) => {
           p.type === 'page' ? 'page' : 'post',
           p.date || now, now,
           p.author || pubkey,
-          extractAudioUrl(markdown)
+          p.audioUrl || extractAudioUrl(markdown)
         ).run()
 
         await savePostTags(db, result.meta.last_row_id, markdown)

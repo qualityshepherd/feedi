@@ -8,12 +8,6 @@ const getAllPublished = async (db) => {
 
 const BREAK = '<break>'
 
-const subscribeLink = (post) => {
-  if (post.meta.page) return ''
-  const href = post.meta.audioUrl ? '/rss/pod' : '/rss/blog'
-  const title = post.meta.audioUrl ? 'Subscribe to podcast feed' : 'Subscribe to blog feed'
-  return `<a class="rss-subscribe" href="${href}" title="${title}" target="_blank" rel="noopener noreferrer">◆ subscribe</a>`
-}
 
 const toIndexEntry = (post) => ({
   meta: {
@@ -42,7 +36,6 @@ const postCardHtml = (post) => {
     <div>${preview}</div>
     ${truncated ? `<div class="post-break"><a class="read-more" href="/posts/${post.meta.slug}">read more</a></div>` : ''}
     ${!truncated && post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
-    ${subscribeLink(post)}
   </div>`
 }
 
@@ -52,7 +45,6 @@ const singlePostHtml = (post) => `
     ${post.meta.page ? '' : `<div class="date">${post.meta.date}</div>`}
     <div class="post-content">${post.html.replaceAll(BREAK, '')}</div>
     ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:1rem 0"></audio>` : ''}
-    ${post.meta.page ? '' : subscribeLink(post)}
   </article>`
 
 const archiveItemHtml = (post) => `
