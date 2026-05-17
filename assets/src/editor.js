@@ -491,6 +491,7 @@ export function initEditor () {
 
   document.getElementById('btn-sign-out')?.addEventListener('click', () => {
     localStorage.removeItem('feedi_token')
+    document.cookie = 'feedi_skip=1; path=/; max-age=0'
     location.reload()
   })
 

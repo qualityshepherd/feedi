@@ -112,6 +112,11 @@ const show = id => { const el = document.getElementById(id); if (el) el.hidden =
   })
 
   if (index.some(p => p.meta.audioUrl)) show('rss-pod-row')
-  if (localStorage.getItem('feedi_token')) initEditor()
-  else initLoginModal()
+  if (localStorage.getItem('feedi_token')) {
+    document.cookie = 'feedi_skip=1; path=/; max-age=31536000; SameSite=Strict'
+    initEditor()
+  } else {
+    document.cookie = 'feedi_skip=1; path=/; max-age=0'
+    initLoginModal()
+  }
 })()

@@ -84,7 +84,7 @@ export function handleRouting () {
   if (route.length > 200 || /\/([^/]+)\/(?:[^/]+\/)*\1(?:\/|$)/.test(route)) return
   setSearchTerm('')
   window.scrollTo(0, 0)
-  if (!isInitialLoad && route !== '/search' && !localStorage.getItem('feedi_token')) {
+  if (!isInitialLoad && route !== '/search') {
     navigator.sendBeacon('/api/hit?path=' + encodeURIComponent(location.pathname + location.search))
   }
   isInitialLoad = false
@@ -109,9 +109,7 @@ export function handleSearch (e) {
     history.replaceState(null, '', '/search?q=' + e.target.value)
     clearTimeout(searchBeaconTimer)
     searchBeaconTimer = setTimeout(() => {
-      if (!localStorage.getItem('feedi_token')) {
-        navigator.sendBeacon('/api/hit?path=' + encodeURIComponent(location.pathname + location.search))
-      }
+      navigator.sendBeacon('/api/hit?path=' + encodeURIComponent(location.pathname + location.search))
     }, 1000)
   } else {
     clearTimeout(searchBeaconTimer)

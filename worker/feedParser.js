@@ -14,8 +14,8 @@ export const extractAttr = (xml, tag, attr) => {
 }
 
 export const extractAtomLink = (xml) => {
-  const alternate = xml.match(/<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']*)["'][^>]*>/i)
-    || xml.match(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']alternate["'][^>]*>/i)
+  const alternate = xml.match(/<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']*)["'][^>]*>/i) ||
+    xml.match(/<link[^>]*href=["']([^"']*)["'][^>]*rel=["']alternate["'][^>]*>/i)
   if (alternate) return alternate[1]
   const first = xml.match(/<link[^>]*href=["']([^"']*)["'][^>]*>/i)
   return first ? first[1] : ''
