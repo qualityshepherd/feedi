@@ -228,7 +228,6 @@ export const handleTagRoute = async (req, env) => {
   })
 }
 
-
 const extractFirstImage = (html, base) => {
   const m = html.match(/<img[^>]+src="([^"]+)"/)
   if (!m) return ''

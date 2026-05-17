@@ -93,7 +93,7 @@ const asnTag = (asn) => {
 }
 
 const bars = (items, isCountry = false, pathBots = {}) => items.map(([name, count]) => {
-  const label = isCountry ? \`\${flag(name)}\${countryName(name)}\` : name
+  const label = isCountry ? \`\${flag(name)}\${name}\` : name
   const title = isCountry ? countryName(name) : name
   const botInfo = !isCountry && pathBots[name]
   const botTags = botInfo && botInfo.asns && botInfo.asns.length
@@ -126,8 +126,7 @@ const groupSessions = (hits) => {
     ipHits.sort((a, b) => a.ts - b.ts)
     let session = null
     for (const h of ipHits) {
-      const utcDay = ts => new Date(ts).toISOString().slice(0, 10)
-      const sameDay = session && utcDay(h.ts) === utcDay(session.ts)
+      const sameDay = session && new Date(h.ts).toDateString() === new Date(session.ts).toDateString()
       const withinGap = session && (h.ts - session.lastTs <= SESSION_GAP)
       const inSession = days === 1 ? withinGap : sameDay
       if (!session || !inSession) {
@@ -268,8 +267,10 @@ const render = (allData) => {
     \`<div>\${heatmap(s.byHour, hourLabels, 'hour')}</div>\`
 
   document.getElementById('charts').innerHTML =
-    \`<h2>top paths</h2><div>\${bars(topPaths, false, s.byPathBots)}</div>\` +
-    \`<h2>top countries</h2><div>\${bars(topCountries, true)}</div>\`
+    \`<div class="charts-grid">\` +
+      \`<div><h2>top paths</h2>\${bars(topPaths, false, s.byPathBots)}</div>\` +
+      \`<div><h2>top countries</h2>\${bars(topCountries, true)}</div>\` +
+    \`</div>\`
 
   renderLogs()
 }
