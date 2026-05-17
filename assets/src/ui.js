@@ -44,7 +44,7 @@ export function renderPosts (posts) {
   if (postsObserver) { postsObserver.disconnect(); postsObserver = null }
   elements.main.innerHTML = ''
 
-  if (!filtered.length) return
+  if (!filtered.length) { elements.main.innerHTML = notFoundTemplate(); return }
 
   let rendered = 0
   const sentinel = document.createElement('div')

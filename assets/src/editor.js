@@ -48,6 +48,7 @@ const buildEditorView = (drafts = []) => `
       <button class="editor-btn" data-action="new-post">new</button>
       <button class="editor-btn" data-action="blog-draft">save draft</button>
       <button class="editor-btn" data-action="blog-preview">preview</button>
+      <button class="editor-btn editor-btn-danger" data-action="delete-post" hidden>delete</button>
       <button class="editor-btn editor-btn-publish editor-btn-right" data-action="blog-publish">publish</button>
     </div>
     <textarea class="editor-textarea" id="blog-editor" placeholder="# Title&#10;&#10;Write in markdown...&#10;&#10;Use #hashtag to tag posts."></textarea>
@@ -68,12 +69,14 @@ const syncActions = () => {
   const post = editorState.slug ? editorState.list.find(p => p.slug === editorState.slug) : null
   const publishBtn = document.querySelector('[data-action="blog-publish"]')
   const draftBtn = document.querySelector('[data-action="blog-draft"]')
+  const deleteBtn = document.querySelector('[data-action="delete-post"]')
   const isPage = document.getElementById('blog-page-check')?.checked
   if (publishBtn) publishBtn.textContent = post?.status === 'published' ? 'update' : 'publish'
   if (draftBtn) {
     draftBtn.hidden = !!(isPage)
     if (!draftBtn.hidden) draftBtn.textContent = post?.status === 'published' ? 'make draft' : 'save draft'
   }
+  if (deleteBtn) deleteBtn.hidden = !editorState.slug
 }
 
 const populateEditor = (slug) => {
@@ -158,9 +161,16 @@ const addBlogCog = (editing = false) => {
 }
 
 const refreshDraftItems = () => {
-  const container = document.querySelector('#blog-edit-card .draft-items')
-  if (!container) return
+  const card = document.getElementById('blog-edit-card')
+  if (!card) return
   const drafts = editorState.list.filter(p => p.status === 'draft').reverse()
+  let container = card.querySelector('.draft-items')
+  if (!container) {
+    if (!drafts.length) return
+    container = document.createElement('div')
+    container.className = 'draft-items'
+    card.appendChild(container)
+  }
   container.innerHTML = draftRowsHtml(drafts)
 }
 
@@ -240,22 +250,25 @@ const settingsCardHtml = (s = {}) => `
   <div id="settings-card">
     <div class="settings-actions">
       <span class="settings-title">site settings</span>
+      <button class="settings-btn settings-btn-primary" data-action="save-settings">save</button>
+    </div>
+    <div class="settings-utils">
       <button class="settings-btn settings-btn-muted" data-action="cache-bust">bust cache</button>
       <button class="settings-btn settings-btn-muted" data-action="backup">backup</button>
       <button class="settings-btn settings-btn-muted" data-action="restore">import posts</button>
       <button class="settings-btn settings-btn-danger" data-action="delete-all">delete all posts</button>
-      <button class="settings-btn settings-btn-primary" data-action="save-settings">save</button>
     </div>
     <div class="settings-fields">
       <label class="settings-field">
-        <span class="settings-field-header"><span>nav</span><span class="settings-hint"><code>/</code> · <code>/feeds</code> · <code>/archive</code></span></span>
+        <span>nav</span>
         <input type="text" id="settings-nav" placeholder="[Home](/) [Archive](/archive)" value="${s.nav || ''}">
+        <span class="settings-hint"><em>built-in routes: / · /feeds · /archive · /analytics</em></span>
       </label>
       <label class="settings-field">
-        <span>site image</span>
+        <span>site image <span class="settings-hint">rss thumbnail fallback</span></span>
         <input type="url" id="settings-site-image" placeholder="https://..." value="${s.siteImage || ''}">
       </label>
-      <div class="settings-divider">podcast · <a class="settings-hint" href="https://www.castfeedvalidator.com" target="_blank" rel="noopener noreferrer">validate</a></div>
+      <div class="settings-divider">podcast · <a class="settings-hint" href="https://www.castfeedvalidator.com/?url=${encodeURIComponent(location.origin + '/rss/pod')}" target="_blank" rel="noopener noreferrer">validate</a></div>
       <label class="settings-field">
         <span>image${!s.podcastImage ? ' <span class="settings-warn">⚠ required for Apple Podcasts</span>' : ''}</span>
         <input type="url" id="settings-pod-image" placeholder="https://... (1400×1400)" value="${s.podcastImage || ''}">
@@ -324,6 +337,134 @@ async function deleteAllPosts (btn) {
   const result = await apiFetch('/api/posts', 'DELETE')
   if (result.error) { alert(result.error); btn.disabled = false; return }
   location.reload()
+}
+
+// login modal
+
+export function initLoginModal () {
+  const overlay = document.createElement('div')
+  overlay.id = 'login-modal'
+  overlay.className = 'login-modal-overlay hidden'
+  overlay.innerHTML = `
+    <div class="login-modal">
+      <div class="login-modal-header">
+        <span>sign in</span>
+        <button class="login-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="login-modal-body">
+        <div id="lm-unconfigured" class="hidden">
+          <p class="login-modal-hint">no owner configured — enter a passphrase to derive your pubkey, then add it to <code>wrangler.toml</code> as <code>OWNER</code> and redeploy.</p>
+          <div class="login-modal-field">
+            <label for="lm-setup-passphrase">passphrase</label>
+            <div class="login-modal-input-wrap">
+              <input type="password" id="lm-setup-passphrase" placeholder="enter your passphrase" autocomplete="new-password">
+              <button type="button" class="login-modal-eye" data-target="lm-setup-passphrase"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+            </div>
+            <div class="login-modal-strength hidden" id="lm-strength"></div>
+          </div>
+          <button class="btn btn-primary" id="lm-btn-derive">derive pubkey</button>
+          <div id="lm-pubkey-result" class="hidden login-modal-field" style="margin-top:var(--space-4)">
+            <label for="lm-pubkey">your pubkey — copy into wrangler.toml as OWNER</label>
+            <input type="text" id="lm-pubkey" readonly onclick="this.select()">
+          </div>
+        </div>
+        <div id="lm-existing" class="hidden">
+          <div class="login-modal-field">
+            <label for="lm-passphrase">passphrase</label>
+            <div class="login-modal-input-wrap">
+              <input type="password" id="lm-passphrase" placeholder="your passphrase" autocomplete="current-password">
+              <button type="button" class="login-modal-eye" data-target="lm-passphrase"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12.5c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="lm-btn-login">sign in</button>
+        </div>
+        <div class="login-modal-error hidden" id="lm-error"></div>
+      </div>
+    </div>
+  `
+  document.body.appendChild(overlay)
+
+  const close = () => { overlay.classList.add('hidden'); document.body.style.overflow = '' }
+  const showErr = msg => { const el = overlay.querySelector('#lm-error'); el.textContent = msg; el.classList.remove('hidden') }
+  const hideErr = () => overlay.querySelector('#lm-error').classList.add('hidden')
+
+  overlay.querySelector('.login-modal-close').addEventListener('click', close)
+  overlay.addEventListener('click', e => { if (e.target === overlay) close() })
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.classList.contains('hidden')) close() })
+
+  overlay.querySelectorAll('.login-modal-eye').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = overlay.querySelector(`#${btn.dataset.target}`)
+      input.type = input.type === 'password' ? 'text' : 'password'
+    })
+  })
+
+  document.getElementById('btn-sign-in')?.addEventListener('click', async () => {
+    document.getElementById('kebab-dropdown').hidden = true
+    hideErr()
+    overlay.querySelector('#lm-unconfigured').classList.add('hidden')
+    overlay.querySelector('#lm-existing').classList.add('hidden')
+    overlay.classList.remove('hidden')
+    document.body.style.overflow = 'hidden'
+
+    const res = await fetch('/api/challenge').then(r => r.json()).catch(() => ({}))
+    if (res.configured === false) {
+      overlay.querySelector('#lm-unconfigured').classList.remove('hidden')
+    } else {
+      overlay.querySelector('#lm-existing').classList.remove('hidden')
+      overlay.querySelector('#lm-passphrase').focus()
+    }
+  })
+
+  overlay.querySelector('#lm-setup-passphrase').addEventListener('input', async () => {
+    const val = overlay.querySelector('#lm-setup-passphrase').value
+    const el = overlay.querySelector('#lm-strength')
+    if (!val) { el.classList.add('hidden'); return }
+    const { scorePassphrase } = await import('../../../../../../lib/keys.js')
+    const { score, flavor } = scorePassphrase(val)
+    el.className = `login-modal-strength strength-${score}`
+    el.textContent = flavor
+    el.classList.remove('hidden')
+  })
+
+  overlay.querySelector('#lm-btn-derive').addEventListener('click', async () => {
+    const passphrase = overlay.querySelector('#lm-setup-passphrase').value.trim()
+    if (!passphrase) return
+    const { deriveKeypair, scorePassphrase } = await import('../../../../../../lib/keys.js')
+    const { score } = scorePassphrase(passphrase)
+    if (score < 3) { showErr('passphrase too weak — aim for a long phrase'); return }
+    hideErr()
+    const { pubkey } = await deriveKeypair(passphrase, location.hostname)
+    overlay.querySelector('#lm-pubkey').value = pubkey
+    overlay.querySelector('#lm-pubkey-result').classList.remove('hidden')
+  })
+
+  const doLogin = async () => {
+    const passphrase = overlay.querySelector('#lm-passphrase').value.trim()
+    if (!passphrase) return
+    hideErr()
+    try {
+      const { deriveKeypair, signChallenge } = await import('../../../../../../lib/keys.js')
+      const { privateKey, pubkey } = await deriveKeypair(passphrase, location.hostname)
+      const { challenge } = await fetch('/api/challenge').then(r => r.json())
+      const sig = await signChallenge(challenge, privateKey)
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pubkey, challenge, sig })
+      }).then(r => r.json())
+      if (res.error) throw new Error(res.error)
+      localStorage.setItem('feedi_token', res.token)
+      localStorage.setItem('feedi_pubkey', pubkey)
+      close()
+      initEditor()
+    } catch (e) {
+      showErr(e.message)
+    }
+  }
+
+  overlay.querySelector('#lm-btn-login').addEventListener('click', doLogin)
+  overlay.querySelector('#lm-passphrase').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
 }
 
 // init
@@ -424,6 +565,17 @@ export function initEditor () {
         preview.hidden = true
         btn.textContent = 'preview'
       }
+      return
+    }
+    if (action === 'delete-post') {
+      if (!editorState.slug || !confirm('Delete this post?')) return
+      btn.disabled = true
+      const result = await apiFetch(`/api/posts/${editorState.slug}`, 'DELETE')
+      btn.disabled = false
+      if (result.error) { alert(result.error); return }
+      editorState.list = editorState.list.filter(p => p.slug !== editorState.slug)
+      resetNewPost()
+      refreshDraftItems()
       return
     }
     if (action === 'blog-draft') { await handleBlogSave('draft'); return }

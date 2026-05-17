@@ -4,6 +4,14 @@ const fmtDate = str => str ? str.slice(0, 10) : ''
 
 const BREAK = '<break>'
 
+const tagsHtml = (tags) => {
+  if (!tags?.length) return ''
+  const tagLinks = tags.map(t =>
+    `<a href="/tag?t=${encodeURIComponent(t)}" class="tag">#${t}</a>`
+  ).join(' ')
+  return `<div class="tags">${tagLinks}</div>`
+}
+
 export const postsTemplate = post => {
   const parts = post.html.split(BREAK)
   const preview = parts[0]
@@ -18,6 +26,7 @@ export const postsTemplate = post => {
     <div>${preview}</div>
     ${truncated ? `<div class="post-break"><a class="read-more" href="/posts/${post.meta.slug}">read more</a></div>` : ''}
     ${!truncated && post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:0.5rem 0 1rem"></audio>` : ''}
+    ${post.meta.page ? '' : tagsHtml(post.meta.tags)}
   </div>
 `
 }
@@ -28,6 +37,7 @@ export const singlePostTemplate = post => `
     ${post.meta.page ? '' : `<div class="date">${fmtDate(post.meta.date)}</div>`}
     <div class="post-content">${post.html.replaceAll(BREAK, '')}</div>
     ${post.meta.audioUrl ? `<audio controls src="${post.meta.audioUrl}" preload="metadata" style="width:100%;margin:1rem 0"></audio>` : ''}
+    ${post.meta.page ? '' : tagsHtml(post.meta.tags)}
   </article>
 `
 
@@ -77,13 +87,13 @@ export const feedsItemTemplate = (item) => {
 
   return `
   <div class="post feed-post" data-url="${url}">
-    ${url
-      ? `<a class="feed-meta" href="${url}" target="_blank" rel="noopener noreferrer">`
-      : '<div class="feed-meta">'}
+    <div class="feed-meta">
       ${avatar ? `<img class="feed-avatar" src="${avatar}" alt="" onerror="this.style.display='none'">` : ''}
-      <span class="feed-source-name" title="${sourceLabel}">${sourceLabel}</span>
+      ${url
+        ? `<a class="feed-source-name" href="${url}" target="_blank" rel="noopener noreferrer" title="${sourceLabel}">${sourceLabel}</a>`
+        : `<span class="feed-source-name" title="${sourceLabel}">${sourceLabel}</span>`}
       <span class="date">${dateStr}</span>
-    ${url ? '</a>' : '</div>'}
+    </div>
     <div class="feed-body feed-open">
       <img class="feed-thumb" src="${thumb}" alt="" loading="lazy">
       <div class="feed-body-text">

@@ -52,11 +52,6 @@ async function handleRequest (req, env, ctx) {
 
   ctx.waitUntil(trackHit(req, env))
 
-  // Not configured — redirect root to /admin
-  if (!env.OWNER && path === '/') {
-    return new Response(null, { status: 302, headers: { Location: '/admin' } })
-  }
-
   if (path === '/api/hit' && req.method === 'POST') {
     return new Response('ok')
   }
@@ -138,16 +133,14 @@ async function handleRequest (req, env, ctx) {
     return new Response(null, { status: 301, headers: { Location: path.replace('/assets/images/', '/images/') } })
   }
 
+  // Analytics page
+  if (path === '/analytics') return handleAnalytics(req, env, url.hostname)
+
   // Home page SSR
   if (path === '/') return handleHomeRoute(req, env)
 
   // Post pages — inject OG meta + fix direct URL navigation
   if (path.startsWith('/posts/')) return handlePostRoute(req, env)
-
-  // Admin UI — serve single HTML file for all /admin routes (but pass through static assets)
-  if (path === '/admin' || (path.startsWith('/admin/') && !path.includes('.'))) {
-    return env.ASSETS.fetch(new Request(new URL('/admin/index.html', req.url)))
-  }
 
   // Block private paths
   if (PRIVATE.some(p => path === p || path.startsWith(p))) {
