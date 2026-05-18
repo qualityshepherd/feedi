@@ -8,7 +8,6 @@ const getAllPublished = async (db) => {
 
 const BREAK = '<break>'
 
-
 const toIndexEntry = (post) => ({
   meta: {
     slug: post.slug,

@@ -2,40 +2,16 @@
   font-family: "header";
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
-  src: url("../fonts/Oswald-Regular.ttf") format("truetype");
+  font-display: block;
+  src: url("../fonts/Oswald-Regular.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Inter";
-  font-style: normal;
-  font-weight: 420;
+  font-style: normal oblique 0deg 10deg;
+  font-weight: 100 900;
   font-display: swap;
-  src: url("../fonts/Inter-Regular.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Inter";
-  font-style: italic;
-  font-weight: 420;
-  font-display: swap;
-  src: url("../fonts/Inter-Italic.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Inter";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("../fonts/Inter-Bold.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Inter";
-  font-style: italic;
-  font-weight: 700;
-  font-display: swap;
-  src: url("../fonts/Inter-BoldItalic.woff2") format("woff2");
+  src: url("../fonts/Inter.var.woff2") format("woff2");
 }
 
 @font-face {
