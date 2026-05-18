@@ -37,7 +37,7 @@ const filterPostsByTag = (posts, tag) =>
 const routeHandlers = {
   [ROUTES.HOME]: () => {
     renderPosts(getPosts())
-    if (localStorage.getItem('feedi_token')) initBlogCog()
+    if (document.cookie.includes('feedi_skip=1')) initBlogCog()
   },
 
   [ROUTES.POST]: () => {
@@ -48,7 +48,7 @@ const routeHandlers = {
   [ROUTES.TAG]: ({ params }) => {
     const tag = params.get('t')
     renderPosts(tag ? filterPostsByTag(getPosts(), tag) : [])
-    if (localStorage.getItem('feedi_token')) initBlogCog()
+    if (document.cookie.includes('feedi_skip=1')) initBlogCog()
   },
 
   [ROUTES.ARCHIVE]: () => {
@@ -70,7 +70,7 @@ const routeHandlers = {
 
   [ROUTES.READER]: async () => {
     await loadAndRenderFeeds()
-    if (localStorage.getItem('feedi_token')) initFeedsAdmin()
+    if (document.cookie.includes('feedi_skip=1')) initFeedsAdmin()
   },
 
   default: () => {
