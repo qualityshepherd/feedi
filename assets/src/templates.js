@@ -69,9 +69,10 @@ export const feedsItemTemplate = (item) => {
   const domain = feedDomain(url)
   const avatar = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : ''
   const dateStr = formatDate(item.date)
-  const thumb = extractFirstImage(item.content || '') || thumbPlaceholder(domain)
+  const thumb = item.imageUrl || extractFirstImage(item.content || '') || thumbPlaceholder(domain)
   const text = blurb(item.content || '')
   const sourceLabel = item.feed?.url || domain
+  const audioUrl = safeUrl(item.audioUrl || '')
 
   return `
   <div class="post feed-post" data-url="${url}">
@@ -89,6 +90,7 @@ export const feedsItemTemplate = (item) => {
         ${text ? `<p class="feed-blurb">${text}</p>` : ''}
       </div>
     </div>
+    ${audioUrl ? `<audio controls src="${audioUrl}" preload="metadata" style="width:100%;margin-top:0.5em;"></audio>` : ''}
   </div>
   `
 }

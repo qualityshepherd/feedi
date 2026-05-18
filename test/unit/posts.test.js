@@ -79,8 +79,13 @@ test('buildIndex: meta contains expected fields', t => {
   t.deepEqual(entry.meta.tags, ['a', 'b'])
 })
 
-test('buildIndex: html is rendered from markdown', t => {
-  const [entry] = buildIndex([makePost({ markdown: '# Hello' })])
+test('buildIndex: uses stored html when present', t => {
+  const [entry] = buildIndex([makePost({ html: '<p>stored</p>' })])
+  t.ok(entry.html.includes('stored'))
+})
+
+test('buildIndex: falls back to rendering markdown when html is empty', t => {
+  const [entry] = buildIndex([makePost({ html: '', markdown: '# Hello' })])
   t.ok(entry.html.includes('<h1>'))
 })
 

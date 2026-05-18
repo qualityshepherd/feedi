@@ -22,10 +22,21 @@ const PRIVATE = [
   '/README.md', '/LICENSE'
 ]
 
+const addSecurityHeaders = (res) => {
+  if (!res) return res
+  const ct = res.headers.get('Content-Type') || ''
+  if (!ct.includes('text/html')) return res
+  const h = new Headers(res.headers)
+  h.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src *; connect-src 'self'; frame-src https://www.youtube.com https://player.vimeo.com; frame-ancestors 'none'")
+  h.set('X-Content-Type-Options', 'nosniff')
+  h.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  return new Response(res.body, { status: res.status, headers: h })
+}
+
 export default {
   async fetch (req, env, ctx) {
     try {
-      return await handleRequest(req, env, ctx)
+      return addSecurityHeaders(await handleRequest(req, env, ctx))
     } catch (err) {
       console.error('Worker error:', err)
       return new Response(JSON.stringify({ error: err.message || 'internal error' }), {

@@ -262,7 +262,7 @@ test('FeedParser: aggregateFeeds handles empty feed results', t => {
 
 // image pipeline
 
-test('FeedParser: parseFeed includes media:content image in content', t => {
+test('FeedParser: parseFeed sets imageUrl from media:content', t => {
   const xml = `<rss version="2.0"><channel><title>Blog</title>
     <item>
       <title>Post</title>
@@ -273,7 +273,8 @@ test('FeedParser: parseFeed includes media:content image in content', t => {
     </item>
   </channel></rss>`
   const [post] = parseFeed(xml, { url: 'https://example.com/feed.xml' })
-  t.ok(post.content.includes('https://example.com/hero.jpg'))
+  t.ok(post.imageUrl === 'https://example.com/hero.jpg', 'imageUrl set from media:content')
+  t.ok(!post.content.includes('https://example.com/hero.jpg'), 'image not baked into content')
 })
 
 test('FeedParser: parseFeed img in content:encoded is found by extractFirstImage', t => {
@@ -324,4 +325,45 @@ test('FeedParser: decodeEntities handles high codepoint hex entity', t => {
 test('FeedParser: decodeEntities handles named entities', t => {
   t.is(parseFeedTitle('<rss><channel><title>a &amp; b</title></channel></rss>'), 'a & b')
   t.is(parseFeedTitle('<rss><channel><title>&lt;tag&gt;</title></channel></rss>'), '<tag>')
+})
+
+// audio
+
+test('FeedParser: parseFeed rss item sets audioUrl for audio enclosure without iTunes namespace', t => {
+  const xml = `<rss version="2.0"><channel><title>Blog</title>
+    <item>
+      <title>Episode</title>
+      <link>https://example.com/ep1</link>
+      <pubDate>Mon, 01 Jan 2024 00:00:00 GMT</pubDate>
+      <description><![CDATA[<p>show notes</p>]]></description>
+      <enclosure url="https://example.com/ep1.mp3" type="audio/mpeg" length="0"/>
+    </item>
+  </channel></rss>`
+  const [post] = parseFeed(xml, { url: 'https://example.com/feed.xml' })
+  t.is(post.audioUrl, 'https://example.com/ep1.mp3')
+})
+
+test('FeedParser: parseFeed rss item has empty audioUrl when no enclosure', t => {
+  const [first] = parseFeed(rssXml, feedConfig)
+  t.is(first.audioUrl, '')
+})
+
+test('FeedParser: parseFeed atom entry sets audioUrl from enclosure link', t => {
+  const xml = `<?xml version="1.0"?>
+  <feed xmlns="http://www.w3.org/2005/Atom">
+    <entry>
+      <title>Podcast Ep</title>
+      <link href="https://example.com/ep1"/>
+      <link rel="enclosure" type="audio/mpeg" href="https://example.com/ep1.mp3"/>
+      <published>2024-01-01T00:00:00Z</published>
+      <content>Show notes</content>
+    </entry>
+  </feed>`
+  const [post] = parseFeed(xml, { url: 'https://example.com/feed.xml' })
+  t.is(post.audioUrl, 'https://example.com/ep1.mp3')
+})
+
+test('FeedParser: parseFeed atom entry has empty audioUrl when no enclosure', t => {
+  const [first] = parseFeed(atomXml, { url: 'https://example.com/atom.xml' })
+  t.is(first.audioUrl, '')
 })

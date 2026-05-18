@@ -131,25 +131,23 @@ const autoSave = async () => {
 
   if (!editorState.slug) {
     if (!markdown) return
-    const title = extractTitle(markdown)
     const type = document.getElementById('blog-page-check')?.checked ? 'page' : 'post'
-    const result = await apiFetch('/api/posts', 'POST', { title, content: markdown, status: 'draft', type, ...readMeta() })
+    const result = await apiFetch('/api/posts', 'POST', { markdown, status: 'draft', type, ...readMeta() })
     if (result.error) return
     editorState.slug = result.slug
     editorState.original = markdown
     editorState.list.push(result)
     refreshDraftItems()
   } else {
-    const title = extractTitle(markdown)
     const type = document.getElementById('blog-page-check')?.checked ? 'page' : 'post'
     const post = editorState.list.find(p => p.slug === editorState.slug)
     const result = await apiFetch(`/api/posts/${editorState.slug}`, 'PATCH', {
-      title, content: markdown, status: post?.status || 'draft', type, ...readMeta()
+      markdown, status: post?.status || 'draft', type, ...readMeta()
     })
     if (result.error) return
     editorState.original = markdown
     const idx = editorState.list.findIndex(p => p.slug === editorState.slug)
-    if (idx !== -1) editorState.list[idx] = { ...editorState.list[idx], markdown, title, type }
+    if (idx !== -1) editorState.list[idx] = { ...editorState.list[idx], markdown, title: result.title, type }
     refreshDraftItems()
   }
 }
@@ -260,13 +258,12 @@ const handleBlogSave = async (action) => {
   const btn = document.querySelector(`[data-action="blog-${action}"]`)
   if (btn) btn.disabled = true
 
-  const title = extractTitle(markdown)
   const type = document.getElementById('blog-page-check')?.checked ? 'page' : 'post'
   const status = action === 'publish' ? 'published' : 'draft'
 
   const result = editorState.slug
-    ? await apiFetch(`/api/posts/${editorState.slug}`, 'PATCH', { title, content: markdown, status, type, ...readMeta() })
-    : await apiFetch('/api/posts', 'POST', { title, content: markdown, status, type, ...readMeta() })
+    ? await apiFetch(`/api/posts/${editorState.slug}`, 'PATCH', { markdown, status, type, ...readMeta() })
+    : await apiFetch('/api/posts', 'POST', { markdown, status, type, ...readMeta() })
 
   if (btn) btn.disabled = false
   if (result.error) { alert(result.error); return }
@@ -280,7 +277,7 @@ const handleBlogSave = async (action) => {
   editorState.original = markdown
   const idx = editorState.list.findIndex(p => p.slug === slug)
   if (idx !== -1) {
-    editorState.list[idx] = { ...editorState.list[idx], markdown, title, type, status }
+    editorState.list[idx] = { ...editorState.list[idx], markdown, title: result.title, type, status }
   } else {
     editorState.list.push(result)
   }
