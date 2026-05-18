@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { slugify, buildIndex, postToMd, renderHtml } from '../../worker/posts.js'
+import { slugify, buildIndex, renderHtml } from '../../worker/posts.js'
 
 // slugify
 test('slugify: lowercases title', t => {
@@ -106,44 +106,6 @@ test('buildIndex: sorts by date descending', t => {
 
 test('buildIndex: empty array returns empty array', t => {
   t.deepEqual(buildIndex([]), [])
-})
-
-// postToMd
-test('postToMd: includes title in frontmatter', t => {
-  const md = postToMd(makePost({ title: 'My Post' }))
-  t.ok(md.includes('title: My Post'))
-})
-
-test('postToMd: includes date in frontmatter', t => {
-  const md = postToMd(makePost({ date: '2026-01-15' }))
-  t.ok(md.includes('date: 2026-01-15'))
-})
-
-test('postToMd: includes tags in frontmatter', t => {
-  const md = postToMd(makePost({ tags: ['foo', 'bar'] }))
-  t.ok(md.includes('tags: [foo, bar]'))
-})
-
-test('postToMd: includes markdown content after frontmatter', t => {
-  const md = postToMd(makePost({ markdown: '## Hello\n\nworld' }))
-  t.ok(md.includes('## Hello'))
-  t.ok(md.includes('world'))
-})
-
-test('postToMd: wraps frontmatter in --- delimiters', t => {
-  const md = postToMd(makePost())
-  t.ok(md.startsWith('---\n'))
-  t.ok(md.includes('\n---\n'))
-})
-
-test('postToMd: includes author in frontmatter', t => {
-  const md = postToMd(makePost({ author: 'brine' }))
-  t.ok(md.includes('author: brine'))
-})
-
-test('postToMd: empty tags renders empty brackets', t => {
-  const md = postToMd(makePost({ tags: [] }))
-  t.ok(md.includes('tags: []'))
 })
 
 // renderHtml — inline hashtag linking

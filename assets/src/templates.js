@@ -67,7 +67,7 @@ const safeUrl = (url) => {
 export const feedsItemTemplate = (item) => {
   const url = safeUrl(item.url)
   const domain = feedDomain(url)
-  const avatar = domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=16` : ''
+  const avatar = domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : ''
   const dateStr = formatDate(item.date)
   const thumb = item.imageUrl || extractFirstImage(item.content || '') || thumbPlaceholder(domain)
   const text = blurb(item.content || '')
