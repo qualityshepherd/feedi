@@ -110,7 +110,7 @@ const parseAtomEntry = (entryXml, feedMeta) => {
 // Public API
 
 export const parseFeed = (xml, feedConfig) => {
-  const feedMeta = { title: parseFeedTitle(xml, feedConfig.url), url: feedConfig.url }
+  const feedMeta = { url: feedConfig.url }
   const isPodcast = xml.includes('xmlns:itunes')
   return isAtom(xml)
     ? splitEntries(xml).map(e => parseAtomEntry(e, feedMeta))

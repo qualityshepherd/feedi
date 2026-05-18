@@ -84,9 +84,12 @@ const populateEditor = (slug) => {
   const post = editorState.list.find(p => p.slug === slug)
   if (!post) return
   editorState.slug = slug
-  editorState.original = post.markdown || ''
+  const md = post.markdown || ''
+  const hasTitle = /^#\s+.+$/m.test(md)
+  const markdown = hasTitle ? md : `# ${post.title}\n\n${md}`.trimEnd()
+  editorState.original = markdown
   const ta = document.getElementById('blog-editor')
-  if (ta) ta.value = post.markdown || ''
+  if (ta) ta.value = markdown
   const pageCheck = document.getElementById('blog-page-check')
   if (pageCheck) pageCheck.checked = post.type === 'page'
   const dateEl = document.getElementById('meta-date')

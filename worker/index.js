@@ -1,6 +1,6 @@
 import { trackHit, handleAnalytics, handleAnalyticsMigrate } from './analytics.js'
 import { handleFeeds, refreshFeeds, handleFeedsAdmin } from './feeds.js'
-import { handleRss } from './rss.js'
+import { handleRss, refreshRss } from './rss.js'
 import { handleUpload, handleServeUpload } from './upload.js'
 import { handleAuth, memberByToken, isOwnerPubkey, timingSafeEqual } from './auth.js'
 import { handlePosts, handleIndex, getSettings } from './posts.js'
@@ -39,6 +39,7 @@ export default {
     const now = Date.now()
     ctx.waitUntil(Promise.all([
       refreshFeeds(env).catch(err => console.error('Feed refresh failed:', err)),
+      refreshRss(env).catch(err => console.error('RSS refresh failed:', err)),
       env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now).run().catch(() => {}),
       env.DB.prepare('DELETE FROM rate_limits WHERE reset_at < ?').bind(now).run().catch(() => {}),
       env.DB.prepare('DELETE FROM hits WHERE ts < ?').bind(now - 365 * 86400000).run().catch(() => {})
@@ -95,7 +96,7 @@ async function handleRequest (req, env, ctx) {
   }
 
   if (path.startsWith('/rss/')) {
-    return handleRss(req, env)
+    return handleRss(req, env, ctx)
   }
 
   if (path === '/api/upload' && req.method === 'POST') {
@@ -130,7 +131,9 @@ async function handleRequest (req, env, ctx) {
 
   // Posts API (authed)
   if (path === '/api/posts' || path.startsWith('/api/posts/') || path === '/api/backup' || path === '/api/settings') {
-    return handlePosts(req, env)
+    const res = await handlePosts(req, env)
+    if (res && req.method !== 'GET') ctx.waitUntil(refreshRss(env))
+    return res
   }
 
   // Worker-generated index (replaces static index.json)

@@ -57,6 +57,7 @@ const rowToPost = (row) => ({
   slug: row.slug,
   title: row.title,
   markdown: row.markdown,
+  html: row.html || '',
   description: row.description,
   status: row.status,
   type: row.type,
@@ -82,6 +83,27 @@ export const getPostBySlug = async (db, slug) => {
 export const getAllPosts = async (db) => {
   const { results } = await db.prepare(POST_QUERY + ' GROUP BY p.id ORDER BY p.date DESC').all()
   return results.map(rowToPost)
+}
+
+export const getRssPosts = async (db) => {
+  const { results } = await db.prepare(`
+    SELECT p.id, p.slug, p.title, p.html, p.description, p.status, p.type,
+           p.date, p.audio_url, p.image_url, GROUP_CONCAT(pt.tag) as tag_list
+    FROM posts p
+    LEFT JOIN post_tags pt ON pt.post_id = p.id
+    WHERE p.status = 'published' AND p.type != 'page'
+    GROUP BY p.id ORDER BY p.date DESC
+  `).all()
+  return results.map(row => ({
+    slug: row.slug,
+    title: row.title,
+    html: row.html || '',
+    description: row.description,
+    date: row.date,
+    audioUrl: row.audio_url,
+    imageUrl: row.image_url || '',
+    tags: row.tag_list ? row.tag_list.split(',') : []
+  }))
 }
 
 export const buildIndex = (posts) =>
@@ -151,10 +173,10 @@ export const handlePosts = async (req, env) => {
     const postDate = bodyDate ? new Date(bodyDate + 'T00:00:00Z').toISOString() : now
 
     const result = await db.prepare(`
-      INSERT OR REPLACE INTO posts (slug, title, markdown, description, image_url, status, type, date, updated_at, author, audio_url)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO posts (slug, title, markdown, html, description, image_url, status, type, date, updated_at, author, audio_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      slug, title, markdown,
+      slug, title, markdown, renderHtml(markdown),
       (description || '').trim(),
       (imageUrl || '').trim(),
       isPublished ? 'published' : 'draft',
@@ -187,13 +209,13 @@ export const handlePosts = async (req, env) => {
       : post.date || (newStatus === 'published' ? now : null)
 
     await db.prepare(`
-      UPDATE posts SET slug = ?, title = ?, markdown = ?, description = ?, image_url = ?,
+      UPDATE posts SET slug = ?, title = ?, markdown = ?, html = ?, description = ?, image_url = ?,
         status = ?, type = ?, date = ?, updated_at = ?, audio_url = ?
       WHERE id = ?
     `).bind(
       slug,
       title ?? post.title,
-      markdown,
+      markdown, renderHtml(markdown),
       description !== undefined ? description.trim() : post.description,
       imageUrl !== undefined ? imageUrl.trim() : post.imageUrl,
       newStatus,
@@ -254,10 +276,10 @@ export const handlePosts = async (req, env) => {
         const markdown = p.markdown || p.content || ''
 
         const result = await db.prepare(`
-          INSERT OR REPLACE INTO posts (slug, title, markdown, description, status, type, date, updated_at, author, audio_url)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT OR REPLACE INTO posts (slug, title, markdown, html, description, status, type, date, updated_at, author, audio_url)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
-          slug, p.title, markdown,
+          slug, p.title, markdown, p.html || renderHtml(markdown),
           (p.description || '').trim(),
           p.status || 'draft',
           p.type === 'page' ? 'page' : 'post',

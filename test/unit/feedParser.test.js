@@ -127,7 +127,6 @@ test('FeedParser: parseFeed rss item has correct url', t => {
 
 test('FeedParser: parseFeed rss item has feed metadata', t => {
   const [first] = parseFeed(rssXml, feedConfig)
-  t.is(first.feed.title, 'Test Blog')
   t.is(first.feed.url, feedConfig.url)
 })
 
