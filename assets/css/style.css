@@ -1014,11 +1014,13 @@ footer {
   position: absolute;
   top: calc(100% + 0.35rem);
   right: 0;
+  max-width: min(420px, 90vw);
+  white-space: normal;
+  word-break: break-word;
   background: var(--color-surface-1);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 0.3rem 0.5rem;
-  white-space: nowrap;
   font-size: 0.75rem;
   font-family: var(--font-mono);
   color: var(--color-text-primary);
