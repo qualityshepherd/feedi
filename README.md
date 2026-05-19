@@ -37,17 +37,20 @@ wrangler d1 migrations apply feedi --remote
 wrangler deploy
 ```
 
-**First-time owner setup:** go to `/admin`, enter a passphrase (this derives your keypair — nothing is stored server-side), copy the pubkey, paste it into `wrangler.toml` as `OWNER`, and redeploy. After that, logging in signs a challenge with your private key; the passphrase never leaves your browser.
+**First-time owner setup:** with no `OWNER` set, go to your site, open the kebab menu (⋮), and click "sign in". It will detect no owner is configured and show a passphrase field — enter one, click "derive pubkey", copy the result, paste it into `wrangler.toml` as `OWNER`, and redeploy. After that, logging in signs a server challenge with your private key; the passphrase never leaves your browser.
 
 Add your custom domain in the Cloudflare dashboard and wait for propagation.
 
 ## Writing posts
 
-Go to `/admin` — create, edit, publish from the browser. Markdown with live preview.
+Click the `+` button on the main page to open the editor. Write in Markdown, preview before publishing, and publish when ready. Drafts are autosaved every 20 seconds.
+
+- Use `#hashtag` in post body to tag posts
+- Insert `<break>` to set a "read more" cutoff on the home page
 
 Upload images via the toolbar button or drag-and-drop onto the editor. Images are content-hashed so re-uploading the same file is a no-op.
 
-Download a full backup (posts, feeds, uploads) as a ZIP from the settings panel.
+Download a full backup (posts, feeds, uploads) as a ZIP from the settings panel (cog icon when editor is open).
 
 ## RSS feeds
 
