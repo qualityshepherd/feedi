@@ -1,5 +1,5 @@
 import { unit as test } from '../testpup.js'
-import { slugify, buildIndex, renderHtml } from '../../worker/posts.js'
+import { slugify, buildIndex, renderHtml, extractHashtags } from '../../worker/posts.js'
 
 // slugify
 test('slugify: lowercases title', t => {
@@ -106,6 +106,28 @@ test('buildIndex: sorts by date descending', t => {
 
 test('buildIndex: empty array returns empty array', t => {
   t.deepEqual(buildIndex([]), [])
+})
+
+// extractHashtags — derives post_tags / rss <category> from markdown
+
+test('extractHashtags: extracts word tags', t => {
+  t.deepEqual(extractHashtags('#openweb #indieweb #ttrpg'), ['openweb', 'indieweb', 'ttrpg'])
+})
+
+test('extractHashtags: lowercases and dedupes', t => {
+  t.deepEqual(extractHashtags('#TTRPG #ttrpg #Words'), ['ttrpg', 'words'])
+})
+
+test('extractHashtags: drops purely-numeric hex/list refs', t => {
+  t.deepEqual(extractHashtags('crew [#1405] holed up near [#0209], see #1'), [])
+})
+
+test('extractHashtags: ignores numeric character entities (obfuscated email)', t => {
+  t.deepEqual(extractHashtags('&#97;&#99;&#107;&#64;&#98;&#114;&#105;&#110;&#101;'), [])
+})
+
+test('extractHashtags: keeps alphanumeric tags that contain letters', t => {
+  t.deepEqual(extractHashtags('#blog_update #y2024'), ['blog_update', 'y2024'])
 })
 
 // renderHtml — inline hashtag linking

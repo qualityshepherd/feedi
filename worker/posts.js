@@ -17,9 +17,13 @@ const extractTitle = (markdown) => {
   return first?.trim() || `untitled-${Date.now()}`
 }
 
-const extractHashtags = (markdown) => {
-  const matches = [...(markdown || '').matchAll(/(?<![="/>@#a-zA-Z0-9])#([a-zA-Z0-9_]+)/g)]
-  return [...new Set(matches.map(m => m[1].toLowerCase()))]
+export const extractHashtags = (markdown) => {
+  const matches = [...(markdown || '').matchAll(/(?<![="/>@#&a-zA-Z0-9])#([a-zA-Z0-9_]+)/g)]
+  return [...new Set(
+    matches
+      .map(m => m[1].toLowerCase())
+      .filter(t => /[a-z]/.test(t)) // real tags have letters; drop numeric refs like #1405, #0209
+  )]
 }
 
 const extractAudioUrl = (markdown) => {
